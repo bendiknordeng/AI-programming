@@ -6,22 +6,33 @@ class Cell:
         self.board = board #the board of cells
         self.row = row #row position in board
         self.column = column #column position in board
-        self.state = 0 # States 0: empty, 1: peg, 2: most recently hopped peg, 3: peg jumped from here
+        self.state = 1 # States 0: empty, 1: peg,
+                       # 2: peg jumped to cell, 3: peg jumped from cell
 
-    def clearCell(self):
+    def removePeg(self):
         self.state = 0
 
     def placePeg(self):
         self.state = 1
 
-    def jumpedToSelf(self):
+    def jumpedTo(self):
         self.state = 2
 
-    def jumpedFromSelf(self):
+    def jumpedFrom(self):
         self.state = 3
+
+    def isEmpty(self):
+        return self.state == 0 or self.state == 3
+
 
     def getRow(self):
         return self.row
 
     def getColumn(self):
         return self.column
+
+    def getState(self):
+        return self.state
+
+    def __str__(self):
+        return "("+ str(self.getRow()) + "," + str(self.getColumn()) + ")"
