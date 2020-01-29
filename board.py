@@ -19,7 +19,6 @@ class Board:
                 r,c = cell.getRow(), cell.getColumn()
                 self.positions[cell] = (-10*r + 20*c, -10*r)
 
-
     def addCells(self):
         if self.type == 0:  #if triangle: let column length be dynamic with k
             k = 1
@@ -48,6 +47,7 @@ class Board:
                         #print("Added edge from (" + str(r)+","+str(c) + ") to (" + str(i)+","+str(j)+")")
 
 
+
     def draw(self):
         jumpedFromCell = []
         jumpedToCell = []
@@ -72,6 +72,8 @@ class Board:
         print(emptyCells)
         nx.draw(G, pos=self.positions, nodelist=emptyCells, node_color='black', node_size = 1000)
         nx.draw(G, pos=self.positions, nodelist=cellsWithPeg, node_color='blue', node_size = 1000)
+        nx.draw(G, pos=self.positions, nodelist=jumpedToCell, node_color='blue', node_size = 2500)
+        nx.draw(G, pos=self.positions, nodelist=jumpedFromCell, node_color='black', node_size = 200)
 
         plt.savefig("board.png")
         plt.show()
@@ -83,16 +85,54 @@ class Board:
                 cell.removePeg()
                 return
 
-    #def jumpCellOver(self, jumpOver = (r,c), jumpFrom = () )
 
+    def jumpPegFromOver(self, jumpFrom = (-1,-1), jumpOver = (-1,-1) ):
+        r,c = jumpFrom
+        i,j = jumpOver
+        if r-i == 1: #determine endR, row where peg ends up
+            endR = r-2
+        elif i-r == 1:
+            endR = r+2
+        elif r == i:
+            endR = r
+        if c-j == 1: #determine endC, column where peg ends up
+            endC = c-2
+        elif j-c == 1:
+            endC = c+2
+        elif c == j:
+            endC = c
 
+        if r >= 0 and c >= 0:
+            for cell in self.cells:
+                if cell.getRow() == r and cell.getColumn() == c:
+                    fromCell = cell
+                    print("fromCell: ", fromCell)
+                elif cell.getRow() == i and cell.getColumn() == j:
+                    overCell = cell
+                    print("overCell: ", overCell)
+                elif cell.getRow() == endR and cell.getColumn() == endC:
+                    toCell = cell
+                    print("toCell: ", toCell)
 
+        if not fromCell.isEmpty() and not overCell.isEmpty() and toCell.isEmpty():
+            fromCell.jumpedFrom()
+            overCell.removePeg()
+            toCell.jumpedTo()
+            print("jumped from ", jumpFrom, " over ", jumpOver, " to ", (endR,endC))
+        else:
+            print("Not a valid jump")
+            
 def main():
     board = Board(0,4)
     board.addCells()
     board.addEdges()
     board.positionCells()
     board.removePeg(3,1)
+    board.draw()
+
+    board.removePeg(3,2)
+    board.draw()
+    board.jumpPegFromOver((3,0),(3,1))
     board.draw()
 
 main()

@@ -15,11 +15,14 @@ class Cell:
     def placePeg(self):
         self.state = 1
 
-    def jumpedToSelf(self):
+    def jumpedTo(self):
         self.state = 2
 
-    def jumpedFromSelf(self):
+    def jumpedFrom(self):
         self.state = 3
+
+    def isEmpty(self):
+        return self.state == 0 or self.state == 3
 
     def getRow(self):
         return self.row
@@ -29,3 +32,6 @@ class Cell:
 
     def getState(self):
         return self.state
+
+    def __str__(self):
+        return "("+ str(self.getRow()) + "," + str(self.getColumn()) + ")"
