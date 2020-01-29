@@ -12,6 +12,7 @@ class Board:
         self.edges = [] #format: tuple(), from cell with 1. lowest rowNumber and 2. lowest columnNumber
         self.positions = {}
 
+
     def positionCells(self):
         if self.type == 0:
             for cell in self.cells:
@@ -43,6 +44,7 @@ class Board:
                         #print("Added edge from (" + str(r)+","+str(c) + ") to (" + str(i)+","+str(j)+")")
                     elif i == r+1 and j == c+1:
                         self.edges.append((self.cells[n],self.cells[m]))
+                        #print("Added edge from (" + str(r)+","+str(c) + ") to (" + str(i)+","+str(j)+")")
 
 
 
@@ -83,6 +85,7 @@ class Board:
                 cell.removePeg()
                 return
 
+
     def jumpPegFromOver(self, jumpFrom = (-1,-1), jumpOver = (-1,-1) ):
         r,c = jumpFrom
         i,j = jumpOver
@@ -118,13 +121,15 @@ class Board:
             print("jumped from ", jumpFrom, " over ", jumpOver, " to ", (endR,endC))
         else:
             print("Not a valid jump")
-
+            
 def main():
     board = Board(0,4)
     board.addCells()
     board.addEdges()
     board.positionCells()
+    board.removePeg(3,1)
     board.draw()
+
     board.removePeg(3,2)
     board.draw()
     board.jumpPegFromOver((3,0),(3,1))

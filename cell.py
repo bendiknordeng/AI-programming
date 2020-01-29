@@ -24,7 +24,6 @@ class Cell:
     def isEmpty(self):
         return self.state == 0 or self.state == 3
 
-
     def getRow(self):
         return self.row
 
