@@ -14,10 +14,15 @@ class Board:
 
 
     def positionCells(self):
-        if self.type == 0:
+        if self.type == 0: #triangle
             for cell in self.cells:
                 r,c = cell.getRow(), cell.getColumn()
                 self.positions[cell] = (-10*r + 20*c, -10*r)
+        else: #diamond
+            for cell in self.cells:
+                r,c = cell.getRow(), cell.getColumn()
+                self.positions[cell] = (-10*r + 10*c, -20*r - 20*c)
+
 
     def addCells(self):
         if self.type == 0:  #if triangle: let column length be dynamic with k
@@ -27,9 +32,15 @@ class Board:
                     self.cells.append(Cell(self, r, c)) #add cell with position
                     #print("Added cell with row " + str(r) + " and column " + str(c))
                 k += 1
+        else:
+            for r in range(self.size):
+                for c in range(self.size):
+                    self.cells.append(Cell(self, r, c)) #add cell with position
+                    #print("Added cell with row " + str(r) + " and column " + str(c))
+
 
     def addEdges(self): #must have made self.cells in a double array
-        if self.type == 0:
+        if self.type == 0: #triangle
             for n in range(len(self.cells)):
                 #print("n: ", n)
                 r,c = self.cells[n].getRow(), self.cells[n].getColumn()
@@ -43,6 +54,22 @@ class Board:
                         self.edges.append((self.cells[n],self.cells[m]))
                         #print("Added edge from (" + str(r)+","+str(c) + ") to (" + str(i)+","+str(j)+")")
                     elif i == r+1 and j == c+1:
+                        self.edges.append((self.cells[n],self.cells[m]))
+                        #print("Added edge from (" + str(r)+","+str(c) + ") to (" + str(i)+","+str(j)+")")
+        else: #diamond
+            for n in range(len(self.cells)):
+                #print("n: ", n)
+                r,c = self.cells[n].getRow(), self.cells[n].getColumn()
+                for m in range(n+1, len(self.cells)):
+                    #print("m: ", m)
+                    i,j = self.cells[m].getRow(), self.cells[m].getColumn()
+                    if i == r+1 and j == c-1:
+                        self.edges.append((self.cells[n],self.cells[m]))
+                        #print("Added edge from (" + str(r)+","+str(c) + ") to (" + str(i)+","+str(j)+")")
+                    elif i == r+1 and j == c:
+                        self.edges.append((self.cells[n],self.cells[m]))
+                        #print("Added edge from (" + str(r)+","+str(c) + ") to (" + str(i)+","+str(j)+")")
+                    elif i == r and j == c+1:
                         self.edges.append((self.cells[n],self.cells[m]))
                         #print("Added edge from (" + str(r)+","+str(c) + ") to (" + str(i)+","+str(j)+")")
 
@@ -121,18 +148,17 @@ class Board:
             print("jumped from ", jumpFrom, " over ", jumpOver, " to ", (endR,endC))
         else:
             print("Not a valid jump")
-            
+
 def main():
-    board = Board(0,4)
+    board = Board(1,4)
     board.addCells()
     board.addEdges()
     board.positionCells()
-    board.removePeg(3,1)
+    board.removePeg(1,0)
+    board.removePeg(0,1)
+    board.jumpPegFromOver((3,0),(2,0))
     board.draw()
 
-    board.removePeg(3,2)
-    board.draw()
-    board.jumpPegFromOver((3,0),(3,1))
-    board.draw()
+
 
 main()
