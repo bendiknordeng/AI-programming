@@ -8,114 +8,102 @@ class Board:
     def __init__(self, type, size):
         self.type = type #0 is triangle, 1 is diamond.
         self.size = size #number of rows and columns of data structure of board.
-        self.cells = []
-        self.edges = [] #format: tuple(), from cell with 1. lowest rowNumber and 2. lowest columnNumber
-        self.positions = {}
+        self.__cells = []
+        self.__cellsWithPeg = []
+        self.__emptyCells = []
+        self.__edges = [] #format: tuple(), from cell with 1. lowest rowNumber and 2. lowest columnNumber
+        self.__positions = {}
+        self.__jumpedFrom = Cell(self, 0, 0)
+        self.__jumpedTo = Cell(self, 0, 0)
+        self.__jumpedFrom.setDummy()
+        self.__jumpedTo.setDummy()
+        self.__addCells()
+        self.__positionCells()
+        self.__addEdges()
+        self.__G = nx.Graph()
+        self.__G.add_nodes_from(self.__cellsWithPeg)
+        self.__G.add_nodes_from(self.__emptyCells)
+        self.__G.add_edges_from(self.__edges)
 
-
-    def positionCells(self):
-        if self.type == 0: #triangle
-            for cell in self.cells:
-                r,c = cell.getRow(), cell.getColumn()
-                self.positions[cell] = (-10*r + 20*c, -10*r)
-        else: #diamond
-            for cell in self.cells:
-                r,c = cell.getRow(), cell.getColumn()
-                self.positions[cell] = (-10*r + 10*c, -20*r - 20*c)
-
-
-    def addCells(self):
+    def __addCells(self):
         if self.type == 0:  #if triangle: let column length be dynamic with k
             k = 1
             for r in range(self.size):
                 for c in range(k):
-                    self.cells.append(Cell(self, r, c)) #add cell with position
-                    #print("Added cell with row " + str(r) + " and column " + str(c))
+                    self.__cellsWithPeg.append(Cell(self, r, c))
                 k += 1
-        else:
+        elif self.type == 1:
             for r in range(self.size):
                 for c in range(self.size):
-                    self.cells.append(Cell(self, r, c)) #add cell with position
-                    #print("Added cell with row " + str(r) + " and column " + str(c))
+                    self.__cellsWithPeg.append(Cell(self, r, c))
 
+    def __positionCells(self): #dependent on that cells have been created
+        if self.type == 0:
+            for cell in self.__cellsWithPeg:
+                r,c = cell.getRow(), cell.getColumn()
+                self.__positions[cell] = (-10*r + 20*c, -10*r)
+        elif self.type == 1:
+            for cell in self.__cellsWithPeg:
+                r,c = cell.getRow(), cell.getColumn()
+                self.__positions[cell] = (-10*r + 10*c, -20*r - 20*c)
 
-    def addEdges(self): #must have made self.cells in a double array
-        if self.type == 0: #triangle
-            for n in range(len(self.cells)):
-                #print("n: ", n)
-                r,c = self.cells[n].getRow(), self.cells[n].getColumn()
-                for m in range(n+1, len(self.cells)):
-                    #print("m: ", m)
-                    i,j = self.cells[m].getRow(), self.cells[m].getColumn()
+    def __addEdges(self): #dependent on that cells have been created.
+        if self.type == 0:
+            for n in range(len(self.__cellsWithPeg)):
+                r,c = self.__cellsWithPeg[n].getRow(), self.__cellsWithPeg[n].getColumn()
+                for m in range(n+1, len(self.__cellsWithPeg)):
+                    i,j = self.__cellsWithPeg[m].getRow(), self.__cellsWithPeg[m].getColumn()
                     if i == r and j == c+1:
-                        self.edges.append((self.cells[n],self.cells[m]))
-                        #print("Added edge from (" + str(r)+","+str(c) + ") to (" + str(i)+","+str(j)+")")
+                        self.__edges.append((self.__cellsWithPeg[n],self.__cellsWithPeg[m]))
                     elif i == r+1 and j == c:
-                        self.edges.append((self.cells[n],self.cells[m]))
-                        #print("Added edge from (" + str(r)+","+str(c) + ") to (" + str(i)+","+str(j)+")")
+                        self.__edges.append((self.__cellsWithPeg[n],self.__cellsWithPeg[m]))
                     elif i == r+1 and j == c+1:
-                        self.edges.append((self.cells[n],self.cells[m]))
-                        #print("Added edge from (" + str(r)+","+str(c) + ") to (" + str(i)+","+str(j)+")")
-        else: #diamond
-            for n in range(len(self.cells)):
-                #print("n: ", n)
-                r,c = self.cells[n].getRow(), self.cells[n].getColumn()
-                for m in range(n+1, len(self.cells)):
-                    #print("m: ", m)
-                    i,j = self.cells[m].getRow(), self.cells[m].getColumn()
+                        self.__edges.append((self.__cellsWithPeg[n],self.__cellsWithPeg[m]))
+        elif self.type == 1:
+            for n in range(len(self.__cellsWithPeg)):
+                r,c = self.__cellsWithPeg[n].getRow(), self.__cellsWithPeg[n].getColumn()
+                for m in range(n+1, len(self.__cellsWithPeg)):
+                    i,j = self.__cellsWithPeg[m].getRow(), self.__cellsWithPeg[m].getColumn()
                     if i == r+1 and j == c-1:
-                        self.edges.append((self.cells[n],self.cells[m]))
-                        #print("Added edge from (" + str(r)+","+str(c) + ") to (" + str(i)+","+str(j)+")")
+                        self.__edges.append((self.__cellsWithPeg[n],self.__cellsWithPeg[m]))
                     elif i == r+1 and j == c:
-                        self.edges.append((self.cells[n],self.cells[m]))
-                        #print("Added edge from (" + str(r)+","+str(c) + ") to (" + str(i)+","+str(j)+")")
+                        self.__edges.append((self.__cellsWithPeg[n],self.__cellsWithPeg[m]))
                     elif i == r and j == c+1:
-                        self.edges.append((self.cells[n],self.cells[m]))
-                        #print("Added edge from (" + str(r)+","+str(c) + ") to (" + str(i)+","+str(j)+")")
-
-
+                        self.__edges.append((self.__cellsWithPeg[n],self.__cellsWithPeg[m]))
 
     def draw(self):
-        jumpedFromCell = []
-        jumpedToCell = []
-        emptyCells = []
-        cellsWithPeg= []
-
-        for cell in self.cells:
-            print(cell.getState())
-            if cell.getState() == 0:
-                emptyCells.append(cell)
-            elif cell.getState() == 1:
-                cellsWithPeg.append(cell)
-            elif cell.getState() == 2:
-                jumpedToCell.append(cell)
-            else:
-                jumpedFromCell.append(cell)
-
-        G = nx.Graph()
-        G.add_nodes_from(self.cells)
-        G.add_edges_from(self.edges)
-
-        print(emptyCells)
-        nx.draw(G, pos=self.positions, nodelist=emptyCells, node_color='black', node_size = 1000)
-        nx.draw(G, pos=self.positions, nodelist=cellsWithPeg, node_color='blue', node_size = 1000)
-        nx.draw(G, pos=self.positions, nodelist=jumpedToCell, node_color='blue', node_size = 2500)
-        nx.draw(G, pos=self.positions, nodelist=jumpedFromCell, node_color='black', node_size = 200)
-
-        plt.savefig("board.png")
+        nx.draw(self.__G, pos=self.__positions, nodelist=self.__emptyCells, node_color='black', node_size = 800)
+        nx.draw(self.__G, pos=self.__positions, nodelist=self.__cellsWithPeg, node_color='blue', node_size = 800)
+        nx.draw(self.__G, pos=self.__positions, nodelist=[self.__jumpedTo], node_color='blue', node_size = 2400)
+        nx.draw(self.__G, pos=self.__positions, nodelist=[self.__jumpedFrom], node_color='black', node_size = 200)
+        #plt.savefig("board.png")
         plt.show()
 
-    def removePeg(self, r, c):
-        for cell in self.cells:
-            if r == cell.getRow() and c == cell.getColumn():
-                print("peg removed at " +str(r)+ "," + str(c))
-                cell.removePeg()
-                return
+    def removePegs(self, positions = [(-1,-1)]):
+        for pos in positions:
+            r,c = pos
+            if self.type == 0:
+                if 0 <= r <= (self.size -1) and 0 <= c <= r:
+                    self.__removePeg(r,c)
+            elif self.type == 1:
+                if 0 <= r <= (self.size-1) and 0 <= c <= (self.size-1):
+                    self.__removePeg(r,c)
 
+    def __removePeg(self, r, c):
+        for cell in self.__cellsWithPeg:
+            if r == cell.getRow() and c == cell.getColumn():
+                cell.removePeg()
+                self.__cellsWithPeg.remove(cell)
+                self.__emptyCells.append(cell)
+
+    def removeRandomPegs(self, numberOfPegs = 0): #not complete
+        n = numberOfPegs
+        return
 
     def jumpPegFromOver(self, jumpFrom = (-1,-1), jumpOver = (-1,-1) ):
         r,c = jumpFrom
         i,j = jumpOver
+        print("er i jumppeg")
         if r-i == 1: #determine endR, row where peg ends up
             endR = r-2
         elif i-r == 1:
@@ -128,37 +116,45 @@ class Board:
             endC = c+2
         elif c == j:
             endC = c
-
+        #print(r,c,i,j,endR,endC)
         if r >= 0 and c >= 0:
-            for cell in self.cells:
-                if cell.getRow() == r and cell.getColumn() == c:
-                    fromCell = cell
-                    print("fromCell: ", fromCell)
-                elif cell.getRow() == i and cell.getColumn() == j:
-                    overCell = cell
-                    print("overCell: ", overCell)
-                elif cell.getRow() == endR and cell.getColumn() == endC:
-                    toCell = cell
-                    print("toCell: ", toCell)
+            print(self.__cellsWithPeg)
+            for cell in self.__cellsWithPeg:
 
-        if not fromCell.isEmpty() and not overCell.isEmpty() and toCell.isEmpty():
-            fromCell.jumpedFrom()
-            overCell.removePeg()
-            toCell.jumpedTo()
-            print("jumped from ", jumpFrom, " over ", jumpOver, " to ", (endR,endC))
-        else:
-            print("Not a valid jump")
+                print(cell, r, c, cell.getRow() == r and cell.getColumn() == c)
+                if cell.getRow() == r and cell.getColumn() == c:
+                    cell.jumpedFrom()
+
+                    print("bool",self.__jumpedFrom.getState() != -1)
+                    if self.__jumpedFrom.getState() != -1:
+                        self.__jumpedFrom.removePeg()
+                        self.__emptyCells.append(self.__jumpedFrom)
+
+                    self.__jumpedFrom = cell
+                elif cell.getRow() == i and cell.getColumn() == j:
+                    cellToRemove = cell
+                    cell.removePeg()
+                    self.__emptyCells.append(cell)
+            for cell in self.__emptyCells:
+                if cell.getRow() == endR and cell.getColumn() == endC:
+                    cell.jumpedTo()
+                    if self.__jumpedTo.getState() != -1:
+                        self.__jumpedTo.placePeg()
+                        self.__cellsWithPeg.append(self.__jumpedTo)
+                    self.__jumpedTo = cell
+            self.__cellsWithPeg.remove(self.__jumpedFrom)
+            self.__cellsWithPeg.remove(cellToRemove)
+            self.__emptyCells.remove(self.__jumpedTo) #må kanskje legge til jumpedTo og jumpedFrom i noen av listene først.
+
+
 
 def main():
     board = Board(1,4)
-    board.addCells()
-    board.addEdges()
-    board.positionCells()
-    board.removePeg(1,0)
-    board.removePeg(0,1)
-    board.jumpPegFromOver((3,0),(2,0))
+    board.removePegs([(1,1)])
+    #board.removePeg(0,1)
+    board.jumpPegFromOver((3,1),(2,1))
     board.draw()
-
-
+    board.jumpPegFromOver((3,3),(3,2))
+    board.draw()
 
 main()

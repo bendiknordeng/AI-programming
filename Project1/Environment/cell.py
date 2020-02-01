@@ -7,7 +7,10 @@ class Cell:
         self.row = row #row position in board
         self.column = column #column position in board
         self.state = 1 # States 0: empty, 1: peg,
-                       # 2: peg jumped to cell, 3: peg jumped from cell
+                       # 2: peg jumped to cell, 3: peg jumped from cell, -1: dummy cell
+
+    def setDummy(self):
+        self.state = -1
 
     def removePeg(self):
         self.state = 0
@@ -33,5 +36,5 @@ class Cell:
     def getState(self):
         return self.state
 
-    def __str__(self):
+    def __repr__(self):
         return "("+ str(self.getRow()) + "," + str(self.getColumn()) + ")"
