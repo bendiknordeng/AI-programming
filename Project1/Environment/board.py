@@ -1,5 +1,6 @@
 import networkx as nx
 import matplotlib.pyplot as plt
+import random
 from cell import Cell
 
 
@@ -22,7 +23,6 @@ class Board:
         self.__addEdges()
         self.__G = nx.Graph()
         self.__G.add_nodes_from(self.__cellsWithPeg)
-        self.__G.add_nodes_from(self.__emptyCells)
         self.__G.add_edges_from(self.__edges)
 
     def __addCells(self):
@@ -74,8 +74,9 @@ class Board:
     def draw(self):
         nx.draw(self.__G, pos=self.__positions, nodelist=self.__emptyCells, node_color='black', node_size = 800)
         nx.draw(self.__G, pos=self.__positions, nodelist=self.__cellsWithPeg, node_color='blue', node_size = 800)
-        nx.draw(self.__G, pos=self.__positions, nodelist=[self.__jumpedTo], node_color='blue', node_size = 2400)
-        nx.draw(self.__G, pos=self.__positions, nodelist=[self.__jumpedFrom], node_color='black', node_size = 200)
+        if self.__jumpedTo.getState() != -1 and self.__jumpedFrom.getState() != -1:
+            nx.draw(self.__G, pos=self.__positions, nodelist=[self.__jumpedTo], node_color='blue', node_size = 2400)
+            nx.draw(self.__G, pos=self.__positions, nodelist=[self.__jumpedFrom], node_color='black', node_size = 200)
         #plt.savefig("board.png")
         plt.show()
 
@@ -96,14 +97,15 @@ class Board:
                 self.__cellsWithPeg.remove(cell)
                 self.__emptyCells.append(cell)
 
-    def removeRandomPegs(self, numberOfPegs = 0): #not complete
-        n = numberOfPegs
-        return
+    def removeRandomPegs(self, numberOfPegs = 1):
+        for i in range(numberOfPegs):
+            k = random.randint(0, len(self.__cellsWithPeg)-1)
+            self.__emptyCells.append(self.__cellsWithPeg[k])
+            self.__cellsWithPeg.remove(self.__cellsWithPeg[k])
 
     def jumpPegFromOver(self, jumpFrom = (-1,-1), jumpOver = (-1,-1) ):
         r,c = jumpFrom
         i,j = jumpOver
-        print("er i jumppeg")
         if r-i == 1: #determine endR, row where peg ends up
             endR = r-2
         elif i-r == 1:
@@ -116,20 +118,13 @@ class Board:
             endC = c+2
         elif c == j:
             endC = c
-        #print(r,c,i,j,endR,endC)
         if r >= 0 and c >= 0:
-            print(self.__cellsWithPeg)
             for cell in self.__cellsWithPeg:
-
-                print(cell, r, c, cell.getRow() == r and cell.getColumn() == c)
                 if cell.getRow() == r and cell.getColumn() == c:
                     cell.jumpedFrom()
-
-                    print("bool",self.__jumpedFrom.getState() != -1)
                     if self.__jumpedFrom.getState() != -1:
                         self.__jumpedFrom.removePeg()
                         self.__emptyCells.append(self.__jumpedFrom)
-
                     self.__jumpedFrom = cell
                 elif cell.getRow() == i and cell.getColumn() == j:
                     cellToRemove = cell
@@ -144,17 +139,13 @@ class Board:
                     self.__jumpedTo = cell
             self.__cellsWithPeg.remove(self.__jumpedFrom)
             self.__cellsWithPeg.remove(cellToRemove)
-            self.__emptyCells.remove(self.__jumpedTo) #må kanskje legge til jumpedTo og jumpedFrom i noen av listene først.
-
+            self.__emptyCells.remove(self.__jumpedTo)
 
 
 def main():
-    board = Board(1,4)
-    board.removePegs([(1,1)])
-    #board.removePeg(0,1)
-    board.jumpPegFromOver((3,1),(2,1))
-    board.draw()
-    board.jumpPegFromOver((3,3),(3,2))
-    board.draw()
+    #board = Board(0,4)
+    #board.draw()
+    #board.removeRandomPegs(2)
+    #board.draw()
 
 main()
