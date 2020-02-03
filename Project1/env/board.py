@@ -58,19 +58,18 @@ class Board:
         rTo, cTo = jumpTo
         rOver, cOver = self.__findOverPos(rFrom, cFrom, rTo, cTo)
         if self.__isValidMove(rFrom, cFrom, rOver, cOver, rTo, cTo): #add validation function
-            cellFrom = self.cells[(rFrom, cFrom)]
-            cellOver = self.cells[(rOver, cOver)]
-            cellTo = self.cells[(rTo, cTo)]
-
-            cellFrom.jumpedFrom()
-            cellOver.removePeg()
-            cellTo.jumpedTo()
-
             if not (self.__jumpedFrom.isDummy() and self.__jumpedTo.isDummy()):
                 self.__jumpedFrom.removePeg()
                 self.__jumpedTo.placePeg()
                 self.emptyCells.append(self.__jumpedFrom)
                 self.cellsWithPeg.append(self.__jumpedTo)
+
+            cellFrom = self.cells[(rFrom, cFrom)]
+            cellOver = self.cells[(rOver, cOver)]
+            cellTo = self.cells[(rTo, cTo)]
+            cellFrom.jumpedFrom()
+            cellOver.removePeg()
+            cellTo.jumpedTo()
 
             self.emptyCells.append(cellOver)
             self.__jumpedFrom = cellFrom
@@ -78,6 +77,9 @@ class Board:
             self.cellsWithPeg.remove(self.__jumpedFrom)
             self.cellsWithPeg.remove(cellOver)
             self.emptyCells.remove(self.__jumpedTo)
+
+            #if (rTo, cTo) == (3,1):
+            #    print("rTo, cTo",(rTo, cTo),self.__jumpedTo)
         else:
             print("The move is not valid")
 
