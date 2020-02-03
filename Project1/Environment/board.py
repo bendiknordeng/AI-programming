@@ -28,7 +28,7 @@ class Board:
     def draw(self):
         nx.draw(self.__G, pos=self.__positions, nodelist=self.__emptyCells, node_color='black', node_size = 800)
         nx.draw(self.__G, pos=self.__positions, nodelist=self.__cellsWithPeg, node_color='blue', node_size = 800)
-        if self.__jumpedTo.getState() != -1 and self.__jumpedFrom.getState() != -1:
+        if not self.__jumpedTo.isDummy() and not self.__jumpedFrom.isDummy():
             nx.draw(self.__G, pos=self.__positions, nodelist=[self.__jumpedTo], node_color='blue', node_size = 2400)
             nx.draw(self.__G, pos=self.__positions, nodelist=[self.__jumpedFrom], node_color='black', node_size = 200)
         #plt.savefig("board.png")
@@ -47,10 +47,12 @@ class Board:
     def removeRandomPegs(self, numberOfPegs = 1):
         for i in range(numberOfPegs):
             k = random.randint(0, len(self.__cellsWithPeg)-1)
+            self.__cellsWithPeg[k].removePeg()
             self.__emptyCells.append(self.__cellsWithPeg[k])
             self.__cellsWithPeg.remove(self.__cellsWithPeg[k])
 
-    #def jumpPegFromTo(self, jumpFrom = (-1,-1), jumpTo = (-1,-1)):
+    """
+    def jumpPegFromTo(self, jumpFrom = (-1,-1), jumpTo = (-1,-1)):
         rFrom, cFrom = jumpFrom
         rTo, cTo = jumpTo
         rOver, cOver = self.__findOverPos(rFrom, cFrom, rTo, cTo)
@@ -73,7 +75,8 @@ class Board:
             self.__cellsWithPeg.remove(cellOver)
             self.__emptyCells.remove(self.__jumpedTo)
         else:
-            print("The move is not valid") #NOT IMPLEMENTED
+            print("The move is not valid")
+    """
 
     def jumpPegFromOver(self, jumpFrom = (-1,-1), jumpOver = (-1,-1)):
         rFrom, cFrom = jumpFrom
@@ -86,7 +89,7 @@ class Board:
             cellFrom.jumpedFrom()
             cellOver.removePeg()
             cellTo.jumpedTo()
-            if not (self.__jumpedFrom.isDummy() and self.__jumpedTo.isDummy()):
+            if not (self.__jumpedFrom.isDummy() and self.__jumpedTo.isDummy()): #not first move
                 self.__jumpedFrom.removePeg()
                 self.__jumpedTo.placePeg()
                 self.__emptyCells.append(self.__jumpedFrom)
@@ -127,7 +130,8 @@ class Board:
                 toValid = True
         return fromValid and overValid and toValid
 
-    #def __findOverPos(rFrom, cFrom, rTo, cTo):
+    """
+    def __findOverPos(rFrom, cFrom, rTo, cTo):
         rOver, cOver = None, None
         if rFrom-rOver == 1: #determine rOver, row where peg ends up
             rOver = rFrom-2
@@ -141,7 +145,8 @@ class Board:
             cOver = cFrom+2
         elif cFrom == cOver:
             cOver = cFrom
-        return rOver, cOver #NOT IMPLEMENTED
+        return rOver, cOver
+    """
 
     def __findEndPos(self, rFrom, cFrom, rOver, cOver):
         rTo, cTo = None, None
@@ -212,32 +217,37 @@ class Board:
                     self.__cells[(r,c)] = cell
 
 def main():
-    #board = Board(0,4)
-    #board.draw()
-    #board.removeRandomPegs(2)
-    #board.draw()
+    board = Board(type = 0, size = 4)
+    board.removeRandomPegs(2)
+    dict = board.generateValidMoves()
+    for x in dict:
+       print("jump from", x, "to")
+       for y in dict[x]:
+           print(y)
+       print()
+    board.draw()
 
     #test diamond
 
-    board2 = Board(1,4)
-    board2.removePegs([(2,1), (2,3)])
-    board2.jumpPegFromOver((0,3),(1,3))
-    dict = board2.generateValidMoves()
-    for x in dict:
-        print("jump from", x, "to")
-        for y in dict[x]:
-            print(y)
-        print()
-        print()
-    board2.draw()
-    board2.jumpPegFromOver((2,3),(2,2))
-    dict = board2.generateValidMoves()
-    for x in dict:
-        print("jump from", x, "to")
-        for y in dict[x]:
-            print(y)
-        print()
-        print()
-    board2.draw()
+    # board2 = Board(1,4)
+    # board2.removePegs([(2,1), (2,3)])
+    # board2.jumpPegFromOver((0,3),(1,3))
+    # dict = board2.generateValidMoves()
+    # for x in dict:
+    #     print("jump from", x, "to")
+    #     for y in dict[x]:
+    #         print(y)
+    #     print()
+    #     print()
+    # board2.draw()
+    # board2.jumpPegFromOver((2,3),(2,2))
+    # dict = board2.generateValidMoves()
+    # for x in dict:
+    #     print("jump from", x, "to")
+    #     for y in dict[x]:
+    #         print(y)
+    #     print()
+    #     print()
+    # board2.draw()
 
 main()

@@ -1,7 +1,4 @@
 class Cell:
-
-
-
     def __init__(self, board):
         self.board = board #the board of cells
         self.state = 1 # States 0: empty, 1: peg,
@@ -30,6 +27,3 @@ class Cell:
 
     def getState(self):
         return self.state
-
-    def __repr__(self):
-        return "("+ str(self.getRow()) + "," + str(self.getColumn()) + ")"
