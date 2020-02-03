@@ -14,8 +14,8 @@ class Board:
         self.__emptyCells = []
         self.__edges = [] #format: tuple(), from cell with 1. lowest rowNumber and 2. lowest columnNumber
         self.__positions = {}
-        self.__jumpedFrom = Cell(self, 0, 0)
-        self.__jumpedTo = Cell(self, 0, 0)
+        self.__jumpedFrom = Cell(self)
+        self.__jumpedTo = Cell(self)
         self.__jumpedFrom.setDummy()
         self.__jumpedTo.setDummy()
         self.__addCells()
