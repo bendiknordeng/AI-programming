@@ -2,7 +2,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import random
 from cell import Cell
-
+import time
 
 class Board:
 
@@ -25,14 +25,18 @@ class Board:
         self.__G.add_nodes_from(self.__cellsWithPeg)
         self.__G.add_edges_from(self.__edges)
 
-    def draw(self):
-        nx.draw(self.__G, pos=self.__positions, nodelist=self.__emptyCells, node_color='black', node_size = 800)
-        nx.draw(self.__G, pos=self.__positions, nodelist=self.__cellsWithPeg, node_color='blue', node_size = 800)
+    def draw(self, playing = True):
+        fig = plt.figure(figsize =(9,7))
+        plt.axes()
+        nx.draw(self.__G, pos=self.__positions, nodelist=self.__emptyCells, node_color='black', node_size = 800, ax = fig.axes[0])
+        nx.draw(self.__G, pos=self.__positions, nodelist=self.__cellsWithPeg, node_color='blue', node_size = 800, ax = fig.axes[0])
         if not self.__jumpedTo.isDummy() and not self.__jumpedFrom.isDummy():
-            nx.draw(self.__G, pos=self.__positions, nodelist=[self.__jumpedTo], node_color='blue', node_size = 2400)
-            nx.draw(self.__G, pos=self.__positions, nodelist=[self.__jumpedFrom], node_color='black', node_size = 200)
+            nx.draw(self.__G, pos=self.__positions, nodelist=[self.__jumpedTo], node_color='blue', node_size = 2400, ax = fig.axes[0])
+            nx.draw(self.__G, pos=self.__positions, nodelist=[self.__jumpedFrom], node_color='black', node_size = 200, ax = fig.axes[0])
+        plt.show(block=False)
+        plt.pause(1)
+        plt.close()
         #plt.savefig("board.png")
-        plt.show()
 
     def removePegs(self, positions = [(-1,-1)]):
         for pos in positions:
@@ -104,7 +108,7 @@ class Board:
                 toValid = True
         return fromValid and overValid and toValid
 
-    def __findOverPos(rFrom, cFrom, rTo, cTo):
+    def __findOverPos(self, rFrom, cFrom, rTo, cTo):
         rOver, cOver = None, None
         if rFrom - rTo == 2: #determine rOver, row where peg ends up
             rOver = rFrom - 1
@@ -173,18 +177,16 @@ class Board:
                     self.__cells[(r,c)] = cell
 
 def main():
-    #board = Board(0,4)
-    #board.removePegs([(3,0),(3,1)])
-    #dict = board.generateValidMoves()
-    #for x in dict:
-    #    print("jump from", x, "to")
-    #    for y in dict[x]:
-    #        print(y)
-    #    print()
+    board = Board(type = 0, size = 4)
+    board.removePegs([(0,0)])
     #board.draw()
-    #jumpFrom, jumpTo = (1,0), dict[(1,0)][0]
-    #board.jumpPegFromTo(jumpFrom, jumpTo)
-    #board.draw()
+    dict = board.generateValidMoves()
+    while len(dict) > 0:
+        dict = board.generateValidMoves()
+        print(dict)
+        fromTo = dict.popitem()
+        board.jumpPegFromTo(fromTo[0],fromTo[1][0])
+        #board.draw()
 
     #test diamond
 

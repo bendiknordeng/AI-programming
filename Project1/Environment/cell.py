@@ -27,3 +27,6 @@ class Cell:
 
     def getState(self):
         return self.state
+
+    def __rep__(self):
+        return self.state()
