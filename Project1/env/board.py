@@ -33,9 +33,9 @@ class Board:
         if not self.__jumpedTo.isDummy() and not self.__jumpedFrom.isDummy():
             nx.draw(self.__G, pos=self.__positions, nodelist=[self.__jumpedTo], node_color='blue', node_size = 2400, ax = fig.axes[0])
             nx.draw(self.__G, pos=self.__positions, nodelist=[self.__jumpedFrom], node_color='black', node_size = 200, ax = fig.axes[0])
-        plt.show(block=False)
-        plt.pause(1)
-        plt.close()
+        plt.show(block=True)
+        #plt.pause(1.5)
+        #plt.close()
         #plt.savefig("board.png")
 
     def removePegs(self, positions = [(-1,-1)]):
@@ -176,17 +176,19 @@ class Board:
                     self.__cellsWithPeg.append(cell)
                     self.__cells[(r,c)] = cell
 
-def main():
+if __name__ == '__main__':
     board = Board(type = 0, size = 4)
     board.removePegs([(0,0)])
-    #board.draw()
     dict = board.generateValidMoves()
+    print(dict)
+    board.draw()
     while len(dict) > 0:
-        dict = board.generateValidMoves()
-        print(dict)
         fromTo = dict.popitem()
         board.jumpPegFromTo(fromTo[0],fromTo[1][0])
-        #board.draw()
+        dict = board.generateValidMoves()
+        print(dict)
+        board.draw()
+
 
     #test diamond
 
@@ -210,5 +212,3 @@ def main():
     #    print()
     #    print()
     #board2.draw()
-
-main()
