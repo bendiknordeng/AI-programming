@@ -33,4 +33,4 @@ class Cell:
         for key, cell in self.board.cells.items():
             if cell == self:
                 pos = key
-        return 'State: ' + str(self.state) + '\n' + 'Position: ' + str(pos)
+        return '\nPosition: ' + str(pos) + '\n' + 'State: ' + str(self.state)

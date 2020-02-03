@@ -31,9 +31,9 @@ class Board:
         if not self.__jumpedTo.isDummy() and not self.__jumpedFrom.isDummy():
             nx.draw(self.__G, pos=self.positions, nodelist=[self.__jumpedTo], node_color='blue', node_size = 2400, ax = fig.axes[0])
             nx.draw(self.__G, pos=self.positions, nodelist=[self.__jumpedFrom], node_color='black', node_size = 200, ax = fig.axes[0])
-        plt.show(block=False)
-        plt.pause(1.5)
-        plt.close()
+        plt.show(block=True)
+        #plt.pause(1.5)
+        #plt.close()
         #plt.savefig("board.png")
 
     def removePegs(self, positions = [(-1,-1)]):
@@ -61,14 +61,17 @@ class Board:
             cellFrom = self.cells[(rFrom, cFrom)]
             cellOver = self.cells[(rOver, cOver)]
             cellTo = self.cells[(rTo, cTo)]
+
             cellFrom.jumpedFrom()
             cellOver.removePeg()
             cellTo.jumpedTo()
+
             if not (self.__jumpedFrom.isDummy() and self.__jumpedTo.isDummy()):
                 self.__jumpedFrom.removePeg()
                 self.__jumpedTo.placePeg()
                 self.emptyCells.append(self.__jumpedFrom)
                 self.cellsWithPeg.append(self.__jumpedTo)
+
             self.emptyCells.append(cellOver)
             self.__jumpedFrom = cellFrom
             self.__jumpedTo = cellTo
@@ -185,7 +188,7 @@ if __name__ == '__main__':
         dict = board.generateValidMoves()
         for pos in board.cells:
             cell = board.cells[pos]
-            print(pos, cell.isEmpty())
+            print(cell)
         print(dict)
         print('',end='\n\n')
         board.draw()
