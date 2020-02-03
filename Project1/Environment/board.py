@@ -200,14 +200,14 @@ class Board:
             k = 1
             for r in range(self.size):
                 for c in range(k):
-                    cell = Cell(self, r, c)
+                    cell = Cell(self)
                     self.__cellsWithPeg.append(cell)
                     self.__cells[(r,c)] = cell
                 k += 1
         elif self.type == 1:
             for r in range(self.size):
                 for c in range(self.size):
-                    cell = Cell(self, r, c)
+                    cell = Cell(self)
                     self.__cellsWithPeg.append(cell)
                     self.__cells[(r,c)] = cell
 
