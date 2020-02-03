@@ -1,11 +1,6 @@
 class Cell:
-
-
-
-    def __init__(self, board, row, column):
+    def __init__(self, board):
         self.board = board #the board of cells
-        self.row = row #row position in board
-        self.column = column #column position in board
         self.state = 1 # States 0: empty, 1: peg,
                        # 2: peg jumped to cell, 3: peg jumped from cell, -1: dummy cell
 
@@ -27,14 +22,8 @@ class Cell:
     def isEmpty(self):
         return self.state == 0 or self.state == 3
 
-    def getRow(self):
-        return self.row
-
-    def getColumn(self):
-        return self.column
+    def isDummy(self):
+        return self.state == -1
 
     def getState(self):
         return self.state
-
-    def __repr__(self):
-        return "("+ str(self.getRow()) + "," + str(self.getColumn()) + ")"
