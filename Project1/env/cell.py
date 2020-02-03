@@ -28,5 +28,9 @@ class Cell:
     def getState(self):
         return self.state
 
-    def __rep__(self):
-        return self.state()
+    def __str__(self):
+        pos = ''
+        for key, cell in self.board.cells.items():
+            if cell == self:
+                pos = key
+        return 'State: ' + str(self.state) + '\n' + 'Position: ' + str(pos)
