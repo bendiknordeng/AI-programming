@@ -50,7 +50,7 @@ class Board:
             self.__emptyCells.append(self.__cellsWithPeg[k])
             self.__cellsWithPeg.remove(self.__cellsWithPeg[k])
 
-    def jumpPegFromTo(self, jumpFrom = (-1,-1), jumpTo = (-1,-1)):
+    #def jumpPegFromTo(self, jumpFrom = (-1,-1), jumpTo = (-1,-1)):
         rFrom, cFrom = jumpFrom
         rTo, cTo = jumpTo
         rOver, cOver = self.__findOverPos(rFrom, cFrom, rTo, cTo)
@@ -127,7 +127,7 @@ class Board:
                 toValid = True
         return fromValid and overValid and toValid
 
-    def __findOverPos(rFrom, cFrom, rTo, cTo):
+    #def __findOverPos(rFrom, cFrom, rTo, cTo):
         rOver, cOver = None, None
         if rFrom-rOver == 1: #determine rOver, row where peg ends up
             rOver = rFrom-2

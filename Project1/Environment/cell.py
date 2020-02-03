@@ -2,7 +2,7 @@ class Cell:
 
 
 
-    def __init__(self, board, row, column):
+    def __init__(self, board):
         self.board = board #the board of cells
         self.state = 1 # States 0: empty, 1: peg,
                        # 2: peg jumped to cell, 3: peg jumped from cell, -1: dummy cell
