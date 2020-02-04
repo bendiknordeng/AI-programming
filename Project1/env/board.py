@@ -92,6 +92,30 @@ class Board:
                 validMoves[(rFrom, cFrom)] = topositions
         return validMoves
 
+    def reward(self):
+        numberOfPegs = 0
+        for pos in self.cells:
+            if not self.cells[pos].isEmpty():
+                numberOfPegs += 1
+
+        print("numberOfPegs", numberOfPegs)
+
+        if numberOfPegs ==1:
+            return 10
+        elif len(self.generateValidMoves()) <= 0:
+            return -10
+        else:
+            return 0
+
+    def stringBoard(self):
+        state = ''
+        for pos in self.cells:
+            if self.cells[pos].isEmpty():
+                state += '0'
+            else:
+                state += '1'
+        return state
+
     def __isValidMove(self, rFrom, cFrom, rOver, cOver, rTo, cTo):
         if rFrom == None or cFrom == None or rOver ==None or cOver==None or rTo==None or cTo == None:
             return False
@@ -188,6 +212,7 @@ class Board:
                     self.cells[(r,c)] = cell
 
 if __name__ == '__main__':
+    """
     board = Board(type = 1, size = 7)
     board.removeRandomPegs(2)
     dict = board.generateValidMoves()
@@ -203,3 +228,4 @@ if __name__ == '__main__':
         print(dict)
         print('',end='\n\n')
         board.draw(1)
+    """

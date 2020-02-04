@@ -1,33 +1,33 @@
 from env import Board
 
+#policy updates occur within the actor
+#The actor should map from state, action to z (a real number)
+#The actor must keep track of the results of performing actions in states.
 class Actor:
-    def __init__(self, agent, state, actions):
+    def __init__(self, agent, alphaActor, eps, gamma):
         self.agent = agent
-        self.saps = self.generateSAP(state, actions)
-        self.eligibilities = {}
+        self.alphaActor = alphaActor
+        self.eps = eps
+        self.gamma = gamma
+        self.saps = {}
+        self.createNewSAPs()
 
-    def generateSAP(self, state, actions):
-        SAP = {}
-        for move in actions:
-            for to in actions[move]:
-                SAP[(state,(move,to))] = 0
-        return SAP
+    def createNewSAPs(self):
+        newState = self.agent.getState()
+        possActions = self.agent.getActions()
+        print(newState)
+        for fromPos in possActions:
+            for toPos in possActions[fromPos]:
+                if self.saps.get((newState,(fromPos,toPos))) == None:
+                    self.saps[newState,(fromPos,toPos)] = 0
 
-    def __toDec(n):
-        sum = 0
-        p = len(str(n))-1
-        for i in str(n):
-            if(int(i)):
-                sum += 2**(int(i)*p)
-            p-=1
-        return sum
-
-    def resetEligibilities(self):
-        for key in self.eligibilities:
-            self.eligibilities[key] = 0
-
-    def chooseNext(self, moves):
-        pass
+    def getNextMove(self):
+        currentBest = -100
+        nextMove = ((-1,-1),(-1,-1))
+        for state, action in self.saps:
+            if self.saps[(state,action)] > currentBest:
+                nextMove = action
+        return nextMove
 
     def score(self, currentState, nextState):
         pass

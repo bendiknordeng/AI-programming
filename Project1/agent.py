@@ -4,44 +4,68 @@ from env import Board
 import numpy as np
 
 class Agent:
-    def __init__(self, board, initialActions):
-        self.initialState = self.boardToBinary(board)
-        self.initialActions = initialActions
-        self.actor = Actor(self, self.initialState, self.initialActions)
-        self.critic = Critic(self, self.initialState)
+    def __init__(self, board, alphaActor, alphaCritic, eps, gamma):
+        self.board = board
+        self.alphaActor = alphaActor
+        self.alphaCritic = alphaCritic
+        self.eps = eps
+        self.gamma = gamma
+        #self.lastState
+        #self.nextState
+        #self.lastAction
+        self.nextAction = None
+        self.actor = Actor(self, self.alphaActor, self.eps, self.gamma)
+        self.critic = Critic(self, self.alphaCritic, self.eps, self.gamma)
+
+
+    def findAction(self):
+        self.actor.createNewSAPs()
+        self.nextAction = self.actor.getNextMove()
 
     def runEpisode(self):
-        alpha = 0.85
-        epsilon = 0.9
-        gamma = 0.95
+        reward = 0
+        while reward == 0:
+            self.findAction()
+            self.board.jumpPegFromTo(self.nextAction[0],self.nextAction[1])
+            self.createCriticValues()
+            self.updateCriticValues()
+            reward = self.getReward()
+        self.board.draw()
         maxSteps = 100
-        self.actor.resetEligibilities()
-        self.critic.resetEligibilities()
-        # actor.state = initialState
-        # actor.saps = actor.generateSAP(initialState, initialActions)
-        # critic.state = initialState
-        action = self.actor.chooseNext(self.state)
 
+    def getState(self):
+        return self.board.stringBoard()
 
-    def boardToBinary(self, board):
-        state = ""
-        for pos in board.cells:
-            if board.cells[pos].isEmpty():
-                state += '0'
-            else:
-                state += '1'
-        return int(state)
+    def getActions(self):
+        return self.board.generateValidMoves()
 
+    def getReward(self):
+        return self.board.reward()
+
+    def createCriticValues(self):
+        self.critic.createNewValues()
+
+    def updateCriticValues(self):
+        self.critic.updateValues()
 if __name__ == '__main__':
-    # epsilon = 0.9
-    # total_episodes = 10000
-    # max_steps = 100
-    # alpha = 0.85
-    # gamma = 0.95
 
-    board = Board(0, 5)
-    board.removeRandomPegs(2)
-    initialActions = board.generateValidMoves()
+    alpha = 0.85
+    eps = 0.9 #lambda
+    gamma = 0.95
 
-    agent = Agent(board, initialActions)
-    print(agent.actor.saps)
+    board = Board(0, 3)
+    board.removePegs([(0,0),(2,1),(2,0)]) #leaves no choices in moves.
+    agent = Agent(board, alpha, alpha, eps, gamma)
+    agent.runEpisode()
+    """
+    print(agent.getReward())
+    board.draw()
+    board.jumpPegFromTo((2,2),(0,0))
+    board.draw()
+    board.jumpPegFromTo((0,0),(2,0))
+    board.draw()
+    print(agent.getReward())
+    print(agent.boardToString())
+    agent.transition()
+    board.draw()
+    """
