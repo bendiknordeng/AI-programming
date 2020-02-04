@@ -23,7 +23,7 @@ class Board:
         self.__G.add_nodes_from(self.cellsWithPeg)
         self.__G.add_edges_from(self.__edges)
 
-    def draw(self, playing = True, pause = 1.5):
+    def draw(self, pause = 0):
         fig = plt.figure(figsize =(9,7))
         plt.axes()
         nx.draw(self.__G, pos=self.positions, nodelist=self.emptyCells, node_color='black', node_size = 800, ax = fig.axes[0])
@@ -31,12 +31,12 @@ class Board:
         if not self.__jumpedTo.isDummy() and not self.__jumpedFrom.isDummy():
             nx.draw(self.__G, pos=self.positions, nodelist=[self.__jumpedTo], node_color='blue', node_size = 2400, ax = fig.axes[0])
             nx.draw(self.__G, pos=self.positions, nodelist=[self.__jumpedFrom], node_color='black', node_size = 200, ax = fig.axes[0])
-        if playing:
-            plt.show(block = (not playing))
+        if pause:
+            plt.show(block = False)
             plt.pause(pause)
             plt.close()
         else:
-            plt.show(block = playing)
+            plt.show(block = True)
 
     def removePegs(self, positions = [(-1,-1)]):
         for pos in positions:
@@ -184,11 +184,11 @@ class Board:
                     self.cells[(r,c)] = cell
 
 if __name__ == '__main__':
-    board = Board(type = 1, size = 5)
+    board = Board(type = 0, size = 3)
     board.removeRandomPegs(1)
     dict = board.generateValidMoves()
     print(dict)
-    board.draw()
+    board.draw(0)
     while len(dict) > 0:
         fromTo = dict.popitem()
         board.jumpPegFromTo(fromTo[0],fromTo[1][0])
@@ -198,4 +198,4 @@ if __name__ == '__main__':
             print(cell)
         print(dict)
         print('',end='\n\n')
-        board.draw()
+        board.draw(0)
