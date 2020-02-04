@@ -23,7 +23,7 @@ class Board:
         self.__G.add_nodes_from(self.cellsWithPeg)
         self.__G.add_edges_from(self.__edges)
 
-    def draw(self, playing = True, pause = 1.5):
+    def draw(self, playing = True, pause = 0.5):
         fig = plt.figure(figsize =(9,7))
         plt.axes()
         nx.draw(self.__G, pos=self.positions, nodelist=self.emptyCells, node_color='black', node_size = 800, ax = fig.axes[0])
@@ -96,7 +96,11 @@ class Board:
         if rFrom == None or cFrom == None or rOver ==None or cOver==None or rTo==None or cTo == None:
             return False
         if self.type == 0:
-            if rFrom - rOver == 2 or rOver - rFrom == 2 : #catch case moving vertically
+            if rFrom - rOver == -1 and cFrom - cOver == 1:
+                return False
+            elif rOver - rFrom == -1 and cOver - cFrom == 1:
+                return False
+            elif rFrom - rOver == 2 or rOver - rFrom == 2 : #catch case moving vertically
                 return False
         if self.type == 1:
             if rOver - rFrom == 1 and cOver - cFrom == 1:  #catch case moving vertically
@@ -184,7 +188,7 @@ class Board:
                     self.cells[(r,c)] = cell
 
 if __name__ == '__main__':
-    board = Board(type = 1, size = 5)
+    board = Board(type = 1, size = 8)
     board.removeRandomPegs(1)
     dict = board.generateValidMoves()
     print(dict)
