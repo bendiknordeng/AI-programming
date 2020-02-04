@@ -23,7 +23,7 @@ class Board:
         self.__G.add_nodes_from(self.cellsWithPeg)
         self.__G.add_edges_from(self.__edges)
 
-    def draw(self, playing = True):
+    def draw(self, playing = True, pause = 1.5):
         fig = plt.figure(figsize =(9,7))
         plt.axes()
         nx.draw(self.__G, pos=self.positions, nodelist=self.emptyCells, node_color='black', node_size = 800, ax = fig.axes[0])
@@ -31,10 +31,12 @@ class Board:
         if not self.__jumpedTo.isDummy() and not self.__jumpedFrom.isDummy():
             nx.draw(self.__G, pos=self.positions, nodelist=[self.__jumpedTo], node_color='blue', node_size = 2400, ax = fig.axes[0])
             nx.draw(self.__G, pos=self.positions, nodelist=[self.__jumpedFrom], node_color='black', node_size = 200, ax = fig.axes[0])
-        plt.show(block=True)
-        #plt.pause(1.5)
-        #plt.close()
-        #plt.savefig("board.png")
+        if playing:
+            plt.show(block = (not playing))
+            plt.pause(pause)
+            plt.close()
+        else:
+            plt.show(block = playing)
 
     def removePegs(self, positions = [(-1,-1)]):
         for pos in positions:
@@ -63,23 +65,18 @@ class Board:
                 self.__jumpedTo.placePeg()
                 self.emptyCells.append(self.__jumpedFrom)
                 self.cellsWithPeg.append(self.__jumpedTo)
-
             cellFrom = self.cells[(rFrom, cFrom)]
             cellOver = self.cells[(rOver, cOver)]
             cellTo = self.cells[(rTo, cTo)]
             cellFrom.jumpedFrom()
             cellOver.removePeg()
             cellTo.jumpedTo()
-
             self.emptyCells.append(cellOver)
             self.__jumpedFrom = cellFrom
             self.__jumpedTo = cellTo
             self.cellsWithPeg.remove(self.__jumpedFrom)
             self.cellsWithPeg.remove(cellOver)
             self.emptyCells.remove(self.__jumpedTo)
-
-            #if (rTo, cTo) == (3,1):
-            #    print("rTo, cTo",(rTo, cTo),self.__jumpedTo)
         else:
             print("The move is not valid")
 
@@ -96,8 +93,16 @@ class Board:
         return validMoves
 
     def __isValidMove(self, rFrom, cFrom, rOver, cOver, rTo, cTo):
-        if rTo == None and cTo == None:
+        if rFrom == None or cFrom == None or rOver ==None or cOver==None or rTo==None or cTo == None:
             return False
+        if self.type == 0:
+            if rFrom - rOver == 2 or rOver - rFrom == 2 : #catch case moving vertically
+                return False
+        if self.type == 1:
+            if rOver - rFrom == 1 and cOver - cFrom == 1:  #catch case moving vertically
+                return False
+            elif rFrom -rOver == 1 and cFrom - cOver == 1:
+                return False
         fromValid = False
         overValid = False
         toValid = False
@@ -179,8 +184,8 @@ class Board:
                     self.cells[(r,c)] = cell
 
 if __name__ == '__main__':
-    board = Board(type = 0, size = 4)
-    board.removePegs([(0,0)])
+    board = Board(type = 1, size = 5)
+    board.removeRandomPegs(1)
     dict = board.generateValidMoves()
     print(dict)
     board.draw()
