@@ -1,7 +1,7 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 import random
-from cell import Cell
+from env import Cell
 
 class Board:
     def __init__(self, type, size):
@@ -23,11 +23,7 @@ class Board:
         self.__G.add_nodes_from(self.cellsWithPeg)
         self.__G.add_edges_from(self.__edges)
 
-<<<<<<< HEAD
     def draw(self, pause = 0):
-=======
-    def draw(self, playing = True, pause = 0.5):
->>>>>>> b43c913a3ecc8c70f83bc613f8964b99beb1d157
         fig = plt.figure(figsize =(9,7))
         plt.axes()
         nx.draw(self.__G, pos=self.positions, nodelist=self.emptyCells, node_color='black', node_size = 800, ax = fig.axes[0])
@@ -192,15 +188,11 @@ class Board:
                     self.cells[(r,c)] = cell
 
 if __name__ == '__main__':
-<<<<<<< HEAD
-    board = Board(type = 0, size = 3)
-=======
-    board = Board(type = 1, size = 8)
->>>>>>> b43c913a3ecc8c70f83bc613f8964b99beb1d157
-    board.removeRandomPegs(1)
+    board = Board(type = 1, size = 7)
+    board.removeRandomPegs(2)
     dict = board.generateValidMoves()
     print(dict)
-    board.draw(0)
+    board.draw(1)
     while len(dict) > 0:
         fromTo = dict.popitem()
         board.jumpPegFromTo(fromTo[0],fromTo[1][0])
@@ -210,4 +202,4 @@ if __name__ == '__main__':
             print(cell)
         print(dict)
         print('',end='\n\n')
-        board.draw(0)
+        board.draw(1)
