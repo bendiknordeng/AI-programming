@@ -92,13 +92,11 @@ class Board:
                 validMoves[(rFrom, cFrom)] = topositions
         return validMoves
 
-    def reward(self):
+    def reinforcement(self):
         numberOfPegs = 0
         for pos in self.cells:
             if not self.cells[pos].isEmpty():
                 numberOfPegs += 1
-
-        print("numberOfPegs", numberOfPegs)
 
         if numberOfPegs ==1:
             return 10
@@ -212,20 +210,4 @@ class Board:
                     self.cells[(r,c)] = cell
 
 if __name__ == '__main__':
-    """
-    board = Board(type = 1, size = 7)
-    board.removeRandomPegs(2)
-    dict = board.generateValidMoves()
-    print(dict)
-    board.draw(1)
-    while len(dict) > 0:
-        fromTo = dict.popitem()
-        board.jumpPegFromTo(fromTo[0],fromTo[1][0])
-        dict = board.generateValidMoves()
-        for pos in board.cells:
-            cell = board.cells[pos]
-            print(cell)
-        print(dict)
-        print('',end='\n\n')
-        board.draw(1)
-    """
+    pass
