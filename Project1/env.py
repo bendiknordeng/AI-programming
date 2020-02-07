@@ -82,31 +82,30 @@ class Board:
             k = random.randint(0, len(keys)-1)
             self.cells[keys.pop(k)] = 0
 
-    def jumpPegFromTo(self, jumpFrom = (-1,-1), jumpTo = (-1,-1)):
-        rFrom, cFrom = jumpFrom
-        rTo, cTo = jumpTo
-        rOver, cOver = self.__findOverPos(rFrom, cFrom, rTo, cTo)
-        if self.__isValidMove(rFrom, cFrom, rOver, cOver, rTo, cTo):
+    def execute(self, action):
+        jumpFrom, jumpTo = action
+        jumpOver = self.__findOverPos(jumpFrom, jumpTo)
+        if self.__isValidAction(jumpFrom, jumpOver, jumpTo):
             self.cells[jumpFrom] = 0
-            self.cells[(rOver, cOver)] = 0
+            self.cells[jumpOver] = 0
             self.cells[jumpTo] = 1
             self.jumpedFrom = jumpFrom
             self.jumpedTo = jumpTo
             return True
         else:
-            print("Invalid move: {} => {} => {} \nValid: {}".format((rFrom, cFrom), (rOver, cOver), (rTo, cTo),(self.__isValidMove(rFrom, cFrom, rOver, cOver, rTo, cTo))))
+            print("Invalid move: {} => {} => {} \nValid: {}".format(jumpFrom, jumpOver, jumpTo,(self.__isValidAction(jumpFrom, jumpOver, jumpTo))))
             return False
 
     def generateActions(self): #should return dict of valid moves. Key,value pairs: (from), [(to)]
         validMoves = {}
-        for (rFrom, cFrom) in self.cells:
+        for jumpFrom in self.cells:
             topositions = []
-            for (rTo, cTo) in self.cells:
-                rOver, cOver = self.__findOverPos(rFrom, cFrom, rTo, cTo)
-                if self.__isValidMove(rFrom, cFrom, rOver, cOver, rTo, cTo):
-                    topositions.append((rTo,cTo))
+            for jumpTo in self.cells:
+                jumpOver = self.__findOverPos(jumpFrom, jumpTo)
+                if self.__isValidAction(jumpFrom, jumpOver, jumpTo):
+                    topositions.append(jumpTo)
             if len(topositions) > 0:
-                validMoves[(rFrom, cFrom)] = topositions
+                validMoves[jumpFrom] = topositions
         return validMoves
 
     def numberOfPegsLeft(self):
@@ -133,7 +132,10 @@ class Board:
                 state += '1'
         return state
 
-    def __isValidMove(self, rFrom, cFrom, rOver, cOver, rTo, cTo):
+    def __isValidAction(self, jumpFrom, jumpOver, jumpTo):
+        rFrom, cFrom = jumpFrom
+        rOver, cOver = jumpOver
+        rTo, cTo = jumpTo
         if rFrom == None or cFrom == None or rOver == None or cOver== None or rTo== None or cTo == None:
             return False
         if self.type == 0:
@@ -163,7 +165,9 @@ class Board:
     def __cellEmpty(self, pos):
         return self.cells[pos] == 0
 
-    def __findOverPos(self, rFrom, cFrom, rTo, cTo):
+    def __findOverPos(self, jumpFrom, jumpTo):
+        rFrom, cFrom = jumpFrom
+        rTo, cTo = jumpTo
         rOver, cOver = None, None
         if rFrom - rTo == 2: #determine rOver, row where peg ends up
             rOver = rFrom - 1
@@ -177,7 +181,7 @@ class Board:
             cOver = cFrom + 1
         elif cFrom == cTo:
             cOver = cFrom
-        return rOver, cOver
+        return (rOver, cOver)
 
     def __removePeg(self, r, c):
         self.cells[(r,c)] = 0

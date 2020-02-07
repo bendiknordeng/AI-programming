@@ -44,7 +44,7 @@ class Agent:
             while len(validActions) > 0 :
                 #make move
                 #self.env.draw()
-                self.env.jumpPegFromTo(action[0],action[1])
+                self.env.execute(action)
                 lastAction = action
                 lastState = state
                 state = self.env.getState()
@@ -84,7 +84,7 @@ class Agent:
         action = self.actor.findNextAction(state, 0)
         while len(self.env.generateActions()) > 0:
             self.env.draw(0.5)
-            self.env.jumpPegFromTo(action[0],action[1])
+            self.env.execute(action)
             reinforcement = self.env.reinforcement()
             state = self.env.getState()
             self.actor.createSAPs(state, self.env.generateActions())
