@@ -7,15 +7,13 @@ class Board:
     def __init__(self, type, size):
         self.type = type #0 is triangle, 1 is diamond.
         self.size = size #number of rows and columns of data structure of board.
-        self.cells = {} #key (row, column), value: Cell object
-        self.cellsWithPeg = []
-        self.emptyCells = []
+        self.cells = {} #key (row, column), value: status
+        # self.cellsWithPeg = []
+        # self.emptyCells = []
         self.__edges = [] #format: tuple(), from cell with 1. lowest rowNumber and 2. lowest columnNumber
         self.positions = {}
-        self.__jumpedFrom = Cell(self)
-        self.__jumpedTo = Cell(self)
-        self.__jumpedFrom.setDummy()
-        self.__jumpedTo.setDummy()
+        self.__jumpedFrom = None
+        self.__jumpedTo = None
         self.__addCells()
         self.__positionCells()
         self.__addEdges()
@@ -56,27 +54,18 @@ class Board:
             self.cellsWithPeg.remove(self.cellsWithPeg[k])
 
     def jumpPegFromTo(self, jumpFrom = (-1,-1), jumpTo = (-1,-1)):
-        rFrom, cFrom = jumpFrom
-        rTo, cTo = jumpTo
         rOver, cOver = self.__findOverPos(rFrom, cFrom, rTo, cTo)
         if self.__isValidMove(rFrom, cFrom, rOver, cOver, rTo, cTo): #add validation function
-            if not (self.__jumpedFrom.isDummy() and self.__jumpedTo.isDummy()):
-                self.__jumpedFrom.removePeg()
-                self.__jumpedTo.placePeg()
-                self.emptyCells.append(self.__jumpedFrom)
-                self.cellsWithPeg.append(self.__jumpedTo)
-            cellFrom = self.cells[(rFrom, cFrom)]
-            cellOver = self.cells[(rOver, cOver)]
-            cellTo = self.cells[(rTo, cTo)]
-            cellFrom.jumpedFrom()
-            cellOver.removePeg()
-            cellTo.jumpedTo()
-            self.emptyCells.append(cellOver)
+            if not (self.__jumpedFrom is None and self.__jumpedTo.is None):
+                self.cells[self.__jumpedFrom] = 3
+                self.cells[self.__jumpedTo] = 2
+            cellFrom = (rFrom, cFrom)
+            cellOver = (rOver, cOver)
+            cellTo = (rTo, cTo)
+            self.cells[cellOver] = 0
+            self.cells[cellTo] = 2
             self.__jumpedFrom = cellFrom
             self.__jumpedTo = cellTo
-            self.cellsWithPeg.remove(self.__jumpedFrom)
-            self.cellsWithPeg.remove(cellOver)
-            self.emptyCells.remove(self.__jumpedTo)
             return True
         else:
             print("Invalid move:", rFrom, cFrom, rOver, cOver, rTo, cTo,self.__isValidMove(rFrom, cFrom, rOver, cOver, rTo, cTo))
@@ -97,7 +86,7 @@ class Board:
     def numberOfPegsLeft(self):
         numberOfPegs = 0
         for pos in self.cells:
-            if not self.cells[pos].isEmpty():
+            if not self.__cellEmpty(pos[0], pos[1]):
                 numberOfPegs += 1
         return numberOfPegs
 
@@ -112,7 +101,7 @@ class Board:
     def stringBoard(self):
         state = ''
         for pos in self.cells:
-            if self.cells[pos].isEmpty():
+            if self.__cellEmpty(pos[0], pos[1]):
                 state += '0'
             else:
                 state += '1'
@@ -137,13 +126,16 @@ class Board:
         overValid = False
         toValid = False
         for (r,c) in self.cells:
-            if r == rFrom and c == cFrom and not self.cells[(r,c)].isEmpty():
+            if r == rFrom and c == cFrom and not self.__cellEmpty(r, c):
                 fromValid = True
-            elif r == rOver and c == cOver and not self.cells[(r,c)].isEmpty():
+            elif r == rOver and c == cOver and not self.__cellEmpty(r, c):
                 overValid = True
-            elif r == rTo and c == cTo and self.cells[(r,c)].isEmpty():
+            elif r == rTo and c == cTo and self.__cellEmpty(r, c):
                 toValid = True
         return fromValid and overValid and toValid
+
+    def __cellEmpty(self, r, c):
+        return self.cells[(r,c)] == 0 or self.cells[(r,c)] == 3
 
     def __findOverPos(self, rFrom, cFrom, rTo, cTo):
         rOver, cOver = None, None
@@ -162,54 +154,45 @@ class Board:
         return rOver, cOver
 
     def __removePeg(self, r, c):
-        cell = self.cells[(r,c)]
-        cell.removePeg()
-        self.cellsWithPeg.remove(cell)
-        self.emptyCells.append(cell)
+        self.cells[(r,c)] = 0
 
     def __addEdges(self): #dependent on that cells have been created.
         if self.type == 0:
             for (r,c) in self.cells:
                 for (i,j) in self.cells:
                     if i == r and j == c+1:
-                        self.__edges.append((self.cells[(r,c)],self.cells[(i,j)]))
+                        self.__edges.append(((r,c),(i,j)))
                     elif i == r+1 and j == c:
-                        self.__edges.append((self.cells[(r,c)],self.cells[(i,j)]))
+                        self.__edges.append(((r,c),(i,j)))
                     elif i == r+1 and j == c+1:
-                        self.__edges.append((self.cells[(r,c)],self.cells[(i,j)]))
+                        self.__edges.append(((r,c),(i,j)))
         elif self.type == 1:
             for (r,c) in self.cells:
                 for (i,j) in self.cells:
                     if i == r+1 and j == c-1:
-                        self.__edges.append((self.cells[(r,c)],self.cells[(i,j)]))
+                        self.__edges.append(((r,c),(i,j)))
                     elif i == r+1 and j == c:
-                        self.__edges.append((self.cells[(r,c)],self.cells[(i,j)]))
+                        self.__edges.append(((r,c),(i,j)))
                     elif i == r and j == c+1:
-                        self.__edges.append((self.cells[(r,c)],self.cells[(i,j)]))
+                        self.__edges.append(((r,c),(i,j)))
 
     def __positionCells(self): #dependent on that cells have been created
         if self.type == 0:
             for (r,c) in self.cells:
-                cell = self.cells[(r,c)]
-                self.positions[cell] = (-10*r + 20*c, -10*r)
+                self.positions[(r,c)] = (-10*r + 20*c, -10*r)
         elif self.type == 1:
             for (r,c) in self.cells:
-                cell = self.cells[(r,c)]
-                self.positions[cell] = (-10*r + 10*c, -20*r - 20*c)
+                self.positions[(r,c)] = (-10*r + 10*c, -20*r - 20*c)
 
     def __addCells(self):
         if self.type == 0:  #if triangle: let column length be dynamic with r
             for r in range(self.size):
                 for c in range(r+1):
-                    cell = Cell(self)
-                    self.cellsWithPeg.append(cell)
-                    self.cells[(r,c)] = cell
+                    self.cells[(r,c)] = 1 #place peg in pos (r,c)
         elif self.type == 1:
             for r in range(self.size):
                 for c in range(self.size):
-                    cell = Cell(self)
-                    self.cellsWithPeg.append(cell)
-                    self.cells[(r,c)] = cell
+                    self.cells[(r,c)] = 1 #place peg in pos (r,c)
 
 if __name__ == '__main__':
     pass
