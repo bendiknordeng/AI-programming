@@ -1,4 +1,3 @@
-from env import Board
 import random
 
 #policy updates occur within the actor

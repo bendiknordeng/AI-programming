@@ -1,4 +1,3 @@
-
 class Critic:
     def __init__(self, alphaCritic, eps, gamma):
         self.alphaCritic = alphaCritic
@@ -34,7 +33,7 @@ class Critic:
         self.eligs[lastState] = 1
 
     def updateEligibilities(self):
-        gamma =self.gamma
+        gamma = self.gamma
         eps = self.eps
         for state in self.eligs:
             self.eligs[state] = gamma*eps*self.eligs[state]

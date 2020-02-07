@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import random
 
 class Board:
-    def __init__(self, type, size):
+    def __init__(self, type, size, initial = [], random = 0):
         self.type = type #0 is triangle, 1 is diamond.
         self.size = size #number of rows and columns of data structure of board.
         self.cells = {} #key (row, column), value: status
@@ -14,6 +14,12 @@ class Board:
         self.__addCells()
         self.__positionCells()
         self.__addEdges()
+        self.initial = initial
+        if len(self.initial) > 0:
+                self.removePegs(self.initial)
+        if random > 0:
+            self.removeRandomPegs(random)
+
         self.__G = nx.Graph()
         self.__G.add_nodes_from(self.cellsWithPeg())
         self.__G.add_edges_from(self.__edges)
@@ -24,6 +30,7 @@ class Board:
         nx.draw(self.__G, pos=self.positions, nodelist=self.emptyCells(), node_color='black', node_size = 800, ax = fig.axes[0])
         nx.draw(self.__G, pos=self.positions, nodelist=self.cellsWithPeg(), node_color='blue', node_size = 800, ax = fig.axes[0])
         if not self.__jumpedTo is None and not self.__jumpedFrom is None:
+            print(self.positions)
             nx.draw(self.__G, pos=self.positions, nodelist=[self.__jumpedTo], node_color='blue', node_size = 2400, ax = fig.axes[0])
             nx.draw(self.__G, pos=self.positions, nodelist=[self.__jumpedFrom], node_color='black', node_size = 200, ax = fig.axes[0])
         if pause:
@@ -32,6 +39,11 @@ class Board:
             plt.close()
         else:
             plt.show(block = True)
+
+    def reset(self):
+        self.__addCells()
+        if len(self.initial) > 0:
+                self.removePegs(self.initial)
 
     def emptyCells(self):
         positions = []
@@ -64,16 +76,18 @@ class Board:
             self.cells[keys.pop(k)] = 0
 
     def jumpPegFromTo(self, jumpFrom = (-1,-1), jumpTo = (-1,-1)):
+        rFrom, cFrom = jumpFrom
+        rTo, cTo = jumpTo
         rOver, cOver = self.__findOverPos(rFrom, cFrom, rTo, cTo)
         if self.__isValidMove(rFrom, cFrom, rOver, cOver, rTo, cTo): #add validation function
-            cellFrom = (rFrom, cFrom)
-            cellOver = (rOver, cOver)
-            cellTo = (rTo, cTo)
-            self.cells[cellFrom] = 3
-            self.cells[cellOver] = 0
-            self.cells[cellTo] = 2
-            self.__jumpedFrom = cellFrom
-            self.__jumpedTo = cellTo
+            if not (self.__jumpedFrom is None and self.__jumpedTo is None):
+                    self.cells[self.__jumpedFrom] = 3
+                    self.cells[self.__jumpedTo] = 2
+            self.cells[jumpFrom] = 3
+            self.cells[(rOver, cOver)] = 0
+            self.cells[jumpTo] = 2
+            self.__jumpedFrom = jumpFrom
+            self.__jumpedTo = jumpTo
             return True
         else:
             print("Invalid move:", rFrom, cFrom, rOver, cOver, rTo, cTo,self.__isValidMove(rFrom, cFrom, rOver, cOver, rTo, cTo))
@@ -94,22 +108,22 @@ class Board:
     def numberOfPegsLeft(self):
         numberOfPegs = 0
         for pos in self.cells:
-            if not self.__cellEmpty(pos[0], pos[1]):
+            if not self.__cellEmpty(pos):
                 numberOfPegs += 1
         return numberOfPegs
 
     def reinforcement(self):
-        if self.numberOfPegsLeft() ==1:
+        if self.numberOfPegsLeft() == 1:
             return 10
         elif len(self.generateActions()) <= 0:
             return -10
         else:
             return 0
 
-    def stringBoard(self):
+    def state(self):
         state = ''
         for pos in self.cells:
-            if self.__cellEmpty(pos[0], pos[1]):
+            if self.__cellEmpty(pos):
                 state += '0'
             else:
                 state += '1'
@@ -134,11 +148,11 @@ class Board:
         overValid = False
         toValid = False
         for (r,c) in self.cells:
-            if r == rFrom and c == cFrom and not self.__cellEmpty(r, c):
+            if r == rFrom and c == cFrom and not self.__cellEmpty((r, c)):
                 fromValid = True
-            elif r == rOver and c == cOver and not self.__cellEmpty(r, c):
+            elif r == rOver and c == cOver and not self.__cellEmpty((r, c)):
                 overValid = True
-            elif r == rTo and c == cTo and self.__cellEmpty(r, c):
+            elif r == rTo and c == cTo and self.__cellEmpty((r, c)):
                 toValid = True
         return fromValid and overValid and toValid
 
