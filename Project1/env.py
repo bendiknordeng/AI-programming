@@ -1,15 +1,12 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 import random
-from env import Cell
 
 class Board:
     def __init__(self, type, size):
         self.type = type #0 is triangle, 1 is diamond.
         self.size = size #number of rows and columns of data structure of board.
         self.cells = {} #key (row, column), value: status
-        # self.cellsWithPeg = []
-        # self.emptyCells = []
         self.__edges = [] #format: tuple(), from cell with 1. lowest rowNumber and 2. lowest columnNumber
         self.positions = {}
         self.__jumpedFrom = None
@@ -18,15 +15,15 @@ class Board:
         self.__positionCells()
         self.__addEdges()
         self.__G = nx.Graph()
-        self.__G.add_nodes_from(self.cellsWithPeg)
+        self.__G.add_nodes_from(self.cellsWithPeg())
         self.__G.add_edges_from(self.__edges)
 
     def draw(self, pause = 0):
         fig = plt.figure(figsize =(9,7))
         plt.axes()
-        nx.draw(self.__G, pos=self.positions, nodelist=self.emptyCells, node_color='black', node_size = 800, ax = fig.axes[0])
-        nx.draw(self.__G, pos=self.positions, nodelist=self.cellsWithPeg, node_color='blue', node_size = 800, ax = fig.axes[0])
-        if not self.__jumpedTo.isDummy() and not self.__jumpedFrom.isDummy():
+        nx.draw(self.__G, pos=self.positions, nodelist=self.emptyCells(), node_color='black', node_size = 800, ax = fig.axes[0])
+        nx.draw(self.__G, pos=self.positions, nodelist=self.cellsWithPeg(), node_color='blue', node_size = 800, ax = fig.axes[0])
+        if not self.__jumpedTo is None and not self.__jumpedFrom is None:
             nx.draw(self.__G, pos=self.positions, nodelist=[self.__jumpedTo], node_color='blue', node_size = 2400, ax = fig.axes[0])
             nx.draw(self.__G, pos=self.positions, nodelist=[self.__jumpedFrom], node_color='black', node_size = 200, ax = fig.axes[0])
         if pause:
@@ -35,6 +32,20 @@ class Board:
             plt.close()
         else:
             plt.show(block = True)
+
+    def emptyCells(self):
+        positions = []
+        for pos in self.cells:
+            if self.__cellEmpty(pos):
+                positions.append(pos) # empty cells
+        return positions
+
+    def cellsWithPeg(self):
+        positions = []
+        for pos in self.cells:
+            if not self.__cellEmpty(pos):
+                positions.append(pos) # empty cells
+        return positions
 
     def removePegs(self, positions = [(-1,-1)]):
         for pos in positions:
@@ -47,21 +58,18 @@ class Board:
                     self.__removePeg(r,c)
 
     def removeRandomPegs(self, numberOfPegs = 1):
+        keys = list(self.cells)
         for i in range(numberOfPegs):
-            k = random.randint(0, len(self.cellsWithPeg)-1)
-            self.cellsWithPeg[k].removePeg()
-            self.emptyCells.append(self.cellsWithPeg[k])
-            self.cellsWithPeg.remove(self.cellsWithPeg[k])
+            k = random.randint(0, len(keys)-1)
+            self.cells[keys.pop(k)] = 0
 
     def jumpPegFromTo(self, jumpFrom = (-1,-1), jumpTo = (-1,-1)):
         rOver, cOver = self.__findOverPos(rFrom, cFrom, rTo, cTo)
         if self.__isValidMove(rFrom, cFrom, rOver, cOver, rTo, cTo): #add validation function
-            if not (self.__jumpedFrom is None and self.__jumpedTo.is None):
-                self.cells[self.__jumpedFrom] = 3
-                self.cells[self.__jumpedTo] = 2
             cellFrom = (rFrom, cFrom)
             cellOver = (rOver, cOver)
             cellTo = (rTo, cTo)
+            self.cells[cellFrom] = 3
             self.cells[cellOver] = 0
             self.cells[cellTo] = 2
             self.__jumpedFrom = cellFrom
@@ -134,8 +142,8 @@ class Board:
                 toValid = True
         return fromValid and overValid and toValid
 
-    def __cellEmpty(self, r, c):
-        return self.cells[(r,c)] == 0 or self.cells[(r,c)] == 3
+    def __cellEmpty(self, pos):
+        return self.cells[pos] == 0 or self.cells[pos] == 3
 
     def __findOverPos(self, rFrom, cFrom, rTo, cTo):
         rOver, cOver = None, None
@@ -195,4 +203,6 @@ class Board:
                     self.cells[(r,c)] = 1 #place peg in pos (r,c)
 
 if __name__ == '__main__':
-    pass
+    board = Board(0,4)
+    board.removePegs([(1,1)])
+    board.draw()
