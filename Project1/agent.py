@@ -12,19 +12,26 @@ class Agent:
         self.alphaActor = alphaActor
         self.alphaCritic = alphaCritic
         self.eps = eps
+        self.epsDecay = epsDecay
+        self.lambdod = lambdod
         self.gamma = gamma
-        self.actor = Actor(self.alphaActor, self.eps, self.gamma)
-        self.critic = Critic(self.alphaCritic, self.eps, self.gamma)
+        self.actor = Actor(self.alphaActor, self.lambdod, self.gamma)
+        self.critic = Critic(self.alphaCritic, self.lambdod, self.gamma)
 
     def learn(self, runs):
+        eps = self.eps
+        epsDecay = self.epsDecay
         pegsLeft = []
         iterationNumber = []
+        #epsList=[]
         iteration = 0
         start_time = time.time()
         pbar = ProgressBar()
         for i in pbar(range(runs)):
             iteration += 1
-            self.env.reset()
+            eps = eps*epsDecay
+
+            self.resetBoard()
             reinforcement = 0
             #initialize new state values and (s,a)-pairs for start (s,a)
             state = self.env.state()
@@ -33,8 +40,7 @@ class Agent:
             validActions = self.env.generateActions()
             self.actor.createSAPs(state, validActions)
             self.actor.createEligibilities(state, validActions)
-            action = self.actor.findNextAction(state)
-            #action = self.actor.getAction()
+            action = self.actor.findNextAction(state, eps)
             while len(validActions) > 0 :
                 #make move
                 #self.env.draw()
@@ -48,25 +54,26 @@ class Agent:
                 self.critic.createStateValues(state)
                 self.actor.createSAPs(state, validActions)
                 self.actor.createEligibilities(state, validActions)
-                #do variable assignments after move
-                reinforcement = self.env.reinforcement()
-                action = self.actor.findNextAction(state)
-                self.actor.updateNextEligibility(state, action)
+                reinforcement = self.board.reinforcement()
+                action = self.actor.findNextAction(state, eps)
+                if not action == -1:
+                    self.actor.updateNextEligibility(state, action)
                 surprise = self.critic.findTDError(reinforcement, lastState, state)
-
                 self.critic.updateCurrentEligibility(lastState)
-
                 self.critic.updateStateValues()
                 self.critic.updateEligibilities()
                 self.actor.updateSAPs(surprise)
                 self.actor.updateEligibilities()
             pegsLeft.append(self.env.numberOfPegsLeft())
             iterationNumber.append(i)
+            #epsList.append(eps)
+
         timeSpend = time.time()- start_time
         print("time spend", timeSpend)
-        print("average time per iteration", timeSpend/runs)
         plt.plot(iterationNumber, pegsLeft);
         plt.show()
+        #plt.plot(iterationNumber,epsList)
+        #plt.show()
 
     def runGreedy(self):
         start_time = time.time()
@@ -87,8 +94,10 @@ class Agent:
 
 if __name__ == '__main__':
     alpha = 0.85
-    eps = 0.9  #lambda
+    lambdod = 0.9  #lambda
     gamma = 0.95
+    eps = 1
+    epsDecay = 0.99
     type = 0
     size = 4
     initial = [(2,0)] # start with hole in (r,c)

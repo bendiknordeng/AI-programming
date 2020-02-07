@@ -1,16 +1,16 @@
 import random
+import numpy as np
 
 #policy updates occur within the actor
 #The actor should map from state, action to z (a real number)
 #The actor must keep track of the results of performing actions in states.
 class Actor:
-    def __init__(self, alphaActor, eps, gamma):
+    def __init__(self, alphaActor, lambdod, gamma):
         self.alphaActor = alphaActor
-        self.eps = eps
+        self.lambdod = lambdod
         self.gamma = gamma
         self.saps = {}
         self.eligs = {}
-        self.nextAction = None
 
     def createSAPs(self, state, actions):
         for fromP in actions:
@@ -18,26 +18,40 @@ class Actor:
                 if self.saps.get((state,(fromP,toP))) == None:
                     self.saps[(state,(fromP,toP))] = 0
 
-    def findNextAction(self, nextState):
-        currentBest = -100000000000000
-        switched = False
+    def findNextAction(self, nextState, eps):
+        currentBest = np.NINF
+        actionStack = []
+        #print()
+        #print("action, score")
         for state, action in self.saps:
-
             if state == nextState:
-                #print(state, action, self.saps[state,action])
-                if self.saps[(state, action)] > currentBest:
-                    self.nextAction = action
-                    currentBest = self.saps[(state, action)]
-                    switched = True
-                elif self.saps[(state, action)] == currentBest:
-                    if random.random() >= 0.5:
-                        self.nextAction = action
-                        currentBest = self.saps[(state, action)]
-                        switched = True
-        return self.nextAction
+                #print(action,self.saps[(state,action)])
+                if len(actionStack) > 0:
+                    appended = False
+                    for i in range(len(actionStack)):
+                        a = actionStack[i]
+                        if self.saps[(state, action)] <= self.saps[(state, a)]: #insert action in first position where it is \leq
+                            actionStack.insert(i, action)
+                            appended = True
+                            break
 
-    def getAction(self):
-        return self.nextAction
+                    if not appended:
+                        actionStack.append(action)
+                else:
+                    actionStack.append(action)
+
+        if len(actionStack) > 0:
+            if random.random() < eps:
+                i = np.random.randint(0, len(actionStack))
+                #print("chose random action:", actionStack[i])
+                return actionStack[i]
+            else:
+                action = actionStack.pop()
+                #print("chose greedy action:", action )
+                return action
+        else:
+            #print("chose dummy action")
+            return -1 #return dummy move
 
     def updateSAPs(self, surprise):
         alpha = self.alphaActor
@@ -57,6 +71,6 @@ class Actor:
 
     def updateEligibilities(self):
         gamma =self.gamma
-        eps = self.eps
+        lambdod = self.lambdod
         for stateAction in self.eligs:
-                self.eligs[stateAction] = gamma*eps*self.eligs[stateAction]
+                self.eligs[stateAction] = gamma*lambdod*self.eligs[stateAction]
