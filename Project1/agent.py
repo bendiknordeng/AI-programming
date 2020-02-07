@@ -34,7 +34,7 @@ class Agent:
             self.env.reset()
             reinforcement = 0
             #initialize new state values and (s,a)-pairs for start (s,a)
-            state = self.env.state()
+            state = self.env.getState()
             self.critic.createEligibility(state)
             self.critic.createStateValues(state)
             validActions = self.env.generateActions()
@@ -47,7 +47,7 @@ class Agent:
                 self.env.jumpPegFromTo(action[0],action[1])
                 lastAction = action
                 lastState = state
-                state = self.env.state()
+                state = self.env.getState()
                 validActions = self.env.generateActions()
                 #initialize new state values and (s,a)-pairs underway
                 self.critic.createEligibility(state)
@@ -80,16 +80,16 @@ class Agent:
         self.env.reset()
         self.env.draw()
         reinforcement = 0
-        state = self.env.state()
-        action = self.actor.findNextAction(state)
+        state = self.env.getState()
+        action = self.actor.findNextAction(state, eps)
         while len(self.env.generateActions())>0:
             #print("chose action", action)
             self.env.draw(0.5)
             self.env.jumpPegFromTo(action[0],action[1])
             reinforcement = self.env.reinforcement()
-            state = self.env.state()
+            state = self.env.getState()
             self.actor.createSAPs(state, self.env.generateActions())
-            action = self.actor.findNextAction(state)
+            action = self.actor.findNextAction(state, eps)
         self.env.draw()
 
 if __name__ == '__main__':
@@ -97,7 +97,7 @@ if __name__ == '__main__':
     lambdod = 0.9  #lambda
     gamma = 0.95
     eps = 1
-    epsDecay = 0.99
+    epsDecay = 0
     type = 0
     size = 4
     initial = [(2,0)] # start with hole in (r,c)
@@ -105,5 +105,5 @@ if __name__ == '__main__':
 
     env = Board(type, size, initial, random)
     agent = Agent(env, alpha, alpha, eps, gamma)
-    agent.learn(400)
+    agent.learn(300)
     agent.runGreedy()

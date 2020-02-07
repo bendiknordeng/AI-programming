@@ -9,8 +9,8 @@ class Board:
         self.cells = {} #key (row, column), value: status
         self.__edges = [] #format: tuple(), from cell with 1. lowest rowNumber and 2. lowest columnNumber
         self.positions = {}
-        self.__jumpedFrom = None
-        self.__jumpedTo = None
+        self.jumpedFrom = None
+        self.jumpedTo = None
         self.__addCells()
         self.__positionCells()
         self.__addEdges()
@@ -25,14 +25,17 @@ class Board:
         self.__G.add_edges_from(self.__edges)
 
     def draw(self, pause = 0):
-        fig = plt.figure(figsize =(9,7))
+        fig = plt.figure(figsize = (9,7))
         plt.axes()
-        nx.draw(self.__G, pos=self.positions, nodelist=self.emptyCells(), node_color='black', node_size = 800, ax = fig.axes[0])
-        nx.draw(self.__G, pos=self.positions, nodelist=self.cellsWithPeg(), node_color='blue', node_size = 800, ax = fig.axes[0])
-        if not self.__jumpedTo is None and not self.__jumpedFrom is None:
-            print(self.positions)
-            nx.draw(self.__G, pos=self.positions, nodelist=[self.__jumpedTo], node_color='blue', node_size = 2400, ax = fig.axes[0])
-            nx.draw(self.__G, pos=self.positions, nodelist=[self.__jumpedFrom], node_color='black', node_size = 200, ax = fig.axes[0])
+        filled = self.cellsWithPeg()
+        empty = self.emptyCells()
+        if not (self.jumpedTo is None and self.jumpedFrom is None):
+            filled.remove(self.jumpedTo)
+            empty.remove(self.jumpedFrom)
+            nx.draw(self.__G, pos = self.positions, nodelist = [self.jumpedTo], node_color='blue', node_size = 2400, ax = fig.axes[0])
+            nx.draw(self.__G, pos = self.positions, nodelist = [self.jumpedFrom], node_color='black', node_size = 200, ax = fig.axes[0])
+        nx.draw(self.__G, pos = self.positions, nodelist = filled, node_color='blue', node_size = 800, ax = fig.axes[0])
+        nx.draw(self.__G, pos = self.positions, nodelist = empty, node_color='black', node_size = 800, ax = fig.axes[0])
         if pause:
             plt.show(block = False)
             plt.pause(pause)
@@ -41,7 +44,11 @@ class Board:
             plt.show(block = True)
 
     def reset(self):
-        self.__addCells()
+        for key in self.cells:
+            self.cells[key] = 1
+        self.jumpedFrom = None
+        self.jumpedTo = None
+
         if len(self.initial) > 0:
                 self.removePegs(self.initial)
 
@@ -79,18 +86,15 @@ class Board:
         rFrom, cFrom = jumpFrom
         rTo, cTo = jumpTo
         rOver, cOver = self.__findOverPos(rFrom, cFrom, rTo, cTo)
-        if self.__isValidMove(rFrom, cFrom, rOver, cOver, rTo, cTo): #add validation function
-            if not (self.__jumpedFrom is None and self.__jumpedTo is None):
-                    self.cells[self.__jumpedFrom] = 3
-                    self.cells[self.__jumpedTo] = 2
-            self.cells[jumpFrom] = 3
+        if self.__isValidMove(rFrom, cFrom, rOver, cOver, rTo, cTo):
+            self.cells[jumpFrom] = 0
             self.cells[(rOver, cOver)] = 0
-            self.cells[jumpTo] = 2
-            self.__jumpedFrom = jumpFrom
-            self.__jumpedTo = jumpTo
+            self.cells[jumpTo] = 1
+            self.jumpedFrom = jumpFrom
+            self.jumpedTo = jumpTo
             return True
         else:
-            print("Invalid move:", rFrom, cFrom, rOver, cOver, rTo, cTo,self.__isValidMove(rFrom, cFrom, rOver, cOver, rTo, cTo))
+            print("Invalid move: {} => {} => {} \nValid: {}".format((rFrom, cFrom), (rOver, cOver), (rTo, cTo),(self.__isValidMove(rFrom, cFrom, rOver, cOver, rTo, cTo))))
             return False
 
     def generateActions(self): #should return dict of valid moves. Key,value pairs: (from), [(to)]
@@ -110,6 +114,7 @@ class Board:
         for pos in self.cells:
             if not self.__cellEmpty(pos):
                 numberOfPegs += 1
+        print(numberOfPegs)
         return numberOfPegs
 
     def reinforcement(self):
@@ -130,7 +135,7 @@ class Board:
         return state
 
     def __isValidMove(self, rFrom, cFrom, rOver, cOver, rTo, cTo):
-        if rFrom == None or cFrom == None or rOver ==None or cOver==None or rTo==None or cTo == None:
+        if rFrom == None or cFrom == None or rOver == None or cOver== None or rTo== None or cTo == None:
             return False
         if self.type == 0:
             if rFrom - rOver == -1 and cFrom - cOver == 1:
@@ -157,7 +162,7 @@ class Board:
         return fromValid and overValid and toValid
 
     def __cellEmpty(self, pos):
-        return self.cells[pos] == 0 or self.cells[pos] == 3
+        return self.cells[pos] == 0
 
     def __findOverPos(self, rFrom, cFrom, rTo, cTo):
         rOver, cOver = None, None
@@ -219,4 +224,7 @@ class Board:
 if __name__ == '__main__':
     board = Board(0,4)
     board.removePegs([(1,1)])
+    board.draw()
+    board.jumpPegFromTo((3,3),(1,1))
+
     board.draw()
