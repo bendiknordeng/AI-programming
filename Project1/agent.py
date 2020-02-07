@@ -7,11 +7,8 @@ from progressbar import ProgressBar
 import matplotlib.pyplot as plt
 
 class Agent:
-    def __init__(self, type, size, removePegs, alphaActor, alphaCritic, lambdod, gamma, eps, epsDecay):
-        self.boardType = type
-        self.boardSize = size
-        self.removePegs = removePegs
-        self.board = None
+    def __init__(self, env, alphaActor, alphaCritic, eps, gamma):
+        self.env = env
         self.alphaActor = alphaActor
         self.alphaCritic = alphaCritic
         self.eps = eps
@@ -20,13 +17,6 @@ class Agent:
         self.gamma = gamma
         self.actor = Actor(self.alphaActor, self.lambdod, self.gamma)
         self.critic = Critic(self.alphaCritic, self.lambdod, self.gamma)
-
-    def resetBoard(self):
-        type = self.boardType
-        size = self.boardSize
-        removePegs = self.removePegs
-        self.board = Board(type,size)
-        self.board.removePegs(removePegs)
 
     def learn(self, runs):
         eps = self.eps
@@ -41,29 +31,30 @@ class Agent:
             iteration += 1
             eps = eps*epsDecay
 
-            self.resetBoard()
+            self.env.reset()
             reinforcement = 0
-            #initialize new state values and (s,a)-pairs
-            state = self.board.stringBoard()
+            #initialize new state values and (s,a)-pairs for start (s,a)
+            state = self.env.getState()
             self.critic.createEligibility(state)
             self.critic.createStateValues(state)
-            validActions = self.board.generateActions()
+            validActions = self.env.generateActions()
             self.actor.createSAPs(state, validActions)
             self.actor.createEligibilities(state, validActions)
             action = self.actor.findNextAction(state, eps)
             while len(validActions) > 0 :
                 #make move
-                self.board.jumpPegFromTo(action[0],action[1])
+                #self.env.draw()
+                self.env.execute(action)
                 lastAction = action
                 lastState = state
-                state = self.board.stringBoard()
-                validActions = self.board.generateActions()
+                state = self.env.getState()
+                validActions = self.env.generateActions()
                 #initialize new state values and (s,a)-pairs underway
                 self.critic.createEligibility(state)
                 self.critic.createStateValues(state)
                 self.actor.createSAPs(state, validActions)
                 self.actor.createEligibilities(state, validActions)
-                reinforcement = self.board.reinforcement()
+                reinforcement = self.env.reinforcement()
                 action = self.actor.findNextAction(state, eps)
                 if not action == -1:
                     self.actor.updateNextEligibility(state, action)
@@ -73,7 +64,7 @@ class Agent:
                 self.critic.updateEligibilities()
                 self.actor.updateSAPs(surprise)
                 self.actor.updateEligibilities()
-            pegsLeft.append(self.board.numberOfPegsLeft())
+            pegsLeft.append(self.env.numberOfPegsLeft())
             iterationNumber.append(i)
             #epsList.append(eps)
 
@@ -86,32 +77,32 @@ class Agent:
 
     def runGreedy(self):
         start_time = time.time()
-        self.resetBoard()
-        #self.board.draw()
+        self.env.reset()
+        self.env.draw()
         reinforcement = 0
-        state = self.board.stringBoard()
-        action = self.actor.findNextAction(state,0)
-        while len(self.board.generateActions()) > 0:
-            #self.board.draw(0.5)
-            self.board.jumpPegFromTo(action[0],action[1])
-            reinforcement = self.board.reinforcement()
-            state = self.board.stringBoard()
-            self.actor.createSAPs(state, self.board.generateActions())
-            action = self.actor.findNextAction(state,0)
-        self.board.draw()
+        state = self.env.getState()
+        action = self.actor.findNextAction(state, 0)
+        while len(self.env.generateActions()) > 0:
+            self.env.draw(0.5)
+            self.env.execute(action)
+            reinforcement = self.env.reinforcement()
+            state = self.env.getState()
+            self.actor.createSAPs(state, self.env.generateActions())
+            action = self.actor.findNextAction(state, 0)
+        self.env.draw()
 
-def main():
+if __name__ == '__main__':
     alpha = 0.85
     lambdod = 0.9  #lambda
     gamma = 0.95
     eps = 1
-    epsDecay = 0.99
+    epsDecay = 0
     type = 0
-    size = 5
-    removePegs = [(2,0)]
-    runs = 300
-    agent = Agent(type, size, removePegs, alpha, alpha, lambdod, gamma, eps, epsDecay)
-    agent.learn(runs)
-    agent.runGreedy()
+    size = 4
+    initial = [(2,0)] # start with hole in (r,c)
+    random = 0 # remove random pegs
 
-main()
+    env = Board(type, size, initial, random)
+    agent = Agent(env, alpha, alpha, eps, gamma)
+    agent.learn(300)
+    agent.runGreedy()
