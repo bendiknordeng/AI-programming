@@ -94,6 +94,13 @@ class Board:
                 validMoves[(rFrom, cFrom)] = topositions
         return validMoves
 
+    def numberOfPegsLeft(self):
+        numberOfPegs = 0
+        for pos in self.cells:
+            if not self.cells[pos].isEmpty():
+                numberOfPegs += 1
+        return numberOfPegs
+
     def reinforcement(self):
         numberOfPegs = 0
         for pos in self.cells:

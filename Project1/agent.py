@@ -4,6 +4,7 @@ from env import Board
 import numpy as np
 import time
 from progressbar import ProgressBar
+import matplotlib.pyplot as plt
 
 class Agent:
     def __init__(self, type, size, removePegs, alphaActor, alphaCritic, eps, gamma):
@@ -26,10 +27,13 @@ class Agent:
         self.board.removePegs(removePegs)
 
     def learn(self, runs):
-        endResults = []
+        pegsLeft = []
+        iterationNumber = []
+        iteration = 0
         start_time = time.time()
         pbar = ProgressBar()
         for i in pbar(range(runs)):
+            iteration += 1
             self.resetBoard()
             reinforcement = 0
             #initialize new state values and (s,a)-pairs for start (s,a)
@@ -41,7 +45,7 @@ class Agent:
             self.actor.createEligibilities(state, validActions)
             action = self.actor.findNextAction(state)
             #action = self.actor.getAction()
-            while reinforcement == 0:
+            while len(validActions) > 0 :
                 #make move
                 #self.board.draw()
                 self.board.jumpPegFromTo(action[0],action[1])
@@ -66,9 +70,13 @@ class Agent:
                 self.critic.updateEligibilities()
                 self.actor.updateSAPs(surprise)
                 self.actor.updateEligibilities()
-            endResults.append(reinforcement)
-        print("time spend", time.time()- start_time)
-        return endResults
+            pegsLeft.append(self.board.numberOfPegsLeft())
+            iterationNumber.append(i)
+        timeSpend = time.time()- start_time
+        print("time spend", timeSpend)
+        print("average time per iteration", timeSpend/runs)
+        plt.plot(iterationNumber, pegsLeft);
+        plt.show()
 
     def runGreedy(self):
         start_time = time.time()
@@ -100,7 +108,7 @@ def main():
     removePegs = [(2,0)]
     runs = 1
     agent = Agent(type, size, removePegs, alpha, alpha, eps, gamma)
-    agent.learn(10000)
+    agent.learn(400)
     agent.runGreedy()
 
 main()
