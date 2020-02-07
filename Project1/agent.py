@@ -80,23 +80,19 @@ class Agent:
 
     def runGreedy(self):
         start_time = time.time()
-
         self.resetBoard()
         self.board.draw()
         reinforcement = 0
         state = self.board.stringBoard()
         action = self.actor.findNextAction(state)
-        while reinforcement == 0:
-            print("chose action", action)
+        while len(self.board.generateActions())>0:
+            #print("chose action", action)
             self.board.draw(0.5)
             self.board.jumpPegFromTo(action[0],action[1])
-
             reinforcement = self.board.reinforcement()
             state = self.board.stringBoard()
             self.actor.createSAPs(state, self.board.generateActions())
             action = self.actor.findNextAction(state)
-
-
         self.board.draw()
 
 def main():
@@ -104,7 +100,7 @@ def main():
     eps = 0.9  #lambda
     gamma = 0.95
     type = 0
-    size = 6
+    size = 4
     removePegs = [(2,0)]
     runs = 1
     agent = Agent(type, size, removePegs, alpha, alpha, eps, gamma)

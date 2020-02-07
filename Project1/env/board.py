@@ -102,11 +102,7 @@ class Board:
         return numberOfPegs
 
     def reinforcement(self):
-        numberOfPegs = 0
-        for pos in self.cells:
-            if not self.cells[pos].isEmpty():
-                numberOfPegs += 1
-        if numberOfPegs ==1:
+        if self.numberOfPegsLeft() ==1:
             return 10
         elif len(self.generateActions()) <= 0:
             return -10
@@ -202,14 +198,12 @@ class Board:
                 self.positions[cell] = (-10*r + 10*c, -20*r - 20*c)
 
     def __addCells(self):
-        if self.type == 0:  #if triangle: let column length be dynamic with k
-            k = 1
+        if self.type == 0:  #if triangle: let column length be dynamic with r
             for r in range(self.size):
-                for c in range(k):
+                for c in range(r+1):
                     cell = Cell(self)
                     self.cellsWithPeg.append(cell)
                     self.cells[(r,c)] = cell
-                k += 1
         elif self.type == 1:
             for r in range(self.size):
                 for c in range(self.size):
