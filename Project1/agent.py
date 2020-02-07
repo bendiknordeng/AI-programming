@@ -2,6 +2,8 @@ from actor import Actor
 from critic import Critic
 from env import Board
 import numpy as np
+import time
+from progressbar import ProgressBar
 
 class Agent:
     def __init__(self, type, size, removePegs, alphaActor, alphaCritic, eps, gamma):
@@ -9,7 +11,6 @@ class Agent:
         self.boardSize = size
         self.removePegs = removePegs
         self.board = None
-        self.resetBoard()
         self.alphaActor = alphaActor
         self.alphaCritic = alphaCritic
         self.eps = eps
@@ -24,102 +25,82 @@ class Agent:
         self.board = Board(type,size)
         self.board.removePegs(removePegs)
 
-    def getActorsAction(self):
-        return self.actor.getNextAction()
-
-    def actorFindNextAction(self):
-        self.actor.findNextAction(getActions())
-
-    def learn(self):
+    def learn(self, runs):
         endResults = []
-        for i in range(10000):
+        start_time = time.time()
+        pbar = ProgressBar()
+        for i in pbar(range(runs)):
             self.resetBoard()
             reinforcement = 0
-            if i == 9999:
-                self.board.draw()
-
-            #initialize for start (s,a)
-            self.critic.createStateValues(self.getState())
-            self.actor.createSAPs(self.getState(), self.getActions())
-            self.actor.findNextAction(self.getState())
+            #initialize new state values and (s,a)-pairs for start (s,a)
+            state = self.board.stringBoard()
+            self.critic.createEligibility(state)
+            self.critic.createStateValues(state)
+            validActions = self.board.generateActions()
+            self.actor.createSAPs(state, validActions)
+            self.actor.createEligibilities(state, validActions)
+            action = self.actor.findNextAction(state)
+            #action = self.actor.getAction()
             while reinforcement == 0:
-                action = self.actor.getAction()
-                #save previousState
-                lastState = self.getState()
                 #make move
-                if i == 9999:
-                    self.board.draw(1)
+                #self.board.draw()
                 self.board.jumpPegFromTo(action[0],action[1])
+                lastAction = action
+                lastState = state
+                state = self.board.stringBoard()
+                validActions = self.board.generateActions()
                 #initialize new state values and (s,a)-pairs underway
-                self.critic.createStateValues(self.getState())
-                self.actor.createSAPs(self.getState(), self.getActions())
+                self.critic.createEligibility(state)
+                self.critic.createStateValues(state)
+                self.actor.createSAPs(state, validActions)
+                self.actor.createEligibilities(state, validActions)
                 #do variable assignments after move
-                reinforcement = self.getReinforcement()
-                self.actor.findNextAction(self.getState())
-                self.actor.updateEligibilities(self.getState())
-                self.critic.assignTDError(reinforcement, lastState, self.getState())
-                self.critic.updateLastEligibility(lastState)
-                surprise = self.critic.getTDError()
-                self.critic.updateStateValue(lastState)
-                self.actor.updateSAP(lastState, action, surprise)
+                reinforcement = self.board.reinforcement()
+                action = self.actor.findNextAction(state)
+                self.actor.updateNextEligibility(state, action)
+                surprise = self.critic.findTDError(reinforcement, lastState, state)
+
+                self.critic.updateCurrentEligibility(lastState)
+
+                self.critic.updateStateValues()
+                self.critic.updateEligibilities()
+                self.actor.updateSAPs(surprise)
+                self.actor.updateEligibilities()
             endResults.append(reinforcement)
-            #print()
-            #print("state values")
-            #for state in self.critic.values:
-        #        print (state, self.critic.values[state])
-            #print()
-            #print("SAPs")
-            #for state, action in self.actor.saps:
-            #    print (state, action, self.actor.saps[state,action])
-            #print()
-            #print(endResults[-40:])
-            if i == 9999:
-                self.board.draw(1)
+        print("time spend", time.time()- start_time)
         return endResults
 
     def runGreedy(self):
-        print("ready for greedy run")
+        start_time = time.time()
+
+        self.resetBoard()
+        self.board.draw()
         reinforcement = 0
-        self.actor.findNextAction(self.getState())
+        state = self.board.stringBoard()
+        action = self.actor.findNextAction(state)
         while reinforcement == 0:
-            action = self.actor.getAction()
-            #save previousState
-            lastState = self.getState()
-            #make move
-            self.board.draw()
+            print("chose action", action)
+            self.board.draw(0.5)
             self.board.jumpPegFromTo(action[0],action[1])
-            #initialize new state values and (s,a)-pairs underway
-            self.critic.createStateValues(self.getState())
-            self.actor.createSAPs(self.getState(), self.getActions())
-            #do variable assignments after move
-            reinforcement = self.getReinforcement()
-            self.actor.findNextAction(self.getState())
-            self.actor.updateEligibilities(self.getState())
-            self.critic.assignTDError(reinforcement, lastState, self.getState())
-            self.critic.updateLastEligibility(lastState)
-            surprise = self.critic.getTDError()
-            self.critic.updateStateValue(lastState)
-            self.actor.updateSAP(lastState, action, surprise)
+
+            reinforcement = self.board.reinforcement()
+            state = self.board.stringBoard()
+            self.actor.createSAPs(state, self.board.generateActions())
+            action = self.actor.findNextAction(state)
 
 
-    def getState(self):
-        return self.board.stringBoard()
+        self.board.draw()
 
-    def getActions(self):
-        return self.board.generateValidMoves()
-
-    def getReinforcement(self):
-        return self.board.reinforcement()
-
-if __name__ == '__main__':
-
+def main():
     alpha = 0.85
-    eps = 0.9 #lambda
+    eps = 0.9  #lambda
     gamma = 0.95
     type = 0
     size = 6
-    removePegs = [(1,0)]
-
+    removePegs = [(2,0)]
+    runs = 1
     agent = Agent(type, size, removePegs, alpha, alpha, eps, gamma)
-    print(agent.learn())
+    agent.learn(10000)
     agent.runGreedy()
+
+main()

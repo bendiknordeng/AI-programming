@@ -10,47 +10,54 @@ class Actor:
         self.eps = eps
         self.gamma = gamma
         self.saps = {}
+        self.eligs = {}
         self.nextAction = None
 
     def createSAPs(self, state, actions):
         for fromP in actions:
             for toP in actions[fromP]:
                 if self.saps.get((state,(fromP,toP))) == None:
-                    self.saps[state,(fromP,toP)] = 0
+                    self.saps[(state,(fromP,toP))] = 0
 
     def findNextAction(self, nextState):
-        currentBest = -1 * 10^6
-        print("finding next action")
+        currentBest = -100000000000000
+        switched = False
         for state, action in self.saps:
+
             if state == nextState:
-                print(state, action,self.saps[(state, action)])
+                #print(state, action, self.saps[state,action])
                 if self.saps[(state, action)] > currentBest:
                     self.nextAction = action
                     currentBest = self.saps[(state, action)]
+                    switched = True
                 elif self.saps[(state, action)] == currentBest:
                     if random.random() >= 0.5:
                         self.nextAction = action
                         currentBest = self.saps[(state, action)]
-        print("chose action", self.nextAction)
-        print()
-
-
-
+                        switched = True
+        return self.nextAction
 
     def getAction(self):
         return self.nextAction
 
-    def updateSAP(self, lastState, action, surprise):
+    def updateSAPs(self, surprise):
         alpha = self.alphaActor
-        self.saps[(lastState, action)] = self.saps[(lastState, action)] + alpha*surprise
+        for stateAction in self.saps:
+            #print(stateAction,self.saps[stateAction])
+            e_s = self.eligs[stateAction]
+            self.saps[stateAction] = self.saps[stateAction] + alpha*surprise*e_s
 
-    def updateEligibilities(self, state):
-        state = state
-        action = self.nextAction
-        pass
+    def createEligibilities(self, state, actions):
+        for fromP in actions:
+            for toP in actions[fromP]:
+                if self.eligs.get((state,(fromP,toP))) == None:
+                    self.eligs[(state,(fromP,toP))] = 0
 
-    def score(self, currentState, nextState):
-        pass
+    def updateNextEligibility(self, state, action):
+        self.eligs[(state, action)] = 1
 
-if __name__ == '__main__':
-    pass
+    def updateEligibilities(self):
+        gamma =self.gamma
+        eps = self.eps
+        for stateAction in self.eligs:
+                self.eligs[stateAction] = gamma*eps*self.eligs[stateAction]

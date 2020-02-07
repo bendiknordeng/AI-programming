@@ -6,32 +6,35 @@ class Critic:
         self.gamma = gamma
         self.surprise = 0
         self.values = {}
+        self.eligs = {} #key, value is state, eligibility
 
     def createStateValues(self, state):
         if self.values.get(state) == None:
             self.values[state] = 0
 
-    def assignTDError(self, reinforcement, lastState, nextState):
-        #print("inside TDError")
-        #print(reinforcement)
-        #print(self.gamma)
-        #print(self.values[nextState])
-        #print(self.values[lastState])
-        self.surprise = reinforcement + self.gamma*self.values[nextState] - self.values[lastState]
-        #print("TDError",self.TDError)
-        #print()
+    def findTDError(self, reinforcement, lastState, state):
+        self.surprise = reinforcement + self.gamma*self.values[state] - self.values[lastState]
+        return self.surprise
 
     def getTDError(self):
         return self.surprise
 
-    def updateStateValue(self, lastState):
+    def updateStateValues(self):
         alpha = self.alphaCritic
         surprise = self.surprise
-        self.values[lastState] = self.values[lastState] + alpha*surprise
+        for state in self.values:
+            e_s =self.eligs[state]
+            self.values[state] = self.values[state] + alpha*surprise*e_s
 
+    def createEligibility(self, state):
+        if self.eligs.get(state) == None:
+            self.eligs[state] = 0
 
-    def updateLastEligibility(self, lastState):
-        pass
+    def updateCurrentEligibility(self, lastState):
+        self.eligs[lastState] = 1
 
-if __name__ == '__main__':
-    pass
+    def updateEligibilities(self):
+        gamma =self.gamma
+        eps = self.eps
+        for state in self.eligs:
+            self.eligs[state] = gamma*eps*self.eligs[state]
