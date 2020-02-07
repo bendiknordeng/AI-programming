@@ -1,8 +1,7 @@
-
 class Critic:
-    def __init__(self, alphaCritic, eps, gamma):
+    def __init__(self, alphaCritic, lambdod, gamma):
         self.alphaCritic = alphaCritic
-        self.eps = eps
+        self.lambdod = lambdod
         self.gamma = gamma
         self.surprise = 0
         self.values = {}
@@ -35,6 +34,6 @@ class Critic:
 
     def updateEligibilities(self):
         gamma =self.gamma
-        eps = self.eps
+        lambdod = self.lambdod
         for state in self.eligs:
-            self.eligs[state] = gamma*eps*self.eligs[state]
+            self.eligs[state] = gamma*lambdod*self.eligs[state]
