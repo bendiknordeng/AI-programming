@@ -2,46 +2,109 @@ from actor import Actor
 from critic import Critic
 from env import Board
 import numpy as np
+import time
+from progressbar import ProgressBar
+import matplotlib.pyplot as plt
 
 class Agent:
-    def __init__(self, board, initialActions):
-        self.initialState = self.boardToBinary(board)
-        self.initialActions = initialActions
-        self.actor = Actor(self, self.initialState, self.initialActions)
-        self.critic = Critic(self, self.initialState)
+    def __init__(self, type, size, removePegs, alphaActor, alphaCritic, eps, gamma):
+        self.boardType = type
+        self.boardSize = size
+        self.removePegs = removePegs
+        self.board = None
+        self.alphaActor = alphaActor
+        self.alphaCritic = alphaCritic
+        self.eps = eps
+        self.gamma = gamma
+        self.actor = Actor(self.alphaActor, self.eps, self.gamma)
+        self.critic = Critic(self.alphaCritic, self.eps, self.gamma)
 
-    def runEpisode(self):
-        alpha = 0.85
-        epsilon = 0.9
-        gamma = 0.95
-        maxSteps = 100
-        self.actor.resetEligibilities()
-        self.critic.resetEligibilities()
-        # actor.state = initialState
-        # actor.saps = actor.generateSAP(initialState, initialActions)
-        # critic.state = initialState
-        action = self.actor.chooseNext(self.state)
+    def resetBoard(self):
+        type = self.boardType
+        size = self.boardSize
+        removePegs = self.removePegs
+        self.board = Board(type,size)
+        self.board.removePegs(removePegs)
 
+    def learn(self, runs):
+        pegsLeft = []
+        iterationNumber = []
+        iteration = 0
+        start_time = time.time()
+        pbar = ProgressBar()
+        for i in pbar(range(runs)):
+            iteration += 1
+            self.resetBoard()
+            reinforcement = 0
+            #initialize new state values and (s,a)-pairs for start (s,a)
+            state = self.board.stringBoard()
+            self.critic.createEligibility(state)
+            self.critic.createStateValues(state)
+            validActions = self.board.generateActions()
+            self.actor.createSAPs(state, validActions)
+            self.actor.createEligibilities(state, validActions)
+            action = self.actor.findNextAction(state)
+            #action = self.actor.getAction()
+            while len(validActions) > 0 :
+                #make move
+                #self.board.draw()
+                self.board.jumpPegFromTo(action[0],action[1])
+                lastAction = action
+                lastState = state
+                state = self.board.stringBoard()
+                validActions = self.board.generateActions()
+                #initialize new state values and (s,a)-pairs underway
+                self.critic.createEligibility(state)
+                self.critic.createStateValues(state)
+                self.actor.createSAPs(state, validActions)
+                self.actor.createEligibilities(state, validActions)
+                #do variable assignments after move
+                reinforcement = self.board.reinforcement()
+                action = self.actor.findNextAction(state)
+                self.actor.updateNextEligibility(state, action)
+                surprise = self.critic.findTDError(reinforcement, lastState, state)
 
-    def boardToBinary(self, board):
-        state = ""
-        for pos in board.cells:
-            if board.cells[pos].isEmpty():
-                state += '0'
-            else:
-                state += '1'
-        return int(state)
+                self.critic.updateCurrentEligibility(lastState)
 
-if __name__ == '__main__':
-    # epsilon = 0.9
-    # total_episodes = 10000
-    # max_steps = 100
-    # alpha = 0.85
-    # gamma = 0.95
+                self.critic.updateStateValues()
+                self.critic.updateEligibilities()
+                self.actor.updateSAPs(surprise)
+                self.actor.updateEligibilities()
+            pegsLeft.append(self.board.numberOfPegsLeft())
+            iterationNumber.append(i)
+        timeSpend = time.time()- start_time
+        print("time spend", timeSpend)
+        print("average time per iteration", timeSpend/runs)
+        plt.plot(iterationNumber, pegsLeft);
+        plt.show()
 
-    board = Board(0, 5)
-    board.removeRandomPegs(2)
-    initialActions = board.generateValidMoves()
+    def runGreedy(self):
+        start_time = time.time()
+        self.resetBoard()
+        self.board.draw()
+        reinforcement = 0
+        state = self.board.stringBoard()
+        action = self.actor.findNextAction(state)
+        while len(self.board.generateActions())>0:
+            #print("chose action", action)
+            self.board.draw(0.5)
+            self.board.jumpPegFromTo(action[0],action[1])
+            reinforcement = self.board.reinforcement()
+            state = self.board.stringBoard()
+            self.actor.createSAPs(state, self.board.generateActions())
+            action = self.actor.findNextAction(state)
+        self.board.draw()
 
-    agent = Agent(board, initialActions)
-    print(agent.actor.saps)
+def main():
+    alpha = 0.85
+    eps = 0.9  #lambda
+    gamma = 0.95
+    type = 0
+    size = 4
+    removePegs = [(2,0)]
+    runs = 1
+    agent = Agent(type, size, removePegs, alpha, alpha, eps, gamma)
+    agent.learn(400)
+    agent.runGreedy()
+
+main()

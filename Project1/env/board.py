@@ -77,10 +77,12 @@ class Board:
             self.cellsWithPeg.remove(self.__jumpedFrom)
             self.cellsWithPeg.remove(cellOver)
             self.emptyCells.remove(self.__jumpedTo)
+            return True
         else:
-            print("The move is not valid")
+            print("Invalid move:", rFrom, cFrom, rOver, cOver, rTo, cTo,self.__isValidMove(rFrom, cFrom, rOver, cOver, rTo, cTo))
+            return False
 
-    def generateValidMoves(self): #should return dict of valid moves. Key,value pairs: (from), [(to)]
+    def generateActions(self): #should return dict of valid moves. Key,value pairs: (from), [(to)]
         validMoves = {}
         for (rFrom, cFrom) in self.cells:
             topositions = []
@@ -91,6 +93,30 @@ class Board:
             if len(topositions) > 0:
                 validMoves[(rFrom, cFrom)] = topositions
         return validMoves
+
+    def numberOfPegsLeft(self):
+        numberOfPegs = 0
+        for pos in self.cells:
+            if not self.cells[pos].isEmpty():
+                numberOfPegs += 1
+        return numberOfPegs
+
+    def reinforcement(self):
+        if self.numberOfPegsLeft() ==1:
+            return 10
+        elif len(self.generateActions()) <= 0:
+            return -10
+        else:
+            return 0
+
+    def stringBoard(self):
+        state = ''
+        for pos in self.cells:
+            if self.cells[pos].isEmpty():
+                state += '0'
+            else:
+                state += '1'
+        return state
 
     def __isValidMove(self, rFrom, cFrom, rOver, cOver, rTo, cTo):
         if rFrom == None or cFrom == None or rOver ==None or cOver==None or rTo==None or cTo == None:
@@ -172,14 +198,12 @@ class Board:
                 self.positions[cell] = (-10*r + 10*c, -20*r - 20*c)
 
     def __addCells(self):
-        if self.type == 0:  #if triangle: let column length be dynamic with k
-            k = 1
+        if self.type == 0:  #if triangle: let column length be dynamic with r
             for r in range(self.size):
-                for c in range(k):
+                for c in range(r+1):
                     cell = Cell(self)
                     self.cellsWithPeg.append(cell)
                     self.cells[(r,c)] = cell
-                k += 1
         elif self.type == 1:
             for r in range(self.size):
                 for c in range(self.size):
@@ -188,18 +212,4 @@ class Board:
                     self.cells[(r,c)] = cell
 
 if __name__ == '__main__':
-    board = Board(type = 1, size = 7)
-    board.removeRandomPegs(2)
-    dict = board.generateValidMoves()
-    print(dict)
-    board.draw(1)
-    while len(dict) > 0:
-        fromTo = dict.popitem()
-        board.jumpPegFromTo(fromTo[0],fromTo[1][0])
-        dict = board.generateValidMoves()
-        for pos in board.cells:
-            cell = board.cells[pos]
-            print(cell)
-        print(dict)
-        print('',end='\n\n')
-        board.draw(1)
+    pass

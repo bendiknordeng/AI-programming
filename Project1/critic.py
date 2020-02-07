@@ -1,18 +1,40 @@
-import random
 
 class Critic:
-    def __init__(self, agent, state):
-        self.agent = agent
+    def __init__(self, alphaCritic, eps, gamma):
+        self.alphaCritic = alphaCritic
+        self.eps = eps
+        self.gamma = gamma
+        self.surprise = 0
         self.values = {}
-        self.values[state] = random.random()
-        self.eligibilities = {}
+        self.eligs = {} #key, value is state, eligibility
 
-    def resetEligibilities(self):
-        for key in self.eligibilities:
-            self.eligibilities[key] = 0
+    def createStateValues(self, state):
+        if self.values.get(state) == None:
+            self.values[state] = 0
 
-    def update(state, state2, reward, action, action2):
-        pass
+    def findTDError(self, reinforcement, lastState, state):
+        self.surprise = reinforcement + self.gamma*self.values[state] - self.values[lastState]
+        return self.surprise
 
-if __name__ == '__main__':
-    print()
+    def getTDError(self):
+        return self.surprise
+
+    def updateStateValues(self):
+        alpha = self.alphaCritic
+        surprise = self.surprise
+        for state in self.values:
+            e_s =self.eligs[state]
+            self.values[state] = self.values[state] + alpha*surprise*e_s
+
+    def createEligibility(self, state):
+        if self.eligs.get(state) == None:
+            self.eligs[state] = 0
+
+    def updateCurrentEligibility(self, lastState):
+        self.eligs[lastState] = 1
+
+    def updateEligibilities(self):
+        gamma =self.gamma
+        eps = self.eps
+        for state in self.eligs:
+            self.eligs[state] = gamma*eps*self.eligs[state]
