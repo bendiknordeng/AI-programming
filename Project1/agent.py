@@ -31,7 +31,7 @@ class Agent:
             iteration += 1
             eps = eps*epsDecay
 
-            self.resetBoard()
+            self.env.reset()
             reinforcement = 0
             #initialize new state values and (s,a)-pairs for start (s,a)
             state = self.env.state()
@@ -54,7 +54,7 @@ class Agent:
                 self.critic.createStateValues(state)
                 self.actor.createSAPs(state, validActions)
                 self.actor.createEligibilities(state, validActions)
-                reinforcement = self.board.reinforcement()
+                reinforcement = self.env.reinforcement()
                 action = self.actor.findNextAction(state, eps)
                 if not action == -1:
                     self.actor.updateNextEligibility(state, action)

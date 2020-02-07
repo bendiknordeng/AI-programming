@@ -120,7 +120,7 @@ class Board:
         else:
             return 0
 
-    def state(self):
+    def getState(self):
         state = ''
         for pos in self.cells:
             if self.__cellEmpty(pos):
