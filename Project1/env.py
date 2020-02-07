@@ -114,7 +114,6 @@ class Board:
         for pos in self.cells:
             if not self.__cellEmpty(pos):
                 numberOfPegs += 1
-        print(numberOfPegs)
         return numberOfPegs
 
     def reinforcement(self):

@@ -81,15 +81,14 @@ class Agent:
         self.env.draw()
         reinforcement = 0
         state = self.env.getState()
-        action = self.actor.findNextAction(state, eps)
-        while len(self.env.generateActions())>0:
-            #print("chose action", action)
+        action = self.actor.findNextAction(state, 0)
+        while len(self.env.generateActions()) > 0:
             self.env.draw(0.5)
             self.env.jumpPegFromTo(action[0],action[1])
             reinforcement = self.env.reinforcement()
             state = self.env.getState()
             self.actor.createSAPs(state, self.env.generateActions())
-            action = self.actor.findNextAction(state, eps)
+            action = self.actor.findNextAction(state, 0)
         self.env.draw()
 
 if __name__ == '__main__':
