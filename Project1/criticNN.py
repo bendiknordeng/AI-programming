@@ -1,7 +1,6 @@
 import math
 import tensorflow as tf
 import numpy as np
-import keras.backend as K
 from keras.models import Sequential
 from keras.layers import Dense
 import keras
@@ -17,9 +16,9 @@ import keras
 
 class CriticNN:
 
-    def __init__(self, alpha, lam, gamma, inputDim = 0, nodesInLayers = [0]):
+    def __init__(self, alpha, lambdod, gamma, inputDim = 0, nodesInLayers = [0]):
         self.alpha = alpha
-        self.lam = lam
+        self.lambdod = lambdod
         self.gamma = gamma
         self.surprise = 0
         self.eligibilities = []
