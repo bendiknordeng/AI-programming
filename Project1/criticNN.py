@@ -16,86 +16,81 @@ from tensorflow.keras.layers import Dense
 
 class CriticNN:
 
-    def __init__(self, alpha, lambdod, gamma, inputDim = 0, nodesInLayers = [0]):
+    def __init__(self, alpha, lam, gamma, inputDim=0, nodesInLayers=[0]):
         self.alpha = alpha
-        self.lambdod = lambdod
+        self.lam = lam
         self.gamma = gamma
         self.surprise = 0
         self.eligibilities = []
-        self.model  = Sequential()
-        for i in range(len(nodesInLayers)):
-            if i == 0:
-                print(inputDim)
-                self.model.add(Dense(nodesInLayers[i], activation='hard_sigmoid', input_dim = inputDim))
-            else:
-                self.model.add(Dense(nodesInLayers[i], activation='hard_sigmoid'))
+        self.model = Sequential()
+        self.model.add(
+            Dense(nodesInLayers[0], activation='hard_sigmoid', input_dim=inputDim))
+        for i in range(1, len(nodesInLayers)):
+            self.model.add(Dense(nodesInLayers[i], activation='hard_sigmoid'))
         for params in self.model.trainable_weights:
             self.eligibilities.append(tf.zeros_like(params))
         #sgd = tf.train.GradientDescentOptimizer(learning_rate = alpha)
-        sgd = tf.optimizers.SGD(lr = alpha)
-        self.model.compile(optimizer= sgd, loss='mse')
+        sgd = tf.optimizers.SGD(lr=alpha)
+        self.model.compile(optimizer=sgd, loss='mse')
         #keras.utils.plot_model(self.model, show_shapes = True)
 
-
     def fitNeuralNet(self, reinforcement, state, nextState):
-        #converting states from string to tensor
-        state = [tf.strings.to_number(bin, out_type=tf.dtypes.float32) for bin in state] #convert to array
+        # converting states from string to tensor
+        state = [tf.strings.to_number(bin, out_type=tf.dtypes.float32) for bin in state]  # convert to array
         nextState = [tf.strings.to_number(bin, out_type=tf.dtypes.float32) for bin in nextState]
-        state =  tf.convert_to_tensor(np.expand_dims(state, axis=0))
+        state = tf.convert_to_tensor(np.expand_dims(state, axis=0))
         nextState = tf.convert_to_tensor(np.expand_dims(nextState, axis=0))
 
-        alpha = tf.convert_to_tensor(self.alpha, dtype =tf.dtypes.float32 )
-        reinforcement = tf.convert_to_tensor(reinforcement, dtype =tf.dtypes.float32 )
+        gamma = tf.convert_to_tensor(self.gamma, dtype=tf.dtypes.float32)
+        reinforcement = tf.convert_to_tensor(reinforcement, dtype=tf.dtypes.float32)
 
-        tensor_model = tf.function(func = self.model)
-        target = tf.add(reinforcement, tf.multiply(self.gamma,tensor_model(nextState)) )
-
+        tensor_model = tf.function(func=self.model)
+        target = tf.add(reinforcement, tf.multiply(gamma, tensor_model(nextState)))
         self.fit(state, target)
-        tensor_model = tf.function(func = self.model)
+
+        tensor_model = tf.function(func=self.model)
         prediction = tensor_model(state)
         print("prediction fitNN", prediction.numpy())
 
-
-
     # Subclass this with something useful.
-    def modify_gradients(self, gradients, tdError):
-        print("tdError", tdError.numpy())
-        alpha = tf.convert_to_tensor(self.alpha, dtype =tf.dtypes.float32 )
-        for i in range(len(gradients)):
 
-            #print(self.eligibilities[i].numpy())
+    def modify_gradients(self, gradients, loss, td_error):
+        print("tdError", loss.numpy())
+        alpha = tf.convert_to_tensor(self.alpha, dtype=tf.dtypes.float32)
+        for i in range(len(gradients)):
+            # print(self.eligibilities[i].numpy())
             self.eligibilities[i] = tf.add(self.eligibilities[i], gradients[i])
             #gradients[i] = tf.multiply(alpha, tf.multiply(tdError, self.eligibilities[i]))
-            gradients[i] = self.eligibilities[i]
-            #print(self.eligibilities[i].numpy())
-            #print()
+
+            gradients[i] = self.eligibilities[i] * td_error[0]
+            # print()
         return gradients
 
     # This returns a tensor of losses, OR the value of the averaged tensor.  Note: use .numpy() to get the
     # value of a tensor.
-    def gen_loss(self,state,target):
+    def gen_loss(self, state, target):
         print("in genloss")
-        tensor_model = tf.function(func = self.model)
+        tensor_model = tf.function(func=self.model)
         prediction = tensor_model(state)
         print("prediction genloss", prediction.numpy())
-        loss = self.model.loss_functions[0](target,prediction)
-        return loss #tf.reduce_mean(loss).numpy() if avg else loss
+        loss = self.model.loss_functions[0](target, prediction)
+        return loss, tf.subtract(target, prediction)  # tf.reduce_mean(loss).numpy() if avg else loss
 
     def fit(self, state, target, verbose=True):
         params = self.model.trainable_weights
         with tf.GradientTape() as tape:
-            tdError = self.gen_loss(state,target)
-            tape.watch(tdError)
-            gradients = tape.gradient(tdError, params)
-            gradients = self.modify_gradients(gradients, tdError)
+            loss, td_error = self.gen_loss(state, target)
+            tape.watch(loss)
+            gradients = tape.gradient(loss, params)
+            gradients = self.modify_gradients(gradients, loss, td_error)
             #gradients = tf.Variable(gradients)
             #params = tf.Variable(params)
             #grads_and_vars = zip(gradients, params)
-            #print(type(gradients))
+            # print(type(gradients))
             print(type(self.model.optimizer))
             self.model.optimizer.apply_gradients(zip(gradients, params))
-            #self.model.optimizer.apply_gradients(grads_and_vars)
-            #self.model.apply_gradients(zip(gradients,params))
+            # self.model.optimizer.apply_gradients(grads_and_vars)
+            # self.model.apply_gradients(zip(gradients,params))
         #if verbose: self.end_of_epoch_display(train_ins,train_targs,val_ins,val_targs)
 
     # Use the 'metric' to run a quick test on any set of features and targets.  A typical metric is some form of
@@ -123,20 +118,27 @@ class CriticNN:
             self.status_display(val_ins, val_targs, mode='      Validation')
 
 # A few useful auxiliary functions
+
+
 def gen_random_minibatch(inputs, targets, mbs=1):
     indices = np.random.randint(len(inputs), size=mbs)
     return inputs[indices], targets[indices]
 
 # This returns: train_features, train_targets, validation_features, validation_targets
-def split_training_data(inputs,targets,vfrac=0.1,mix=True):
+
+
+def split_training_data(inputs, targets, vfrac=0.1, mix=True):
     vc = round(vfrac * len(inputs))  # vfrac = validation_fraction
     # pairs = np.array(list(zip(inputs,targets)))
     if vfrac > 0:
-        pairs = list(zip(inputs,targets))
-        if mix: np.random.shuffle(pairs)
-        vcases = pairs[0:vc]; tcases = pairs[vc:]
+        pairs = list(zip(inputs, targets))
+        if mix:
+            np.random.shuffle(pairs)
+        vcases = pairs[0:vc]
+        tcases = pairs[vc:]
         return np.array([tc[0] for tc in tcases]), np.array([tc[1] for tc in tcases]),\
-               np.array([vc[0] for vc in vcases]), np.array([vc[1] for vc in vcases])
+            np.array([vc[0] for vc in vcases]), np.array([vc[1]
+                                                          for vc in vcases])
         #  return tcases[:,0], tcases[:,1], vcases[:,0], vcases[:,1]  # Can't get this to work properly
     else:
-        return inputs,targets,[],[]
+        return inputs, targets, [], []
