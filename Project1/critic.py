@@ -1,11 +1,9 @@
-import random
-
-class Critic:
-    def __init__(self, alphaCritic, lam, gamma):
+class CriticTable:
+    def __init__(self, alphaCritic, lambdod, gamma, criticValuation = 0, inputDim = 0, nodesInLayers = [0]):
         self.alphaCritic = alphaCritic
         self.lam = lam
         self.gamma = gamma
-        self.td_error = 0
+        self.surprise = 0
         self.values = {}
         self.eligs = {}  # key, value is state, eligibility
 
@@ -30,11 +28,11 @@ class Critic:
                 self.values[state] = self.values[state] + alpha * td_error * e_s
 
     def createEligibility(self, state):
-        if self.eligs.get(state) == None:
-            self.eligs[state] = 0
+        if self.stateValueEligibilities.get(state) == None:
+            self.stateValueEligibilities[state] = 0
 
     def updateCurrentEligibility(self, lastState):
-        self.eligs[lastState] = 1
+        self.stateValueEligibilities[lastState] = 1
 
     def updateEligibilities(self):
         gamma = self.gamma
