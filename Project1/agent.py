@@ -1,5 +1,6 @@
 from actor import Actor
-from critic import Critic
+from criticTable import CriticTable
+from criticNN import CriticNN
 from env import Board
 import numpy as np
 import time
@@ -7,7 +8,7 @@ from progressbar import ProgressBar
 import matplotlib.pyplot as plt
 
 class Agent:
-    def __init__(self, env, alphaActor, alphaCritic, eps, gamma):
+    def __init__(self, env, alphaActor, alphaCritic, eps, gamma, criticType, nodesInLayers):
         self.env = env
         self.alphaActor = alphaActor
         self.alphaCritic = alphaCritic
@@ -16,14 +17,22 @@ class Agent:
         self.lambdod = lambdod
         self.gamma = gamma
         self.actor = Actor(self.alphaActor, self.lambdod, self.gamma)
-        self.critic = Critic(self.alphaCritic, self.lambdod, self.gamma)
+
+        if criticType == 0: #use criticTable
+            self.critic = CriticTable(self.alphaCritic, self.lambdod, self.gamma, inputDim, nodesInLayers)
+        else: #use criticNN
+            state = env.getState()
+            inputDim = len((np.array([int(bin) for bin in state])))
+            self.critic = CriticNN(self.alphaCritic, self.lambdod, self.gamma, inputDim, nodesInLayers)
+            self.env.execute(((2,0),(0,0)))
+            nextState = env.getState()
+            self.critic.fitNeuralNet(self.env.reinforcement(), state, nextState)
 
     def learn(self, runs):
         eps = self.eps
         epsDecay = self.epsDecay
         pegsLeft = []
         iterationNumber = []
-        #epsList=[]
         iteration = 0
         start_time = time.time()
         pbar = ProgressBar()
@@ -66,14 +75,11 @@ class Agent:
                 self.actor.updateEligibilities()
             pegsLeft.append(self.env.numberOfPegsLeft())
             iterationNumber.append(i)
-            #epsList.append(eps)
 
         timeSpend = time.time()- start_time
         print("time spend", timeSpend)
         plt.plot(iterationNumber, pegsLeft);
         plt.show()
-        #plt.plot(iterationNumber,epsList)
-        #plt.show()
 
     def runGreedy(self):
         start_time = time.time()
@@ -92,17 +98,20 @@ class Agent:
         self.env.draw()
 
 if __name__ == '__main__':
-    alpha = 0.85
+    type = 0
+    size = 5
+    initial = [(0,0)] # start with hole in (r,c)
+    random = 0 # remove random pegs
+    env = Board(type, size, initial, random)
+
+    alpha = 0.2
     lambdod = 0.9  #lambda
     gamma = 0.95
     eps = 1
-    epsDecay = 0
-    type = 0
-    size = 4
-    initial = [(2,0)] # start with hole in (r,c)
-    random = 0 # remove random pegs
+    epsDecay = 0.9
+    criticValuation = 1 #neural net valuation of states.
+    nodesInLayers = [5,5,1]
+    agent = Agent(env, alpha, alpha, eps, gamma, criticValuation, nodesInLayers)
 
-    env = Board(type, size, initial, random)
-    agent = Agent(env, alpha, alpha, eps, gamma)
-    agent.learn(300)
-    agent.runGreedy()
+    #agent.learn(300)
+    #agent.runGreedy()
