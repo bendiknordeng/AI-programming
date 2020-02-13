@@ -15,11 +15,11 @@ class Board:
         self.__positionCells()
         self.__addEdges()
         self.initial = initial
-        self.random = random
+        if random > 0:
+            self.getRandomPegs(random)
+
         if len(self.initial) > 0:
                 self.removePegs(self.initial)
-        if self.random > 0:
-            self.removeRandomPegs(self.random)
 
         self.__G = nx.Graph()
         self.__G.add_nodes_from(self.cellsWithPeg())
@@ -53,9 +53,6 @@ class Board:
         if len(self.initial) > 0:
             self.removePegs(self.initial)
 
-        if self.random > 0:
-            self.removeRandomPegs(self.random)
-
     def emptyCells(self):
         positions = []
         for pos in self.cells:
@@ -80,12 +77,13 @@ class Board:
                 if 0 <= r <= (self.size-1) and 0 <= c <= (self.size-1):
                     self.__removePeg(r,c)
 
-    def removeRandomPegs(self, numberOfPegs = 1):
+    def getRandomPegs(self, numberOfPegs = 1):
         keys = list(self.cells)
+        for key in self.initial:
+            keys.remove(key)
         for i in range(numberOfPegs):
             k = random.randint(0, len(keys)-1)
-            r, c = keys.pop(k)
-            self.__removePeg(r,c)
+            self.initial.append(keys.pop(k))
 
     def execute(self, action):
         jumpFrom, jumpTo = action
