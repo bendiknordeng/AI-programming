@@ -14,15 +14,13 @@ class Agent:
         self.eps = eps
         self.epsDecay = epsDecay
         self.actor = Actor(alphaActor, lam, gamma)
+        self.criticType = criticType
         if criticType == 0: #use criticTable
             self.critic = CriticTable(alphaCritic, lam, gamma)
         else: #use criticNN
             state = env.getState()
             inputDim = len((np.array([int(bin) for bin in state])))
             self.critic = CriticNN(alphaCritic, lam, gamma, inputDim, nodesInLayers)
-            self.env.execute(((2,0),(0,0)))
-            nextState = env.getState()
-            self.critic.fitNeuralNet(self.env.reinforcement(), state, nextState)
 
     def learn(self, runs):
         eps = self.eps
@@ -40,8 +38,9 @@ class Agent:
             self.critic.resetEligibilities()
             # initialize new state values and (s,a)-pairs for start (s,a)
             state = self.env.getState()
-            self.critic.createEligibility(state)
-            self.critic.createStateValues(state)
+            if self.criticType == 0:
+                self.critic.createEligibility(state)
+                self.critic.createStateValues(state)
 
             validActions = self.env.generateActions()
             self.actor.createSAPs(state, validActions)
@@ -53,8 +52,10 @@ class Agent:
                 state = self.env.getState()
                 validActions = self.env.generateActions()
 
-                self.critic.createEligibility(state)
-                self.critic.createStateValues(state)
+                if self.criticType == 0:
+                    self.critic.createEligibility(state)
+                    self.critic.createStateValues(state)
+
                 self.actor.createSAPs(state, validActions)
                 self.actor.createEligibilities(state, validActions)
 
@@ -64,9 +65,13 @@ class Agent:
                 self.actor.updateCurrentEligibility(state, action)
                 td_error = self.critic.findTDError(reinforcement, lastState, state)
 
-                self.critic.updateCurrentEligibility(lastState)
-                self.critic.updateStateValues()
-                self.critic.updateEligibilities()
+                if self.criticType == 0:
+                    self.critic.updateCurrentEligibility(lastState)
+                    self.critic.updateStateValues()
+                    self.critic.updateEligibilities()
+                else:
+                    self.critic.fit(td_error, lastState)
+
                 self.actor.updateSAPs(td_error)
                 self.actor.updateEligibilities()
 
@@ -99,8 +104,8 @@ class Agent:
 
 if __name__ == '__main__':
     type = 0
-    size = 5
-    initial = [(0,0)] # start with hole in (r,c)
+    size = 4
+    initial = [(2,2)] # start with hole in (r,c)
     random = 0 # remove random pegs
     env = Board(type, size, initial, random)
 
@@ -113,5 +118,5 @@ if __name__ == '__main__':
     nodesInLayers = [5,5,1]
     agent = Agent(env, alpha, alpha, lam, eps, gamma, criticValuation, nodesInLayers)
 
-    #agent.learn(300)
-    #agent.runGreedy()
+    agent.learn(50)
+    agent.runGreedy()

@@ -3,6 +3,7 @@ import tensorflow as tf
 import numpy as np
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
+import pdb
 
 
 # ************** Split Gradient Descent (SplitGD) **********************************
@@ -27,59 +28,70 @@ class CriticNN:
             Dense(nodesInLayers[0], activation='hard_sigmoid', input_dim=inputDim))
         for i in range(1, len(nodesInLayers)):
             self.model.add(Dense(nodesInLayers[i], activation='hard_sigmoid'))
-        for params in self.model.trainable_weights:
-            self.eligibilities.append(tf.zeros_like(params))
+        self.resetEligibilities()
         #sgd = tf.train.GradientDescentOptimizer(learning_rate = alpha)
         sgd = tf.optimizers.SGD(lr=alpha)
         self.model.compile(optimizer=sgd, loss='mse')
         #keras.utils.plot_model(self.model, show_shapes = True)
 
-    def fitNeuralNet(self, reinforcement, state, nextState):
+    def resetEligibilities(self):
+        for params in self.model.trainable_weights:
+            self.eligibilities.append(tf.zeros_like(params))
+
+    def findTDError(self, reinforcement, lastState, state):
         # converting states from string to tensor
-        state = [tf.strings.to_number(bin, out_type=tf.dtypes.float32) for bin in state]  # convert to array
-        nextState = [tf.strings.to_number(bin, out_type=tf.dtypes.float32) for bin in nextState]
+        lastState = [tf.strings.to_number(bin, out_type=tf.dtypes.float32) for bin in lastState]  # convert to array
+        state = [tf.strings.to_number(bin, out_type=tf.dtypes.float32) for bin in state]
+        lastState = tf.convert_to_tensor(np.expand_dims(lastState, axis=0))
         state = tf.convert_to_tensor(np.expand_dims(state, axis=0))
-        nextState = tf.convert_to_tensor(np.expand_dims(nextState, axis=0))
 
         gamma = tf.convert_to_tensor(self.gamma, dtype=tf.dtypes.float32)
         reinforcement = tf.convert_to_tensor(reinforcement, dtype=tf.dtypes.float32)
 
         tensor_model = tf.function(func=self.model)
-        target = tf.add(reinforcement, tf.multiply(gamma, tensor_model(nextState)))
-        self.fit(state, target)
+        td_error = tf.subtract(tf.add(reinforcement, tf.multiply(gamma, tensor_model(state))),tensor_model(lastState)).numpy()[0][0]
+        #self.fit(lastState, target)
 
-        tensor_model = tf.function(func=self.model)
-        prediction = tensor_model(state)
-        print("prediction fitNN", prediction.numpy())
+        #tensor_model = tf.function(func=self.model)
+        #prediction = tensor_model(lastState)
+        #print("prediction fitNN", prediction.numpy())
+
+        return td_error
 
     # Subclass this with something useful.
 
     def modify_gradients(self, gradients, loss, td_error):
-        print("tdError", loss.numpy())
+        #print("tdError", loss.numpy())
         alpha = tf.convert_to_tensor(self.alpha, dtype=tf.dtypes.float32)
         for i in range(len(gradients)):
             # print(self.eligibilities[i].numpy())
+
             self.eligibilities[i] = tf.add(self.eligibilities[i], gradients[i])
             #gradients[i] = tf.multiply(alpha, tf.multiply(tdError, self.eligibilities[i]))
 
-            gradients[i] = self.eligibilities[i] * td_error[0]
+            gradients[i] = self.eligibilities[i] * td_error
             # print()
         return gradients
 
     # This returns a tensor of losses, OR the value of the averaged tensor.  Note: use .numpy() to get the
     # value of a tensor.
-    def gen_loss(self, state, target):
-        print("in genloss")
+    def gen_loss(self, lastState, td_error):
+        #print("in genloss")
         tensor_model = tf.function(func=self.model)
-        prediction = tensor_model(state)
-        print("prediction genloss", prediction.numpy())
+        prediction = tensor_model(lastState)
+        target = tf.add(td_error, prediction)
+        #print("prediction genloss", prediction.numpy())
         loss = self.model.loss_functions[0](target, prediction)
-        return loss, tf.subtract(target, prediction)  # tf.reduce_mean(loss).numpy() if avg else loss
+        return loss
 
-    def fit(self, state, target, verbose=True):
+    def fit(self, td_error, lastState, verbose=True):
+        lastState = [tf.strings.to_number(bin, out_type=tf.dtypes.float32) for bin in lastState]  # convert to array
+        lastState = tf.convert_to_tensor(np.expand_dims(lastState, axis=0))
+        #tensor_model = tf.function(func=self.model)
+        #prediction = tensor_model(lastState)
         params = self.model.trainable_weights
         with tf.GradientTape() as tape:
-            loss, td_error = self.gen_loss(state, target)
+            loss = self.gen_loss(lastState, td_error)
             tape.watch(loss)
             gradients = tape.gradient(loss, params)
             gradients = self.modify_gradients(gradients, loss, td_error)
@@ -87,7 +99,7 @@ class CriticNN:
             #params = tf.Variable(params)
             #grads_and_vars = zip(gradients, params)
             # print(type(gradients))
-            print(type(self.model.optimizer))
+            #print(type(self.model.optimizer))
             self.model.optimizer.apply_gradients(zip(gradients, params))
             # self.model.optimizer.apply_gradients(grads_and_vars)
             # self.model.apply_gradients(zip(gradients,params))
