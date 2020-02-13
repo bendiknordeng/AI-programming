@@ -15,7 +15,7 @@ class Agent:
         self.epsDecay = epsDecay
         self.actor = Actor(alphaActor, lam, gamma)
         if criticType == 0: #use criticTable
-            self.critic = CriticTable(alphaCritic, lam, gamma, inputDim, nodesInLayers)
+            self.critic = CriticTable(alphaCritic, lam, gamma)
         else: #use criticNN
             state = env.getState()
             inputDim = len((np.array([int(bin) for bin in state])))
@@ -113,5 +113,5 @@ if __name__ == '__main__':
     nodesInLayers = [5,5,1]
     agent = Agent(env, alpha, alpha, lam, eps, gamma, criticValuation, nodesInLayers)
 
-    #agent.learn(300)
-    #agent.runGreedy()
+    agent.learn(300)
+    agent.runGreedy()
