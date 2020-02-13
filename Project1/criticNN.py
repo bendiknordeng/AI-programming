@@ -17,9 +17,9 @@ import keras
 
 class CriticNN:
 
-    def __init__(self, alpha, lambdod, gamma, inputDim = 0, nodesInLayers = [0]):
+    def __init__(self, alpha, lam, gamma, inputDim = 0, nodesInLayers = [0]):
         self.alpha = alpha
-        self.lambdod = lambdod
+        self.lam = lam
         self.gamma = gamma
         self.surprise = 0
         self.eligibilities = []

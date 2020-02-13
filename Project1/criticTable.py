@@ -1,5 +1,5 @@
 class CriticTable:
-    def __init__(self, alphaCritic, lambdod, gamma, criticValuation = 0, inputDim = 0, nodesInLayers = [0]):
+    def __init__(self, alphaCritic, lam, gamma, criticValuation = 0, inputDim = 0, nodesInLayers = [0]):
         self.alphaCritic = alphaCritic
         self.lam = lam
         self.gamma = gamma
