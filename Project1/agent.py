@@ -109,7 +109,7 @@ if __name__ == '__main__':
     gamma = 0.95
     eps = 1
     epsDecay = 0.9
-    criticValuation = 0 # 1 = neural net valuation of states.
+    criticValuation = 1 # neural net valuation of states.
     nodesInLayers = [5,5,1]
     agent = Agent(env, alpha, alpha, lam, eps, gamma, criticValuation, nodesInLayers)
 
