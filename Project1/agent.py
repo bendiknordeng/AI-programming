@@ -9,17 +9,17 @@ import matplotlib.pyplot as plt
 
 
 class Agent:
-    def __init__(self, env, alphaActor, alphaCritic, eps, gamma, criticType, nodesInLayers):
+    def __init__(self, env, alphaActor, alphaCritic, lam, eps, gamma, criticType, nodesInLayers):
         self.env = env
         self.eps = eps
         self.epsDecay = epsDecay
-        self.actor = Actor(alphaActor, lambdod, gamma)
+        self.actor = Actor(alphaActor, lam, gamma)
         if criticType == 0: #use criticTable
-            self.critic = CriticTable(alphaCritic, lambdod, gamma, inputDim, nodesInLayers)
+            self.critic = CriticTable(alphaCritic, lam, gamma, inputDim, nodesInLayers)
         else: #use criticNN
             state = env.getState()
             inputDim = len((np.array([int(bin) for bin in state])))
-            self.critic = CriticNN(alphaCritic, lambdod, gamma, inputDim, nodesInLayers)
+            self.critic = CriticNN(alphaCritic, lam, gamma, inputDim, nodesInLayers)
             self.env.execute(((2,0),(0,0)))
             nextState = env.getState()
             self.critic.fitNeuralNet(self.env.reinforcement(), state, nextState)
@@ -105,13 +105,13 @@ if __name__ == '__main__':
     env = Board(type, size, initial, random)
 
     alpha = 0.2
-    lambdod = 0.9  #lambda
+    lam = 0.9  #lambda
     gamma = 0.95
     eps = 1
     epsDecay = 0.9
-    criticValuation = 1 #neural net valuation of states.
+    criticValuation = 0 # 1 = neural net valuation of states.
     nodesInLayers = [5,5,1]
-    agent = Agent(env, alpha, alpha, eps, gamma, criticValuation, nodesInLayers)
+    agent = Agent(env, alpha, alpha, lam, eps, gamma, criticValuation, nodesInLayers)
 
     #agent.learn(300)
     #agent.runGreedy()
