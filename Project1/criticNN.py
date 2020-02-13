@@ -1,9 +1,9 @@
 import math
 import tensorflow as tf
 import numpy as np
-from keras.models import Sequential
-from keras.layers import Dense
-import keras
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+
 
 # ************** Split Gradient Descent (SplitGD) **********************************
 # This "exposes" the gradients during gradient descent by breaking the call to "fit" into two calls: tape.gradient
@@ -27,7 +27,6 @@ class CriticNN:
             if i == 0:
                 print(inputDim)
                 self.model.add(Dense(nodesInLayers[i], activation='hard_sigmoid', input_dim = inputDim))
-
             else:
                 self.model.add(Dense(nodesInLayers[i], activation='hard_sigmoid'))
         for params in self.model.trainable_weights:
@@ -52,6 +51,9 @@ class CriticNN:
         target = tf.add(reinforcement, tf.multiply(self.gamma,tensor_model(nextState)) )
 
         self.fit(state, target)
+        tensor_model = tf.function(func = self.model)
+        prediction = tensor_model(state)
+        print("prediction fitNN", prediction.numpy())
 
 
 
@@ -61,19 +63,21 @@ class CriticNN:
         alpha = tf.convert_to_tensor(self.alpha, dtype =tf.dtypes.float32 )
         for i in range(len(gradients)):
 
-            print(self.eligibilities[i].numpy())
+            #print(self.eligibilities[i].numpy())
             self.eligibilities[i] = tf.add(self.eligibilities[i], gradients[i])
             #gradients[i] = tf.multiply(alpha, tf.multiply(tdError, self.eligibilities[i]))
             gradients[i] = self.eligibilities[i]
-            print(self.eligibilities[i].numpy())
-            print()
+            #print(self.eligibilities[i].numpy())
+            #print()
         return gradients
 
     # This returns a tensor of losses, OR the value of the averaged tensor.  Note: use .numpy() to get the
     # value of a tensor.
     def gen_loss(self,state,target):
+        print("in genloss")
         tensor_model = tf.function(func = self.model)
         prediction = tensor_model(state)
+        print("prediction genloss", prediction.numpy())
         loss = self.model.loss_functions[0](target,prediction)
         return loss #tf.reduce_mean(loss).numpy() if avg else loss
 
@@ -88,7 +92,7 @@ class CriticNN:
             #params = tf.Variable(params)
             #grads_and_vars = zip(gradients, params)
             #print(type(gradients))
-            #print(type(self.model.optimizer))
+            print(type(self.model.optimizer))
             self.model.optimizer.apply_gradients(zip(gradients, params))
             #self.model.optimizer.apply_gradients(grads_and_vars)
             #self.model.apply_gradients(zip(gradients,params))

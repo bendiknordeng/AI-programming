@@ -113,5 +113,5 @@ if __name__ == '__main__':
     nodesInLayers = [5,5,1]
     agent = Agent(env, alpha, alpha, lam, eps, gamma, criticValuation, nodesInLayers)
 
-    agent.learn(300)
-    agent.runGreedy()
+    #agent.learn(300)
+    #agent.runGreedy()
