@@ -6,9 +6,9 @@ import numpy as np
 # The actor must keep track of the results of performing actions in states.
 
 class Actor:
-    def __init__(self, alphaActor, lambdod, gamma):
+    def __init__(self, alphaActor, lam, gamma):
         self.alphaActor = alphaActor
-        self.lambdod = lambdod
+        self.lam = lam
         self.gamma = gamma
         self.saps = {}
         self.eligs = {}
@@ -20,7 +20,6 @@ class Actor:
                     self.saps[(state, (fromP, toP))] = 0
 
     def findNextAction(self, currentState, validActions, eps):
-        currentBest = np.NINF
         actionStack = {}
         for fromP in validActions:
             for toP in validActions[fromP]:
@@ -32,13 +31,12 @@ class Actor:
             else:
                 return max(actionStack, key=actionStack.get)
 
-    def updateSAPs(self, surprise):
+    def updateSAPs(self, td_error):
         alpha = self.alphaActor
-        for stateAction in self.saps:
-            # print(stateAction,self.saps[stateAction])
-            e_s = self.eligs[stateAction]
-            self.saps[stateAction] = self.saps[stateAction] + \
-                alpha * surprise * e_s
+        for sap in self.saps:
+            e_s = self.eligs[sap]
+            if e_s > 0:
+                self.saps[sap] = self.saps[sap] + alpha * td_error * e_s
 
     def createEligibilities(self, state, actions):
         for fromP in actions:
@@ -46,11 +44,15 @@ class Actor:
                 if self.eligs.get((state, (fromP, toP))) == None:
                     self.eligs[(state, (fromP, toP))] = 0
 
-    def updateNextEligibility(self, state, action):
+    def updateCurrentEligibility(self, state, action):
         self.eligs[(state, action)] = 1
 
     def updateEligibilities(self):
         gamma = self.gamma
-        lambdod = self.lambdod
+        lam = self.lam
         for stateAction in self.eligs:
-            self.eligs[stateAction] = gamma * lambdod * self.eligs[stateAction]
+            self.eligs[stateAction] = gamma * lam * self.eligs[stateAction]
+
+    def resetEligibilities(self):
+        for state in self.eligs:
+            self.eligs[state] = 0

@@ -1,30 +1,33 @@
+import random
+
 class Critic:
-    def __init__(self, alphaCritic, lambdod, gamma):
+    def __init__(self, alphaCritic, lam, gamma):
         self.alphaCritic = alphaCritic
-        self.lambdod = lambdod
+        self.lam = lam
         self.gamma = gamma
-        self.surprise = 0
+        self.td_error = 0
         self.values = {}
         self.eligs = {}  # key, value is state, eligibility
 
     def createStateValues(self, state):
         if self.values.get(state) == None:
-            self.values[state] = 0
+            self.values[state] = random.random()
 
     def findTDError(self, reinforcement, lastState, state):
-        self.surprise = reinforcement + self.gamma * \
+        self.td_error = reinforcement + self.gamma * \
             self.values[state] - self.values[lastState]
-        return self.surprise
+        return self.td_error
 
     def getTDError(self):
-        return self.surprise
+        return self.td_error
 
     def updateStateValues(self):
         alpha = self.alphaCritic
-        surprise = self.surprise
+        td_error = self.td_error
         for state in self.values:
             e_s = self.eligs[state]
-            self.values[state] = self.values[state] + alpha * surprise * e_s
+            if e_s > 0:
+                self.values[state] = self.values[state] + alpha * td_error * e_s
 
     def createEligibility(self, state):
         if self.eligs.get(state) == None:
@@ -35,6 +38,10 @@ class Critic:
 
     def updateEligibilities(self):
         gamma = self.gamma
-        lambdod = self.lambdod
+        lam = self.lam
         for state in self.eligs:
-            self.eligs[state] = gamma * lambdod * self.eligs[state]
+            self.eligs[state] = gamma * lam * self.eligs[state]
+
+    def resetEligibilities(self):
+        for state in self.eligs:
+            self.eligs[state] = 0
