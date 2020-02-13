@@ -10,20 +10,15 @@ import matplotlib.pyplot as plt
 class Agent:
     def __init__(self, env, alphaActor, alphaCritic, eps, gamma, criticType, nodesInLayers):
         self.env = env
-        self.alphaActor = alphaActor
-        self.alphaCritic = alphaCritic
         self.eps = eps
         self.epsDecay = epsDecay
-        self.lambdod = lambdod
-        self.gamma = gamma
-        self.actor = Actor(self.alphaActor, self.lambdod, self.gamma)
-
+        self.actor = Actor(alphaActor, lambdod, gamma)
         if criticType == 0: #use criticTable
-            self.critic = CriticTable(self.alphaCritic, self.lambdod, self.gamma, inputDim, nodesInLayers)
+            self.critic = CriticTable(alphaCritic, lambdod, gamma, inputDim, nodesInLayers)
         else: #use criticNN
             state = env.getState()
             inputDim = len((np.array([int(bin) for bin in state])))
-            self.critic = CriticNN(self.alphaCritic, self.lambdod, self.gamma, inputDim, nodesInLayers)
+            self.critic = CriticNN(alphaCritic, lambdod, gamma, inputDim, nodesInLayers)
             self.env.execute(((2,0),(0,0)))
             nextState = env.getState()
             self.critic.fitNeuralNet(self.env.reinforcement(), state, nextState)

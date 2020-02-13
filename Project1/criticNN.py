@@ -17,19 +17,25 @@ import keras
 
 class CriticNN:
 
-    def __init__(self, alphaCritic, lambdod, gamma, inputDim = 0, nodesInLayers = [0]):
-        self.alphaCritic = alphaCritic
+    def __init__(self, alpha, lambdod, gamma, inputDim = 0, nodesInLayers = [0]):
+        self.alpha = alpha
         self.lambdod = lambdod
         self.gamma = gamma
         self.surprise = 0
+        self.eligibilities = []
         self.model  = Sequential()
         for i in range(len(nodesInLayers)):
             if i == 0:
                 print(inputDim)
-                self.model.add(Dense(nodesInLayers[i], activation='relu', input_dim = inputDim))
+                self.model.add(Dense(nodesInLayers[i], activation='hard_sigmoid', input_dim = inputDim))
+
             else:
-                self.model.add(Dense(nodesInLayers[i], activation='relu'))
-        self.model.compile(optimizer='sgd', loss='mse')
+                self.model.add(Dense(nodesInLayers[i], activation='hard_sigmoid'))
+        for params in self.model.trainable_weights:
+            self.eligibilities.append(tf.zeros_like(params))
+        #sgd = tf.train.GradientDescentOptimizer(learning_rate = alpha)
+        sgd = tf.optimizers.SGD(lr = alpha)
+        self.model.compile(optimizer= sgd, loss='mse')
         #keras.utils.plot_model(self.model, show_shapes = True)
 
 
@@ -39,18 +45,29 @@ class CriticNN:
         nextState = [tf.strings.to_number(bin, out_type=tf.dtypes.float32) for bin in nextState]
         state =  tf.convert_to_tensor(np.expand_dims(state, axis=0))
         nextState = tf.convert_to_tensor(np.expand_dims(nextState, axis=0))
+
+        alpha = tf.convert_to_tensor(self.alpha, dtype =tf.dtypes.float32 )
+        reinforcement = tf.convert_to_tensor(reinforcement, dtype =tf.dtypes.float32 )
+
         tensor_model = tf.function(func = self.model)
-        secondTerm = tf.multiply(tf.convert_to_tensor(self.alphaCritic, dtype =tf.dtypes.float32 ),tensor_model(nextState))
-        target = tf.subtract(tf.convert_to_tensor(reinforcement, dtype =tf.dtypes.float32 ), secondTerm)
+        target = tf.add(reinforcement, tf.multiply(self.gamma,tensor_model(nextState)) )
 
         self.fit(state, target)
 
 
 
     # Subclass this with something useful.
-    def modify_gradients(self, gradients):
-        for gradient in gradients:
-            print(gradient.shape)
+    def modify_gradients(self, gradients, tdError):
+        print("tdError", tdError.numpy())
+        alpha = tf.convert_to_tensor(self.alpha, dtype =tf.dtypes.float32 )
+        for i in range(len(gradients)):
+
+            print(self.eligibilities[i].numpy())
+            self.eligibilities[i] = tf.add(self.eligibilities[i], gradients[i])
+            #gradients[i] = tf.multiply(alpha, tf.multiply(tdError, self.eligibilities[i]))
+            gradients[i] = self.eligibilities[i]
+            print(self.eligibilities[i].numpy())
+            print()
         return gradients
 
     # This returns a tensor of losses, OR the value of the averaged tensor.  Note: use .numpy() to get the
@@ -58,22 +75,24 @@ class CriticNN:
     def gen_loss(self,state,target):
         tensor_model = tf.function(func = self.model)
         prediction = tensor_model(state)
-
         loss = self.model.loss_functions[0](target,prediction)
         return loss #tf.reduce_mean(loss).numpy() if avg else loss
 
-    def fit(self, state, target,verbose=True):
+    def fit(self, state, target, verbose=True):
         params = self.model.trainable_weights
         with tf.GradientTape() as tape:
-
-            loss = self.gen_loss(state,target)
-            print(type(loss))
-            tape.watch(loss)
-
-            gradients = tape.gradient(loss,params)
-
-            gradients = self.modify_gradients(gradients)
-            #self.model.optimizer.apply_gradients(zip(gradients,params))
+            tdError = self.gen_loss(state,target)
+            tape.watch(tdError)
+            gradients = tape.gradient(tdError, params)
+            gradients = self.modify_gradients(gradients, tdError)
+            #gradients = tf.Variable(gradients)
+            #params = tf.Variable(params)
+            #grads_and_vars = zip(gradients, params)
+            #print(type(gradients))
+            #print(type(self.model.optimizer))
+            self.model.optimizer.apply_gradients(zip(gradients, params))
+            #self.model.optimizer.apply_gradients(grads_and_vars)
+            #self.model.apply_gradients(zip(gradients,params))
         #if verbose: self.end_of_epoch_display(train_ins,train_targs,val_ins,val_targs)
 
     # Use the 'metric' to run a quick test on any set of features and targets.  A typical metric is some form of
