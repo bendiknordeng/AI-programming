@@ -70,7 +70,7 @@ class Agent:
                     self.critic.updateCurrentEligibility(lastState)
                     self.critic.updateStateValues()
                 else:
-                    self.critic.fit(reinforcement, lastState, state, td_error,i)
+                    self.critic.fit(reinforcement, lastState, state, td_error)
                 self.critic.updateEligibilities() #flyttet utenfor, siden denne skal begge typer critics utføre
 
                 self.actor.updateSAPs(td_error)
@@ -79,50 +79,56 @@ class Agent:
             print("ep", i,"  Pegs", self.env.numberOfPegsLeft(), " LastState Value", "%.3f" % self.critic.modelPred(lastState), " eps", "%.3f" % eps)
             pegsLeft.append(self.env.numberOfPegsLeft())
             iterationNumber.append(i)
-            if i > 250:
-                eps=1
-            else:
-                eps = eps * epsDecay
+            #if i > 250:
+            #    eps=1
+            #else:
+            eps = eps * epsDecay
         time_spent = time.time() - start_time
         print("Time spent", time_spent)
         plt.plot(iterationNumber, pegsLeft)
         plt.show()
 
-    def runGreedy(self):
+    def runGreedy(self, visualizeSolution, delay):
         start_time = time.time()
         self.env.reset()
-        self.env.draw()
+        if visualizeSolution:
+            self.env.draw()
         reinforcement = 0
         state = self.env.getState()
         validActions = self.env.generateActions()
         action = self.actor.findNextAction(state, validActions, 0)
         while len(validActions) > 0:
-            #self.env.draw(0.5)
+            if visualizeSolution:
+                self.env.draw(delay)
             self.env.execute(action)
             reinforcement = self.env.reinforcement()
             state = self.env.getState()
             self.actor.createSAPs(state, self.env.generateActions())
             validActions = self.env.generateActions()
             action = self.actor.findNextAction(state, validActions, 0)
-        self.env.draw()
+        if visualizeSolution:
+            self.env.draw()
 
 
 if __name__ == '__main__':
     type = 0
-    size = 4
-    initial = [(0,0),(2,0)] # start with hole in (r,c)
+    size = 5
+    initial = [(2,1)] # start with hole in (r,c)
     random = 0 # remove random pegs
     env = Board(type, size, initial, random)
+    env.draw()
+    visualizeSolution = False
+    delay = 0.5
 
-    alpha = 0.005
+    alpha = 0.01
     lam = 0.9  #lambda
-    gamma = 0.7
+    gamma = 0.9
     eps = 1
-    epsDecay = 0.9
+    epsDecay = 0.99
     criticValuation = 1 # neural net valuation of states.
     nodesInLayers = [5,5,5]
     agent = Agent(env, alpha, alpha, lam, eps, gamma, criticValuation, nodesInLayers)
 
-    agent.learn(1000)
+    agent.learn(500)
     agent.critic.display_useful_stuff()
-    #agent.runGreedy()
+    #agent.runGreedy(visualizeSolution, delay)
