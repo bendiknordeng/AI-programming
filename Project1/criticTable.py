@@ -14,8 +14,7 @@ class CriticTable:
             self.values[state] = random.random()
 
     def findTDError(self, reinforcement, lastState, state):
-        self.td_error = reinforcement + self.gamma * \
-            self.values[state] - self.values[lastState]
+        self.td_error = reinforcement + self.gamma * self.values[state] - self.values[lastState]
         return self.td_error
 
     def getTDError(self):

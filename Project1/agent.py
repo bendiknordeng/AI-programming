@@ -20,7 +20,7 @@ class Agent:
             self.critic = CriticTable(alphaCritic, lam, gamma)
         else: #use criticNN
             state = env.getState()
-            inputDim = len((np.array([int(bin) for bin in state])))
+            inputDim = len(state)
             self.critic = CriticNN(alphaCritic, lam, gamma, inputDim, nodesInLayers)
 
     def learn(self, runs):
@@ -46,7 +46,7 @@ class Agent:
             self.actor.createSAPs(state, validActions)
             self.actor.createEligibilities(state, validActions)
             action = self.actor.findNextAction(state, validActions, eps)
-            #self.env.draw()
+
             while len(validActions) > 0:
                 lastState = state # save current state before new action
                 self.env.execute(action)
@@ -71,6 +71,7 @@ class Agent:
                     self.critic.updateStateValues()
                 else:
                     self.critic.fit(reinforcement, lastState, state, td_error)
+
                 self.critic.updateEligibilities() #flyttet utenfor, siden denne skal begge typer critics utføre
 
                 self.actor.updateSAPs(td_error)
@@ -79,9 +80,7 @@ class Agent:
             print("ep", i,"  Pegs", self.env.numberOfPegsLeft(), " LastState Value", "%.3f" % self.critic.modelPred(lastState), " eps", "%.3f" % eps)
             pegsLeft.append(self.env.numberOfPegsLeft())
             iterationNumber.append(i)
-            #if i > 250:
-            #    eps=1
-            #else:
+
             eps = eps * epsDecay
         time_spent = time.time() - start_time
         print("Time spent", time_spent)
@@ -112,23 +111,22 @@ class Agent:
 
 if __name__ == '__main__':
     type = 0
-    size = 5
-    initial = [(2,1)] # start with hole in (r,c)
+    size = 4
+    initial = [(2,0)] # start with hole in (r,c)
     random = 0 # remove random pegs
     env = Board(type, size, initial, random)
-    env.draw()
     visualizeSolution = False
     delay = 0.5
 
-    alpha = 0.01
+    alpha = 0.001
     lam = 0.9  #lambda
     gamma = 0.9
     eps = 1
     epsDecay = 0.99
     criticValuation = 1 # neural net valuation of states.
-    nodesInLayers = [5,5,5]
+    nodesInLayers = 5
     agent = Agent(env, alpha, alpha, lam, eps, gamma, criticValuation, nodesInLayers)
 
-    agent.learn(500)
-    agent.critic.display_useful_stuff()
+    agent.learn(100)
+    #agent.critic.display_useful_stuff()
     #agent.runGreedy(visualizeSolution, delay)
