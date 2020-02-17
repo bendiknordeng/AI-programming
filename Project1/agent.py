@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 
 class Agent:
-    def __init__(self, env, alphaActor, alphaCritic, lam, eps, gamma, criticType, nodesInLayers):
+    def __init__(self, env, alphaActor, alphaCritic, lam, eps, gamma, criticType, hiddenLayers, hiddenLayerSize):
         self.env = env
         self.eps = eps
         self.epsDecay = epsDecay
@@ -20,8 +20,8 @@ class Agent:
             self.critic = CriticTable(alphaCritic, lam, gamma)
         else: #use criticNN
             state = env.getState()
-            inputDim = len((np.array([int(bin) for bin in state])))
-            self.critic = CriticNN(alphaCritic, lam, gamma, inputDim, nodesInLayers)
+            inputLayerSize = len(state)
+            self.critic = CriticNN(alphaCritic, lam, gamma, hiddenLayers, hiddenLayerSize, inputLayerSize)
 
     def learn(self, runs):
         eps = self.eps
@@ -46,7 +46,7 @@ class Agent:
             self.actor.createSAPs(state, validActions)
             self.actor.createEligibilities(state, validActions)
             action = self.actor.findNextAction(state, validActions, eps)
-            #self.env.draw()
+
             while len(validActions) > 0:
                 lastState = state # save current state before new action
                 self.env.execute(action)
@@ -71,64 +71,61 @@ class Agent:
                     self.critic.updateStateValues()
                 else:
                     self.critic.fit(reinforcement, lastState, state, td_error)
+
                 self.critic.updateEligibilities() #flyttet utenfor, siden denne skal begge typer critics utføre
 
                 self.actor.updateSAPs(td_error)
                 self.actor.updateEligibilities()
 
-            print("ep", i,"  Pegs", self.env.numberOfPegsLeft(), " LastState Value", "%.3f" % self.critic.modelPred(lastState), " eps", "%.3f" % eps)
+            if self.criticType == 1:
+                print("ep", i,"  Pegs", self.env.numberOfPegsLeft(), " LastState Value", "%.3f" % self.critic.valueState(lastState), " eps", "%.3f" % eps)
             pegsLeft.append(self.env.numberOfPegsLeft())
             iterationNumber.append(i)
-            #if i > 250:
-            #    eps=1
-            #else:
+
             eps = eps * epsDecay
         time_spent = time.time() - start_time
         print("Time spent", time_spent)
         plt.plot(iterationNumber, pegsLeft)
         plt.show()
 
-    def runGreedy(self, visualizeSolution, delay):
+    def runGreedy(self, delay):
         start_time = time.time()
         self.env.reset()
-        if visualizeSolution:
-            self.env.draw()
+        self.env.draw()
         reinforcement = 0
         state = self.env.getState()
         validActions = self.env.generateActions()
         action = self.actor.findNextAction(state, validActions, 0)
         while len(validActions) > 0:
-            if visualizeSolution:
-                self.env.draw(delay)
+            self.env.draw(delay)
             self.env.execute(action)
             reinforcement = self.env.reinforcement()
             state = self.env.getState()
             self.actor.createSAPs(state, self.env.generateActions())
             validActions = self.env.generateActions()
             action = self.actor.findNextAction(state, validActions, 0)
-        if visualizeSolution:
-            self.env.draw()
+        self.env.draw()
 
 
 if __name__ == '__main__':
-    type = 0
-    size = 5
+    type = 1
+    size = 4
     initial = [(2,1)] # start with hole in (r,c)
     random = 0 # remove random pegs
     env = Board(type, size, initial, random)
-    env.draw()
-    visualizeSolution = False
-    delay = 0.5
+    delay = 0.5 # for visualization
 
-    alpha = 0.01
-    lam = 0.9  #lambda
+    alpha = 0.001
+    lam = 0.85  #lambda
     gamma = 0.9
     eps = 1
-    epsDecay = 0.99
+    epsDecay = 0.995
     criticValuation = 1 # neural net valuation of states.
-    nodesInLayers = [5,5,5]
-    agent = Agent(env, alpha, alpha, lam, eps, gamma, criticValuation, nodesInLayers)
+    hiddenLayerSize = 5
+    hiddenLayers = 1
+    agent = Agent(env, alpha, alpha, lam, eps, gamma, criticValuation, hiddenLayers, hiddenLayerSize)
 
     agent.learn(500)
-    agent.critic.display_useful_stuff()
-    #agent.runGreedy(visualizeSolution, delay)
+    visualize = input('Do you want to visualize the solution? (y/n): ')
+    if visualize == 'y':
+        agent.runGreedy(delay)
