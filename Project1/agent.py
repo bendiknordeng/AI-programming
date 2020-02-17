@@ -77,7 +77,7 @@ class Agent:
                 self.actor.updateSAPs(td_error)
                 self.actor.updateEligibilities()
 
-            print("ep", i,"  Pegs", self.env.numberOfPegsLeft(), " LastState Value", "%.3f" % self.critic.modelPred(lastState), " eps", "%.3f" % eps)
+            print("ep", i,"  Pegs", self.env.numberOfPegsLeft(), " LastState Value", "%.3f" % self.critic.valueState(lastState), " eps", "%.3f" % eps)
             pegsLeft.append(self.env.numberOfPegsLeft())
             iterationNumber.append(i)
 
@@ -128,5 +128,4 @@ if __name__ == '__main__':
     agent = Agent(env, alpha, alpha, lam, eps, gamma, criticValuation, nodesInLayers)
 
     agent.learn(100)
-    #agent.critic.display_useful_stuff()
     #agent.runGreedy(visualizeSolution, delay)
