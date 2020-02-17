@@ -2,10 +2,11 @@ from actor import Actor
 from criticTable import CriticTable
 from criticNN import CriticNN
 from env import Board
+from progressbar import ProgressBar
 import numpy as np
 import time
-from progressbar import ProgressBar
 import matplotlib.pyplot as plt
+
 
 
 class Agent:
@@ -29,10 +30,9 @@ class Agent:
         iterationNumber = []
         iteration = 0
         start_time = time.time()
-        pbar = ProgressBar()
-        for i in pbar(range(runs)):
+        #pbar = ProgressBar()
+        for i in range(runs):#pbar(range(runs)):
             iteration += 1
-            eps = eps * epsDecay
             self.env.reset()
             self.actor.resetEligibilities()
             self.critic.resetEligibilities()
@@ -46,6 +46,7 @@ class Agent:
             self.actor.createSAPs(state, validActions)
             self.actor.createEligibilities(state, validActions)
             action = self.actor.findNextAction(state, validActions, eps)
+            #self.env.draw()
             while len(validActions) > 0:
                 lastState = state # save current state before new action
                 self.env.execute(action)
@@ -68,16 +69,20 @@ class Agent:
                 if self.criticType == 0:
                     self.critic.updateCurrentEligibility(lastState)
                     self.critic.updateStateValues()
-                    self.critic.updateEligibilities()
                 else:
-                    self.critic.fit(td_error, lastState)
+                    self.critic.fit(reinforcement, lastState, state, td_error,i)
+                self.critic.updateEligibilities() #flyttet utenfor, siden denne skal begge typer critics utføre
 
                 self.actor.updateSAPs(td_error)
                 self.actor.updateEligibilities()
 
+            print("ep", i,"  Pegs", self.env.numberOfPegsLeft(), " LastState Value", "%.3f" % self.critic.modelPred(lastState), " eps", "%.3f" % eps)
             pegsLeft.append(self.env.numberOfPegsLeft())
             iterationNumber.append(i)
-
+            if i > 250:
+                eps=1
+            else:
+                eps = eps * epsDecay
         time_spent = time.time() - start_time
         print("Time spent", time_spent)
         plt.plot(iterationNumber, pegsLeft)
@@ -105,18 +110,19 @@ class Agent:
 if __name__ == '__main__':
     type = 0
     size = 4
-    initial = [(2,2)] # start with hole in (r,c)
+    initial = [(0,0),(2,0)] # start with hole in (r,c)
     random = 0 # remove random pegs
     env = Board(type, size, initial, random)
 
-    alpha = 0.2
+    alpha = 0.005
     lam = 0.9  #lambda
-    gamma = 0.95
+    gamma = 0.7
     eps = 1
     epsDecay = 0.9
     criticValuation = 1 # neural net valuation of states.
-    nodesInLayers = [5,5,1]
+    nodesInLayers = [5,5,5]
     agent = Agent(env, alpha, alpha, lam, eps, gamma, criticValuation, nodesInLayers)
 
-    agent.learn(50)
-    agent.runGreedy()
+    agent.learn(1000)
+    agent.critic.display_useful_stuff()
+    #agent.runGreedy()
