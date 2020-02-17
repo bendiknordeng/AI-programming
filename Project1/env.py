@@ -120,9 +120,9 @@ class Board:
 
     def reinforcement(self):
         if self.numberOfPegsLeft() == 1:
-            return 1
+            return 500
         elif len(self.generateActions()) <= 0:
-            return -1
+            return -20
         else:
             return 0
 

@@ -6,21 +6,21 @@ from tensorflow.keras.layers import Dense
 
 class CriticNN:
 
-    def __init__(self, alpha, lam, gamma, inputDim=0, nodesInLayers=0):
+    def __init__(self, alpha, lam, gamma, hiddenLayers, hiddenLayerSize, inputLayerSize):
         self.alpha = alpha
         self.lam = lam
         self.gamma = gamma
         self.eligibilities = []
+        # Build model
         self.model = Sequential()
-        # Create model with one hidden layer (Tesauro’s TD-Gammon system)
-        self.model.add(Dense(inputDim, activation=tf.keras.layers.LeakyReLU(alpha=0.5), input_dim=inputDim))
-        self.model.add(Dense(nodesInLayers, activation=tf.keras.layers.LeakyReLU(alpha=0.5)))
-        self.model.add(Dense(1, activation = 'linear'))
+        self.model.add(Dense(inputLayerSize, activation='relu', input_dim=inputLayerSize))
+        for i in range(hiddenLayers):
+            self.model.add(Dense(hiddenLayerSize, activation='relu'))
+        self.model.add(Dense(1, activation='linear'))
+
         self.resetEligibilities()
-        sgd = tf.optimizers.SGD(lr=alpha,momentum=0.9, nesterov=True)# decay=1e-6,
-        #sgd = tf.optimizers.SGD(lr=alpha, momentum = 0.2)#, clipnorm = 1.0)
-        self.loss_fn = tf.keras.losses.MeanSquaredError()
-        self.model.compile(optimizer=sgd, loss=tf.keras.losses.MeanSquaredError(), run_eagerly = True)
+        adagrad = tf.keras.optimizers.Adagrad(learning_rate=self.alpha)
+        self.model.compile(optimizer=adagrad,loss=tf.keras.losses.MeanSquaredError(), run_eagerly = True)
 
     def resetEligibilities(self):
         self.eligibilities.clear()
@@ -33,7 +33,7 @@ class CriticNN:
             self.eligibilities[i] = tf.multiply(lambdaGamma, self.eligibilities[i])
 
     def valueState(self, state):
-        state = [tf.strings.to_number(bin, out_type=tf.dtypes.float32) for bin in state]
+        state = [tf.strings.to_number(bin, out_type=tf.dtypes.int32) for bin in state]
         state = tf.convert_to_tensor(np.expand_dims(state, axis=0))
         return self.model(state).numpy()[0][0]
 
@@ -42,8 +42,7 @@ class CriticNN:
         td_error = target - self.valueState(lastState)
         return td_error
 
-    def modify_gradients(self, gradients, loss, td_error):
-        alpha = tf.convert_to_tensor(self.alpha, dtype=tf.dtypes.float32)
+    def modify_gradients(self, gradients, td_error):
         for j in range(len(gradients)):
             self.eligibilities[j] = tf.add(self.eligibilities[j], gradients[j])
             gradients[j] = self.eligibilities[j] * td_error
@@ -54,10 +53,9 @@ class CriticNN:
             lastState, state, gamma, reinforcement = self.convertData(lastState, state, self.gamma, reinforcement)
             target = tf.add(reinforcement, tf.multiply(gamma, self.model(state, training = True)))
             prediction = self.model(lastState, training = True)
-            loss = self.loss_fn(target, prediction)
+            loss = self.model.loss(target, prediction)
         gradients = tape.gradient(loss, self.model.trainable_variables)
-        modified_gradients = self.modify_gradients(gradients, loss, td_error)
-        
+        modified_gradients = self.modify_gradients(gradients, td_error)
         self.model.optimizer.apply_gradients(zip(modified_gradients, self.model.trainable_variables))
 
     def convertData(self, lastState, state, gamma, reinforcement):
