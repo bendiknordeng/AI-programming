@@ -108,8 +108,8 @@ class Agent:
 
 
 if __name__ == '__main__':
-    type = 0
-    size = 5
+    type = 1
+    size = 4
     initial = [(2,1)] # start with hole in (r,c)
     random = 0 # remove random pegs
     env = Board(type, size, initial, random)
@@ -125,7 +125,7 @@ if __name__ == '__main__':
     hiddenLayers = 1
     agent = Agent(env, alpha, alpha, lam, eps, gamma, criticValuation, hiddenLayers, hiddenLayerSize)
 
-    agent.learn(1000)
+    agent.learn(500)
     visualize = input('Do you want to visualize the solution? (y/n): ')
     if visualize == 'y':
         agent.runGreedy(delay)
