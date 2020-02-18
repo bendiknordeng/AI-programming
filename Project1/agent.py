@@ -7,10 +7,8 @@ import numpy as np
 import time
 import matplotlib.pyplot as plt
 
-
-
 class Agent:
-    def __init__(self, env, alphaActor, alphaCritic, lam, eps, gamma, criticType, hiddenLayers, hiddenLayerSize):
+    def __init__(self, env, alphaActor, alphaCritic, lam, eps, gamma, criticType, hiddenLayerSizes):
         self.env = env
         self.eps = eps
         self.epsDecay = epsDecay
@@ -21,7 +19,7 @@ class Agent:
         else: #use criticNN
             state = env.getState()
             inputLayerSize = len(state)
-            self.critic = CriticNN(alphaCritic, lam, gamma, hiddenLayers, hiddenLayerSize, inputLayerSize)
+            self.critic = CriticNN(alphaCritic, lam, gamma, hiddenLayerSizes, inputLayerSize)
 
     def learn(self, runs):
         eps = self.eps
@@ -109,11 +107,10 @@ if __name__ == '__main__':
     lam = 0.85  #lambda
     gamma = 0.9
     eps = 1
-    epsDecay = 0.995
-    criticValuation = 0 # neural net valuation of states.
-    hiddenLayerSize = 5
-    hiddenLayers = 1
-    agent = Agent(env, alphaActor, alphaCritic, lam, eps, gamma, criticValuation, hiddenLayers, hiddenLayerSize)
+    epsDecay = 0.99
+    criticValuation = 1 # neural net valuation of states.
+    hiddenLayerSizes = [5]
+    agent = Agent(env, alphaActor, alphaCritic, lam, eps, gamma, criticValuation, hiddenLayerSizes)
 
     agent.learn(500)
     visualize = input('Do you want to visualize the solution? (y/n): ')

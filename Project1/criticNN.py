@@ -6,7 +6,7 @@ from tensorflow.keras.layers import Dense
 
 class CriticNN:
 
-    def __init__(self, alpha, lam, gamma, hiddenLayers, hiddenLayerSize, inputLayerSize):
+    def __init__(self, alpha, lam, gamma, hiddenLayerSizes, inputLayerSize):
         self.alpha = alpha
         self.lam = lam
         self.gamma = gamma
@@ -14,8 +14,8 @@ class CriticNN:
         # Build model
         self.model = Sequential()
         self.model.add(Dense(inputLayerSize, activation='relu', input_dim=inputLayerSize))
-        for i in range(hiddenLayers):
-            self.model.add(Dense(hiddenLayerSize, activation='relu'))
+        for i in range(len(hiddenLayerSizes)):
+            self.model.add(Dense(hiddenLayerSizes[i], activation='relu'))
         self.model.add(Dense(1, activation='linear'))
 
         self.resetEligibilities()
