@@ -59,8 +59,11 @@ class Agent:
                 self.actor.updateSAPs(td_error)
                 self.actor.decayEligibilities()
 
-            if self.criticType == 1 and verbose:
-                print("ep", i,"  Pegs", self.env.numberOfPegsLeft(), " LastState Value", "%.3f" % self.critic.valueState(lastState), " eps", "%.3f" % eps)
+            if verbose:
+                if self.criticType == 1:
+                    print("ep", i,"  Pegs", self.env.numberOfPegsLeft(), " LastState Value", "%.3f" % self.critic.valueState(lastState), " eps", "%.3f" % eps)
+                else:
+                    print("ep", i,"  Pegs", self.env.numberOfPegsLeft(), " LastState Value", "%.3f" % self.critic.values[lastState], " eps", "%.3f" % eps)
             pegsLeft.append(self.env.numberOfPegsLeft())
             iterationNumber.append(i)
 
@@ -88,23 +91,24 @@ class Agent:
 
 if __name__ == '__main__':
     type = 0
-    size = 5
+    size = 6
     initial = [(2,1)] # start with hole in (r,c)
     random = 0 # remove random pegs
     env = Board(type, size, initial, random)
+    #env.draw()
     delay = 0.5 # for visualization
 
     criticValuation = 1 # table/neural net valuation of states. (0/1)
     alphaActor = 0.7
-    alphaCritic = 0.005
+    alphaCritic = 0.01
     lam = 0.85
     gamma = 0.9
     eps = 1
-    epsDecay = 0.95
+    epsDecay = 0.9
     hiddenLayerSizes = [5]
     agent = Agent(env, alphaActor, alphaCritic, lam, eps, gamma, criticValuation, hiddenLayerSizes)
 
-    agent.learn(300, verbose = True)
-    visualize = input('Do you want to visualize the solution? (y/n): ')
-    if visualize == 'y':
-        agent.runGreedy(delay)
+    agent.learn(700, verbose = True)
+    # visualize = input('Do you want to visualize the solution? (y/n): ')
+    # if visualize == 'y':
+    #     agent.runGreedy(delay)
