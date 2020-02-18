@@ -52,6 +52,7 @@ class Board:
 
         if len(self.initial) > 0:
             self.removePegs(self.initial)
+        return self.getState(), self.generateActions()
 
     def emptyCells(self):
         positions = []
@@ -86,6 +87,7 @@ class Board:
             self.initial.append(keys.pop(k))
 
     def execute(self, action):
+        lastState = self.getState() #save for pass to agent
         jumpFrom, jumpTo = action
         jumpOver = self.__findOverPos(jumpFrom, jumpTo)
         if self.__isValidAction(jumpFrom, jumpOver, jumpTo):
@@ -94,10 +96,9 @@ class Board:
             self.cells[jumpTo] = 1
             self.jumpedFrom = jumpFrom
             self.jumpedTo = jumpTo
-            return True
         else:
             print("Invalid move: {} => {} => {} \nValid: {}".format(jumpFrom, jumpOver, jumpTo,(self.__isValidAction(jumpFrom, jumpOver, jumpTo))))
-            return False
+        return lastState, self.getState(), self.reinforcement(), self.generateActions()
 
     def generateActions(self): #should return dict of valid moves. Key,value pairs: (from), [(to)]
         validMoves = {}

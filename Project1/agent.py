@@ -28,52 +28,41 @@ class Agent:
         epsDecay = self.epsDecay
         pegsLeft = []
         iterationNumber = []
-        iteration = 0
         start_time = time.time()
-        #pbar = ProgressBar()
-        for i in range(runs):#pbar(range(runs)):
-            iteration += 1
-            self.env.reset()
+        if self.criticType == 0:
+            pbar = ProgressBar()
+            runList = pbar(range(runs))
+        else:
+            runList = range(runs)
+        for i in runList:
             self.actor.resetEligibilities()
             self.critic.resetEligibilities()
-            # initialize new state values and (s,a)-pairs for start (s,a)
-            state = self.env.getState()
+            state, validActions = self.env.reset()
             if self.criticType == 0:
                 self.critic.createEligibility(state)
                 self.critic.createStateValues(state)
-
-            validActions = self.env.generateActions()
             self.actor.createSAPs(state, validActions)
             self.actor.createEligibilities(state, validActions)
             action = self.actor.findNextAction(state, validActions, eps)
-
+            if len(validActions) == 0: #if state has no valid moves from start, break learning
+                break
             while len(validActions) > 0:
                 lastState = state # save current state before new action
-                self.env.execute(action)
-                state = self.env.getState()
-                validActions = self.env.generateActions()
-
+                lastState, state, reinforcement, validActions = self.env.execute(action)
                 if self.criticType == 0:
                     self.critic.createEligibility(state)
                     self.critic.createStateValues(state)
-
                 self.actor.createSAPs(state, validActions)
                 self.actor.createEligibilities(state, validActions)
-
-                reinforcement = self.env.reinforcement()
                 action = self.actor.findNextAction(state, validActions, eps)
-
                 self.actor.updateCurrentEligibility(state, action)
                 td_error = self.critic.findTDError(reinforcement, lastState, state)
-
                 if self.criticType == 0:
                     self.critic.updateCurrentEligibility(lastState)
                     self.critic.updateStateValues()
                 else:
                     self.critic.fit(reinforcement, lastState, state, td_error)
-
                 self.critic.updateEligibilities() #flyttet utenfor, siden denne skal begge typer critics utføre
-
                 self.actor.updateSAPs(td_error)
                 self.actor.updateEligibilities()
 
@@ -115,15 +104,16 @@ if __name__ == '__main__':
     env = Board(type, size, initial, random)
     delay = 0.5 # for visualization
 
-    alpha = 0.001
+    alphaActor = 0.7
+    alphaCritic = 0.001
     lam = 0.85  #lambda
     gamma = 0.9
     eps = 1
     epsDecay = 0.995
-    criticValuation = 1 # neural net valuation of states.
+    criticValuation = 0 # neural net valuation of states.
     hiddenLayerSize = 5
     hiddenLayers = 1
-    agent = Agent(env, alpha, alpha, lam, eps, gamma, criticValuation, hiddenLayers, hiddenLayerSize)
+    agent = Agent(env, alphaActor, alphaCritic, lam, eps, gamma, criticValuation, hiddenLayers, hiddenLayerSize)
 
     agent.learn(500)
     visualize = input('Do you want to visualize the solution? (y/n): ')
