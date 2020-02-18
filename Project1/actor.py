@@ -6,8 +6,8 @@ import numpy as np
 # The actor must keep track of the results of performing actions in states.
 
 class Actor:
-    def __init__(self, alphaActor, lam, gamma):
-        self.alphaActor = alphaActor
+    def __init__(self, alpha, lam, gamma):
+        self.alpha = alpha
         self.lam = lam
         self.gamma = gamma
         self.saps = {}
@@ -32,27 +32,16 @@ class Actor:
                 return max(actionStack, key=actionStack.get)
 
     def updateSAPs(self, td_error):
-        alpha = self.alphaActor
-        for sap in self.saps:
-            e_s = self.eligs[sap]
-            if e_s > 0:
-                self.saps[sap] = self.saps[sap] + alpha * td_error * e_s
+        for sap in self.eligs:
+            if sap[1] != None:
+                self.saps[sap] = self.saps[sap] + self.alpha * td_error * self.eligs[sap]
 
-    def createEligibilities(self, state, actions):
-        for fromP in actions:
-            for toP in actions[fromP]:
-                if self.eligs.get((state, (fromP, toP))) == None:
-                    self.eligs[(state, (fromP, toP))] = 0
-
-    def updateCurrentEligibility(self, state, action):
+    def updateEligibility(self, state, action):
         self.eligs[(state, action)] = 1
 
-    def updateEligibilities(self):
-        gamma = self.gamma
-        lam = self.lam
-        for stateAction in self.eligs:
-            self.eligs[stateAction] = gamma * lam * self.eligs[stateAction]
+    def decayEligibilities(self):
+        for sap in self.eligs:
+            self.eligs[sap] = self.gamma * self.lam * self.eligs[sap]
 
     def resetEligibilities(self):
-        for state in self.eligs:
-            self.eligs[state] = 0
+        self.eligs.clear()

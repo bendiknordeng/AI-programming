@@ -1,8 +1,7 @@
-import math
 import tensorflow as tf
-import numpy as np
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
+import numpy as np
 
 class CriticNN:
 
@@ -28,9 +27,8 @@ class CriticNN:
             self.eligibilities.append(tf.zeros_like(params))
 
     def updateEligibilities(self):
-        lambdaGamma = tf.convert_to_tensor(self.lam*self.gamma, dtype=tf.dtypes.float32)
         for i in range(len(self.eligibilities)):
-            self.eligibilities[i] = tf.multiply(lambdaGamma, self.eligibilities[i])
+            self.eligibilities[i] = self.lam * self.gamma * self.eligibilities[i]
 
     def valueState(self, state):
         state = [tf.strings.to_number(bin, out_type=tf.dtypes.int32) for bin in state]
@@ -44,6 +42,7 @@ class CriticNN:
 
     def modify_gradients(self, gradients, td_error):
         for j in range(len(gradients)):
+            gradients[j] = gradients[j] * 1/(2*td_error)
             self.eligibilities[j] = tf.add(self.eligibilities[j], gradients[j])
             gradients[j] = self.eligibilities[j] * td_error
         return gradients
@@ -51,8 +50,8 @@ class CriticNN:
     def fit(self, reinforcement, lastState, state, td_error):
         with tf.GradientTape() as tape:
             lastState, state, gamma, reinforcement = self.convertData(lastState, state, self.gamma, reinforcement)
-            target = tf.add(reinforcement, tf.multiply(gamma, self.model(state, training = True)))
-            prediction = self.model(lastState, training = True)
+            target = tf.add(reinforcement, tf.multiply(gamma, self.model(state)))
+            prediction = self.model(lastState)
             loss = self.model.loss(target, prediction)
         gradients = tape.gradient(loss, self.model.trainable_variables)
         modified_gradients = self.modify_gradients(gradients, td_error)

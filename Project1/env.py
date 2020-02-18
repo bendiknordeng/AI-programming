@@ -227,11 +227,3 @@ class Board:
             for r in range(self.size):
                 for c in range(self.size):
                     self.cells[(r,c)] = 1 #place peg in pos (r,c)
-
-if __name__ == '__main__':
-    board = Board(0,4)
-    board.removePegs([(1,1)])
-    board.draw()
-    board.jumpPegFromTo((3,3),(1,1))
-
-    board.draw()
