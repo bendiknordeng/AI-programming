@@ -63,22 +63,14 @@ class Agent:
 
     # runs a greedy search through the best states and actions
     def runGreedy(self, delay):
-        self.env.reset()
+        state, validActions = self.env.reset()
         self.env.draw()
-        reinforcement = 0
-        state = self.env.getState()
-        validActions = self.env.generateActions()
         action = self.actor.findNextAction(state, validActions, 0)
         while len(validActions) > 0: # while there exist a valid next move
             self.env.draw(delay)
-            self.env.execute(action)
-            reinforcement = self.env.reinforcement()
-            state = self.env.getState()
-            self.actor.createSAPs(state, self.env.generateActions())
-            validActions = self.env.generateActions()
+            _, state, _, validActions = self.env.execute(action)
             action = self.actor.findNextAction(state, validActions, 0)
         self.env.draw()
-
 
 if __name__ == '__main__':
     type = 0 # (0/1): triangle/diamond type of board
