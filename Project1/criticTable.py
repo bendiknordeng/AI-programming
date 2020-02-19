@@ -30,3 +30,6 @@ class CriticTable:
 
     def resetEligibilities(self):
         self.eligs.clear()
+
+    def stateValue(self, state):
+        return self.values[state]

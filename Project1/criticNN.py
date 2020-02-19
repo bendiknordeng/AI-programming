@@ -30,14 +30,14 @@ class CriticNN:
         for i in range(len(self.eligibilities)):
             self.eligibilities[i] = self.lam * self.gamma * self.eligibilities[i]
 
-    def valueState(self, state):
+    def stateValue(self, state):
         state = [tf.strings.to_number(bin, out_type=tf.dtypes.int32) for bin in state]
         state = tf.convert_to_tensor(np.expand_dims(state, axis=0))
         return self.model(state).numpy()[0][0]
 
     def findTDError(self, reinforcement, lastState, state):
-        target = reinforcement + self.gamma * self.valueState(state)
-        td_error = target - self.valueState(lastState)
+        target = reinforcement + self.gamma * self.stateValue(state)
+        td_error = target - self.stateValue(lastState)
         return td_error
 
     def modify_gradients(self, gradients, td_error):
