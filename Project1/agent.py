@@ -5,10 +5,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class Agent:
-    def __init__(self, env, alphaActor, alphaCritic, lam, eps, gamma, criticType, hiddenLayerSizes):
+    def __init__(self, env, alphaActor, alphaCritic, lam, gamma, criticType, hiddenLayerSizes):
         self.env = env
-        self.eps = eps
-        self.epsDecay = epsDecay
         self.actor = Actor(alphaActor, lam, gamma)
         self.criticType = criticType
         if criticType == 0: #use criticTable
@@ -20,9 +18,7 @@ class Agent:
             inputLayerSize = len(state)
             self.critic = CriticNN(alphaCritic, lam, gamma, hiddenLayerSizes, inputLayerSize)
 
-    def learn(self, runs, verbose = False):
-        eps = self.eps
-        epsDecay = self.epsDecay
+    def learn(self, runs, eps, epsDecay, verbose = False):
         pegsLeft = []
         iterationNumber = []
         if not verbose:
@@ -95,17 +91,17 @@ if __name__ == '__main__':
     #env.draw()
     delay = 0.5 # for visualization
 
-    criticValuation = 0 # table/neural net valuation of states. (0/1)
+    criticValuation = 1 # table/neural net valuation of states. (0/1)
     alphaActor = 0.7
     alphaCritic = 0.01
     lam = 0.85
     gamma = 0.9
     eps = 1
     epsDecay = 0.9
-    hiddenLayerSizes = [15, 20, 30, 5, 1]
-    agent = Agent(env, alphaActor, alphaCritic, lam, eps, gamma, criticValuation, hiddenLayerSizes)
+    hiddenLayerSizes = [5]
+    agent = Agent(env, alphaActor, alphaCritic, lam, gamma, criticValuation, hiddenLayerSizes)
 
-    agent.learn(150, verbose = True)
+    agent.learn(150, eps, epsDecay, verbose = False)
     visualize = input('Do you want to visualize the solution? (y/n): ')
     if visualize == 'y':
         agent.runGreedy(delay)
