@@ -1,6 +1,5 @@
 from actor import Actor
 from env import Board
-from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -9,41 +8,41 @@ class Agent:
         self.env = env
         self.actor = Actor(alphaActor, lam, gamma)
         self.criticType = criticType
-        if criticType == 0: #use criticTable
+        if criticType == 0: # use criticTable
             from criticTable import CriticTable
             self.critic = CriticTable(alphaCritic, lam, gamma)
-        else: #use criticNN
+        else: # use criticNN
             from criticNN import CriticNN
             state = env.getState()
             inputLayerSize = len(state)
             self.critic = CriticNN(alphaCritic, lam, gamma, hiddenLayerSizes, inputLayerSize)
 
+    # Actor-Critic learning
     def learn(self, runs, eps, epsDecay, verbose = False):
         pegsLeft = []
         iterationNumber = []
-        if not verbose:
+        if not verbose: # display progressbar instead
+            from tqdm import tqdm
             runList = tqdm(range(runs))
         else:
             runList = range(runs)
-        for i in runList:
+        for i in runList: # for each episode
             self.actor.resetEligibilities()
             self.critic.resetEligibilities()
             state, validActions = self.env.reset()
-            if self.criticType == 0:
+            if self.criticType == 0: # only needed for table critic
                 self.critic.createEligibility(state)
                 self.critic.createStateValues(state)
             self.actor.createSAPs(state, validActions)
             action = self.actor.findNextAction(state, validActions, eps)
             self.actor.updateEligibility(state, action)
-            if len(validActions) == 0: #if state has no valid moves from start, break learning
-                break
-            while len(validActions) > 0:
+            if len(validActions) == 0: break # do not run episode if initial state gives no valid moves
+            while len(validActions) > 0: # while there exist a valid next move
                 lastState, state, reinforcement, validActions = self.env.execute(action)
                 if self.criticType == 0:
                     self.critic.createEligibility(state)
                     self.critic.createStateValues(state)
                 self.actor.createSAPs(state, validActions)
-
                 action = self.actor.findNextAction(state, validActions, eps)
                 self.actor.updateEligibility(state, action)
                 td_error = self.critic.findTDError(reinforcement, lastState, state)
@@ -51,19 +50,18 @@ class Agent:
                     self.critic.updateStateValues()
                 else:
                     self.critic.fit(reinforcement, lastState, state, td_error)
-                self.critic.updateEligibilities() #flyttet utenfor, siden denne skal begge typer critics utføre
+                self.critic.updateEligibilities()
                 self.actor.updateSAPs(td_error)
                 self.actor.decayEligibilities()
-
-            if verbose:
+            if verbose: # print valuation of each state
                 print("ep", i,"  Pegs", self.env.numberOfPegsLeft(), " LastState Value", "%.3f" % self.critic.stateValue(lastState), " eps", "%.3f" % eps)
             pegsLeft.append(self.env.numberOfPegsLeft())
             iterationNumber.append(i)
-
-            eps = eps * epsDecay
-        plt.plot(iterationNumber, pegsLeft)
+            eps = eps * epsDecay # decrease exploration
+        plt.plot(iterationNumber, pegsLeft) # plot the development for each episode
         plt.show()
 
+    # runs a greedy search through the best states and actions
     def runGreedy(self, delay):
         self.env.reset()
         self.env.draw()
@@ -71,7 +69,7 @@ class Agent:
         state = self.env.getState()
         validActions = self.env.generateActions()
         action = self.actor.findNextAction(state, validActions, 0)
-        while len(validActions) > 0:
+        while len(validActions) > 0: # while there exist a valid next move
             self.env.draw(delay)
             self.env.execute(action)
             reinforcement = self.env.reinforcement()
@@ -83,25 +81,26 @@ class Agent:
 
 
 if __name__ == '__main__':
-    type = 0
-    size = 5
+    type = 0 # (0/1): triangle/diamond type of board
+    size = 5 # size of board
     initial = [(2,1)] # start with hole in (r,c)
     random = 0 # remove random pegs
     env = Board(type, size, initial, random)
-    #env.draw()
-    delay = 0.5 # for visualization
 
-    criticValuation = 1 # table/neural net valuation of states. (0/1)
-    alphaActor = 0.7
-    alphaCritic = 0.01
-    lam = 0.85
-    gamma = 0.9
-    eps = 1
-    epsDecay = 0.9
-    hiddenLayerSizes = [5]
+    criticValuation = 0 # table/neural net valuation of states. (0/1)
+    alphaActor = 0.7 # learning rate actor
+    alphaCritic = 0.01 # learning rate critic
+    lam = 0.85 # trace-decay
+    gamma = 0.9 # discount factor
+    hiddenLayerSizes = [5] # structure for hidden layers
     agent = Agent(env, alphaActor, alphaCritic, lam, gamma, criticValuation, hiddenLayerSizes)
 
+    eps = 1
+    epsDecay = 0.9
     agent.learn(150, eps, epsDecay, verbose = False)
+
+    # prompt to visualize at the end of learning
+    delay = 0.5 # frame delay for visualization
     visualize = input('Do you want to visualize the solution? (y/n): ')
     if visualize == 'y':
         agent.runGreedy(delay)
