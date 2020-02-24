@@ -22,13 +22,12 @@ class MCTS:
                 self.__rollout(current)
             current = self.__greedyChoice(current)
             if self.env.finalState(current.state):
-                continue
+                break
             self.eps = self.eps * self.epsDecay
 
     def runGreedy(self):
         current = self.env.root
         while not self.env.finalState(current):
-            print(current)
             current = self.__greedyChoice(current)
 
     def __greedyChoice(self, current):
@@ -75,7 +74,7 @@ class MCTS:
 
 
 if __name__ == '__main__':
-    G = 100  # number of games in batch
+    G = 10  # number of games in batch
     M = 10  # number of rollouts per game move
     P = 3  # (1/2/3): Player 1 starts/Player 2 starts/Random player starts
     c = 1  # exploration constant
@@ -94,3 +93,4 @@ if __name__ == '__main__':
 
     mcts = MCTS(G, M, env, eps, epsDecay, c)
     mcts.learn()
+    #mcts.runGreedy()

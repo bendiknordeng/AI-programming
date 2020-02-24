@@ -17,6 +17,9 @@ class Node:
     def __str__(self):
         return "Turn: Player {}".format(1 if self.turn else 2) + "\nState: {}".format(self.state) + "\nVisits: {}".format(self.visits)
 
+    def __repr__(self):
+        return str(self.state)
+
 class Edge:
     def __init__(self, action, parent, child):
         self.parent = parent
@@ -27,3 +30,6 @@ class Edge:
 
     def updateValue(self, reinforcement):
         self.value += reinforcement
+
+    def __repr__(self):
+        return str(self.action)
