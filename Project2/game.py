@@ -1,12 +1,11 @@
 import random
-
+from tree import Node, Edge
 
 class Game:
-    def __init__(self, G, M, P):
-        self.G = G  # number of games in batch
+    def __init__(self, P, initialState):
         self.P = P  # starting player option
-        self.M = M  # number of rollouts per game move
         self.turn = self.setStartingPlayer()
+        self.root = Node(self.turn, initialState)
 
     def setStartingPlayer(self):
         if self.P == 1:
@@ -16,69 +15,66 @@ class Game:
         else:
             return random.random() >= 0.5
 
+    def generateChildStates(self, node):
+        for action in self.generateValidActions(node.state):
+            child = Node(not node.turn, self.nextState(node.state, action), node)
+            edge = Edge(action, node, child)
+            child.setPrevAction(edge)
+            node.addChild(edge, child)
+
+    def getReinforcement(self, node):
+        if not self.finalState(node.state): return 0
+        if node.turn:
+            return 1
+        else:
+            return -1
 
 class NIM(Game):
-    def __init__(self, G, M, P, N, K):
-        super().__init__(G, P, M)
-        self.N = N
+    def __init__(self, P, N, K):
+        super().__init__(P, N)
         self.K = K
 
-    def move(self, pieces):
-        assert pieces <= self.K and self.N - pieces >= 0, str(
-            pieces) + " is not a valid amount of pieces. Max allowed is " + str(min(self.N, self.K))
-        self.N -= pieces
-        self.turn = not self.turn
+    def nextState(self, pileCount, action):
+        assert action <= self.K and pileCount - action >= 0, str(
+            action) + " is not a valid amount of pieces. Max allowed is " + str(min(pileCount, self.K))
+        return pileCount-action
 
-    def generateValidActions(self):
-        return list(range(1, min(self.N, self.K)+1))
+    def generateValidActions(self, pileCount):
+        return list(range(1, min(pileCount, self.K)+1))
+
+    def finalState(self, pileCount):
+        return pileCount == 0
 
 
 class Ledge(Game):
-    def __init__(self, G, M, P, board):
-        super().__init__(G, P, M)
+    def __init__(self, P, board):
+        super().__init__(P, board)
         assert board.count(
             2) == 1, "There can only be one gold coin on the board, you put " + str(board.count(2))
-        self.board = board
         self.boardLength = len(board)
 
-    def move(self, action):
+    def nextState(self, board, action):
         if action == 0:
-            assert self.board[0] != 0, 'There is no coin on the ledge'
-            self.board[0] = 0
-            self.turn = not self.turn
+            assert board[0] != 0, 'There is no coin on the ledge'
+            board[0] = 0
         else:
-            i, j = action
-            self.board[i] = self.board[j]
-            self.board[j] = 0
-            self.turn = not self.turn
+            i, j = board
+            board[i] = board[j]
+            board[j] = 0
+        return board
 
-    def generateValidActions(self):
+    def generateValidActions(self, board):
         valid = []
         for i in range(self.boardLength-1):
-            if self.board[i] != 0 and self.board[i + 1] == 0:  # non-empty cell with empty neighbor
+            if board[i] != 0 and board[i + 1] == 0:  # non-empty cell with empty neighbor
                 to = []
                 j = i + 1
-                while self.board[j] == 0:  # while there are empty cells to the right
+                while board[j] == 0:  # while there are empty cells to the right
                     to.append(j)
                     j += 1
                 [valid.append((i,j)) for i in to]
-        if self.board[0] != 0: valid.append(0)
+        if board[0] != 0: valid.append(0)
         return valid
 
-
-if __name__ == '__main__':
-    G = 10
-    M = 10
-    P = 1
-    N = 20
-    K = 5
-    B = [1, 0, 0, 1, 0, 0, 0, 2, 0, 0, 1, 1, 0, 1]
-
-    ledge = Ledge(G, M, P, B)
-    nim = NIM(G, M, P, N, K)
-
-    moves = ledge.generateValidActions()
-    print(moves)
-    print(ledge.board)
-    ledge.move(moves[0])
-    print(ledge.board)
+    def finalState(self, board):
+        return board.count(2) == 0
