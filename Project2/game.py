@@ -1,5 +1,5 @@
 import random
-from tree import Node, Edge
+from tree import Node
 
 class Game:
     def __init__(self, P, initial_state):
@@ -18,7 +18,7 @@ class Game:
     def generate_child_states(self, node):
         for action in self.generate_valid_actions(node.state):
             child = Node(not node.turn, self.next_state(node.state, action), node)
-            edge = Edge(action, node, child)
+            node.add_child(action, child)
 
     def get_reinforcement(self, node):
         if not self.final_state(node.state): return 0

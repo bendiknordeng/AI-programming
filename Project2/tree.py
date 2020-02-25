@@ -1,3 +1,5 @@
+import math
+
 class Node:
     def __init__(self, turn, state, parent = None):
         self.turn = turn
@@ -6,6 +8,9 @@ class Node:
         self.visits = 0
         self.parent = parent
         self.actions = []
+        self.E = 0 # evaluation with respect to wins
+        self.Q = 0
+        self.u = 0
 
     def set_prev_action(self, edge):
         self.prev_action = edge
@@ -13,6 +18,11 @@ class Node:
     def add_child(self, action, child):
         self.actions.append(action)
         self.children.append(child)
+
+    def update_values(self, reinforcement, c):
+        self.E += reinforcement
+        self.Q = self.E / self.visits
+        self.u = c * math.sqrt(math.log(self.parent.visits)/(1+self.visits))
 
     def count_parents(self):
         parents = 0
@@ -28,18 +38,18 @@ class Node:
     def __repr__(self):
         return str(self.state)
 
-class Edge:
-    def __init__(self, action, parent, child):
-        self.parent = parent
-        self.child = child
-        self.action = action
-        self.visits = 0
-        self.value = 0
-        child.set_prev_action(self)
-        parent.add_child(self, child)
-
-    def update_value(self, reinforcement):
-        self.value += reinforcement
-
-    def __repr__(self):
-        return str(self.action)
+#class Edge:
+#    def __init__(self, action, parent, child):
+#        self.parent = parent
+#        self.child = child
+#        self.action = action
+#        self.visits = 0
+#        self.value = 0
+#        child.set_prev_action(self)
+#        parent.add_child(self, child)
+#
+#    def update_value(self, reinforcement):
+#        self.value += reinforcement
+#
+#    def __repr__(self):
+#        return str(self.action)
