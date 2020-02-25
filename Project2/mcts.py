@@ -90,7 +90,7 @@ if __name__ == '__main__':
     game_mode = 0  # (0/1): NIM/Ledge
 
     N = 20  # Inittial pile for NIM
-    K = 3  # Max pieces for each action in NIM
+    K = 5  # Max pieces for each action in NIM
     B = [1, 0, 0, 1, 0, 0, 0, 2, 0, 0]  # board for ledge
 
     if game_mode == 0:

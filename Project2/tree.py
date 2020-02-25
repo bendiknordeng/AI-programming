@@ -13,7 +13,7 @@ class Node:
         self.E = 0  # evaluation with respect to wins
         self.Q = 0
         self.u = 0
-        
+
     def add_child(self, action, child):
         self.actions.append(action)
         self.children.append(child)

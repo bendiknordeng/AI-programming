@@ -51,10 +51,11 @@ class NIM(Game):
         turn = node.parent.turn
         player = 1 if turn else 2
         action = node.prev_action
-        stones = "{} stones".format(
-            action) if action > 1 else "{} stone".format(action)
-        print("Player {} selects {}: Remaining stones = {}".format(
-            player, stones, node.state))
+        remaining = "Remaining stones = {:<2}".format(node.state)
+        stones = "{:<1} stones".format(
+            action) if action > 1 else "{:<2} stone".format(action)
+        print("{:<2}: Player {} selects {:>8}: {:>21}".format(
+            node.count_parents(), player, stones, remaining))
 
 
 class Ledge(Game):
@@ -102,8 +103,9 @@ class Ledge(Game):
         action = node.prev_action
         if action == 0:
             coin = "copper" if node.parent.state[0] == 1 else "gold"
-            print("P{} picks up {}: {}".format(player, coin, node.state))
+            print("{:<2}: P{} picks up {}: {}".format(
+                node.count_parents(), player, coin, str(node.state)))
         else:
             coin = "copper" if node.parent.state[action[0]] == 1 else "gold"
-            print("P{} moves {} from cell {} to {}: {}".format(
-                player, coin, action[0], action[1], node.state))
+            print("{:<2}: P{} moves {} from cell {} to {}: {}".format(
+                node.count_parents(), player, coin, action[0], action[1], str(node.state)))
