@@ -7,10 +7,10 @@ class Node:
         self.parent = parent
         self.actions = []
 
-    def setPrevAction(self, edge):
-        self.prevAction = edge
+    def set_prev_action(self, edge):
+        self.prev_action = edge
 
-    def addChild(self, action, child):
+    def add_child(self, action, child):
         self.actions.append(action)
         self.children.append(child)
 
@@ -28,7 +28,7 @@ class Edge:
         self.visits = 0
         self.value = 0
 
-    def updateValue(self, reinforcement):
+    def update_value(self, reinforcement):
         self.value += reinforcement
 
     def __repr__(self):
