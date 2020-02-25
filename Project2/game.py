@@ -19,8 +19,6 @@ class Game:
         for action in self.generate_valid_actions(node.state):
             child = Node(not node.turn, self.next_state(node.state, action), node)
             edge = Edge(action, node, child)
-            child.set_prev_action(edge)
-            node.add_child(edge, child)
 
     def get_reinforcement(self, node):
         if not self.final_state(node.state): return 0
@@ -54,26 +52,31 @@ class Ledge(Game):
         self.board_length = len(board)
 
     def next_state(self, board, action):
+        temp_board = board.copy()
         if action == 0:
-            assert board[0] != 0, 'There is no coin on the ledge'
-            board[0] = 0
+            assert temp_board[0] != 0, 'There is no coin on the ledge'
+            temp_board[0] = 0
         else:
-            i, j = board
-            board[i] = board[j]
-            board[j] = 0
-        return board
+            i, j = action
+            assert temp_board[i] != 0, 'There is no coin in spot {}'.format(i)
+            assert temp_board[j] == 0, 'You cannot put a coin in spot {}'.format(j)
+            temp_board[j] = temp_board[i]
+            temp_board[i] = 0
+        return temp_board
 
     def generate_valid_actions(self, board):
         valid = []
         for i in range(self.board_length-1):
-            if board[i] != 0 and board[i + 1] == 0:  # non-empty cell with empty neighbor
-                to = []
-                j = i + 1
-                while board[j] == 0:  # while there are empty cells to the right
+            if i == 0 and board[0] != 0:
+                valid.append(0)
+                continue
+            to = []
+            if board[i+1] != 0:
+                j = i
+                while j >= 0 and board[j] == 0:
                     to.append(j)
-                    j += 1
-                [valid.append((i,j)) for i in to]
-        if board[0] != 0: valid.append(0)
+                    j -= 1
+            [valid.append((i+1,j)) for j in to]
         return valid
 
     def final_state(self, board):

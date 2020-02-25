@@ -14,8 +14,16 @@ class Node:
         self.actions.append(action)
         self.children.append(child)
 
+    def count_parents(self):
+        parents = 0
+        current = self
+        while current.parent:
+            parents += 1
+            current = current.parent
+        return parents
+
     def __str__(self):
-        return "Turn: Player {}".format(1 if self.turn else 2) + "\nState: {}".format(self.state) + "\nVisits: {}".format(self.visits)
+        return "Turn: Player {}".format(1 if self.turn else 2) + "\nState: {}".format(self.state) + "\nVisits: {}\n".format(self.visits)
 
     def __repr__(self):
         return str(self.state)
@@ -27,6 +35,8 @@ class Edge:
         self.action = action
         self.visits = 0
         self.value = 0
+        child.set_prev_action(self)
+        parent.add_child(self, child)
 
     def update_value(self, reinforcement):
         self.value += reinforcement
