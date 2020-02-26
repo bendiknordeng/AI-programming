@@ -16,18 +16,17 @@ class MCTS:
     def tree_search(self, display):
         winner = []
         iteration_number = []
-        current = self.env.root
         for i in tqdm(range(self.G)):
+            current = self.env.root
             while not self.env.final_state(current.state):
                 current = self.__find_best_leaf(current)
                 for j in range(self.M):
                     self.__rollout(current)
                 if self.env.final_state(current.state):
-                    if current.turn:
+                    if current.parent.turn:
                         winner.append(1)
                     else:
                         winner.append(2)
-                    current = self.env.root
                     break
             iteration_number.append(i)
             self.eps = self.eps * self.eps_decay
