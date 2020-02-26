@@ -23,7 +23,7 @@ class MCTS:
                 for j in range(self.M):
                     self.__rollout(current)
                 if self.env.final_state(current.state):
-                    if current.turn:
+                    if current.parent.turn:
                         winner.append(1)
                     else:
                         winner.append(2)
@@ -40,11 +40,9 @@ class MCTS:
     def run_greedy(self):
         current = self.env.root
         print("Initial state: {}".format(current.state))
-        while True: # do while loop
+        while current.children:
             current, _ = current.get_best_child()
             self.env.print_move(current)
-            if self.env.final_state(current.state):
-                break
         print('Player {} won after {} moves.\n'.format(
             1 if current.parent.turn else 2, current.count_parents()))
 
@@ -77,9 +75,11 @@ class MCTS:
     def __backprop(self, node):
         current = node
         reinforcement = self.env.get_reinforcement(current)
-        while current.parent != self.env.root:
+        while True:
             current.update_values(reinforcement, self.c)
             current = current.parent
+            if current == self.env.root:
+                break
 
 
 
@@ -92,9 +92,9 @@ if __name__ == '__main__':
     eps_decay = 0.95
     game_mode = 0  # (0/1): NIM/Ledge
 
-    N = 15  # Inittial pile for NIM
+    N = 10  # Inittial pile for NIM
     K = 3  # Max pieces for each action in NIM
-    B = [1, 1, 1, 0, 2, 0, 1, 1]  # board for ledge
+    B = [1, 1, 1, 0, 2, 0, 1]  # board for ledge
 
     if game_mode == 0:
         env = NIM(P, N, K)

@@ -25,7 +25,7 @@ class Game:
     def get_reinforcement(self, node):
         if not self.final_state(node.state):
             return 0
-        if node.turn:
+        if node.parent.turn:
             return 1
         else:
             return -1
