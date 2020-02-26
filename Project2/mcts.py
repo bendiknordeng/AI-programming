@@ -69,7 +69,7 @@ class MCTS:
             current.visits += 1
             if not current.children:
                 self.env.generate_child_states(current)
-            if random.random() > self.eps:
+            if random.random() < self.eps:
                 current = self.__greedy_choice(current)
             else:
                 current = random.choice(current.children)
@@ -86,16 +86,16 @@ class MCTS:
 
 if __name__ == '__main__':
     G = 100  # number of games in batch
-    M = 50  # number of rollouts per game move
+    M = 500  # number of rollouts per game move
     P = 1  # (1/2/3): Player 1 starts/Player 2 starts/Random player starts
     c = 1  # exploration constant
     eps = 1
-    eps_decay = 0.9
-    game_mode = 0  # (0/1): NIM/Ledge
+    eps_decay = 0.95
+    game_mode = 1 # (0/1): NIM/Ledge
 
     N = 10  # Inittial pile for NIM
     K = 3  # Max pieces for each action in NIM
-    B = [1, 1, 1, 0, 0, 2, 0]  # board for ledge
+    B = [1, 1, 1, 0, 0, 2, 0, 1]  # board for ledge
 
     if game_mode == 0:
         env = NIM(P, N, K)

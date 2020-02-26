@@ -8,14 +8,12 @@ class Node:
         self.children = []
         self.visits = 0
         self.parent = parent
-        self.actions = []
         self.prev_action = prev_action
         self.E = 0  # evaluation with respect to wins
         self.Q = 0
         self.u = 0
 
-    def add_child(self, action, child):
-        self.actions.append(action)
+    def add_child(self, child):
         self.children.append(child)
 
     def update_values(self, reinforcement, c):
