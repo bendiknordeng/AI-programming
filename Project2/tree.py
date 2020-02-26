@@ -35,28 +35,11 @@ class Node:
     def get_best_child(self):
         values = {}
         for child in self.children:
-            values[child] = (
-                child.Q + child.u) if self.turn else (child.Q - child.u)
+            values[child] = (child.Q + child.u) if self.turn else (child.Q - child.u)
         return max(values, key=values.get) if self.turn else min(values, key=values.get)
 
     def __str__(self):
-        return "Turn: Player {}".format(1 if self.turn else 2) + "\nState: {}".format(self.state) + "\nVisits: {}\n".format(self.visits)
-
-    def __repr__(self):
-        return "Player_{}-Node_{}-Visits_{}".format(1 if self.turn else 2, self.count_parents(), self.visits)
-
-# class Edge:
-#    def __init__(self, action, parent, child):
-#        self.parent = parent
-#        self.child = child
-#        self.action = action
-#        self.visits = 0
-#        self.value = 0
-#        child.set_prev_action(self)
-#        parent.add_child(self, child)
-#
-#    def update_value(self, reinforcement):
-#        self.value += reinforcement
-#
-#    def __repr__(self):
-#        return str(self.action)
+        turn = 1 if self.turn else 2
+        node = self.count_parents()
+        s = "P{} Node: {:>2} Visits: {:>5} Q: {:>7.1f} u: {:.3f} E: {:>6}"
+        return s.format(turn, node, self.visits, self.Q, self.u, self.E)
