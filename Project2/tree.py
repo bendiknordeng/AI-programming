@@ -8,14 +8,12 @@ class Node:
         self.children = []
         self.visits = 0
         self.parent = parent
-        self.actions = []
         self.prev_action = prev_action
         self.E = 0  # evaluation with respect to wins
         self.Q = 0
         self.u = 0
 
-    def add_child(self, action, child):
-        self.actions.append(action)
+    def add_child(self, child):
         self.children.append(child)
 
     def update_values(self, reinforcement, c):
@@ -33,10 +31,11 @@ class Node:
         return parents
 
     def get_best_child(self):
+        assert self.children, "Current node does not have children"
         values = {}
         for child in self.children:
             values[child] = (child.Q + child.u) if self.turn else (child.Q - child.u)
-        return max(values, key=values.get) if self.turn else min(values, key=values.get)
+        return max(values, key=values.get) if self.turn else min(values, key=values.get), values
 
     def __str__(self):
         turn = 1 if self.turn else 2

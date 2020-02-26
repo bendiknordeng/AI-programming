@@ -16,8 +16,8 @@ class MCTS:
     def tree_search(self, display):
         winner = []
         iteration_number = []
-        current = self.env.root
         for i in tqdm(range(self.G)):
+            current = self.env.root
             while not self.env.final_state(current.state):
                 current = self.__find_best_leaf(current)
                 for j in range(self.M):
@@ -27,7 +27,6 @@ class MCTS:
                         winner.append(1)
                     else:
                         winner.append(2)
-                    current = self.env.root
                     break
             iteration_number.append(i)
             self.eps = self.eps * self.eps_decay
@@ -41,27 +40,26 @@ class MCTS:
     def run_greedy(self):
         current = self.env.root
         print("Initial state: {}".format(current.state))
-        while not self.env.final_state(current.state):
-            current = self.__greedy_choice(current)
+        while True: # do while loop
+            current, _ = current.get_best_child()
             self.env.print_move(current)
+            if self.env.final_state(current.state):
+                break
         print('Player {} won after {} moves.\n'.format(
             1 if current.parent.turn else 2, current.count_parents()))
 
-    def display_tree(self):
+    def display_best_path(self):
         current = self.env.root
         print(current)
         while current.children:
-            current = current.get_best_child()
+            current, _ = current.get_best_child()
             print(current)
 
     def __find_best_leaf(self, node):
         current = node
         while current.children:
-            current = self.__greedy_choice(current)
+            current, _ = current.get_best_child()
         return current
-
-    def __greedy_choice(self, current):
-        return current.get_best_child()
 
     def __rollout(self, node):
         current = node
@@ -70,10 +68,10 @@ class MCTS:
             if not current.children:
                 self.env.generate_child_states(current)
             if random.random() > self.eps:
-                current = self.__greedy_choice(current)
+                current, _ = current.get_best_child()
             else:
                 current = random.choice(current.children)
-        current.visits += 1
+        current.visits += 1 # add visit to final node
         self.__backprop(current)
 
     def __backprop(self, node):
@@ -84,18 +82,19 @@ class MCTS:
             current = current.parent
 
 
+
 if __name__ == '__main__':
     G = 100  # number of games in batch
-    M = 50  # number of rollouts per game move
+    M = 500  # number of rollouts per game move
     P = 1  # (1/2/3): Player 1 starts/Player 2 starts/Random player starts
     c = 1  # exploration constant
     eps = 1
-    eps_decay = 0.9
+    eps_decay = 0.95
     game_mode = 0  # (0/1): NIM/Ledge
 
-    N = 10  # Inittial pile for NIM
+    N = 15  # Inittial pile for NIM
     K = 3  # Max pieces for each action in NIM
-    B = [1, 1, 1, 0, 0, 2, 0]  # board for ledge
+    B = [1, 1, 1, 0, 2, 0, 1, 1]  # board for ledge
 
     if game_mode == 0:
         env = NIM(P, N, K)
@@ -105,6 +104,6 @@ if __name__ == '__main__':
     display = True
     mcts = MCTS(G, M, env, eps, eps_decay, c)
     mcts.tree_search(display)
-    mcts.display_tree()
+    mcts.display_best_path()
     print()
     mcts.run_greedy()

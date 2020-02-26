@@ -20,7 +20,7 @@ class Game:
         for action in self.generate_valid_actions(node.state):
             child = Node(not node.turn, self.next_state(
                 node.state, action), node, action)
-            node.add_child(action, child)
+            node.add_child(child)
 
     def get_reinforcement(self, node):
         if not self.final_state(node.state):
