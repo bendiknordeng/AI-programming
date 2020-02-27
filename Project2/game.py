@@ -5,8 +5,8 @@ from tree import Node
 class Game:
     def __init__(self, P, initial_state):
         self.P = P  # starting player option
-        self.turn = self.set_starting_player()
-        self.root = Node(self.turn, initial_state)
+        turn = self.set_starting_player()
+        self.root = Node(turn, initial_state)
 
     def set_starting_player(self):
         if self.P == 1:
@@ -17,15 +17,15 @@ class Game:
             return random.random() >= 0.5
 
     def generate_child_states(self, node):
+        num_child = 1
         for action in self.generate_valid_actions(node.state):
             child = Node(not node.turn, self.next_state(
-                node.state, action), node, action)
+                node.state, action), num_child, node, action)
             node.add_child(child)
+            num_child += 1
 
-    def get_reinforcement(self, node):
-        if not self.final_state(node.state):
-            return 0
-        if node.parent.turn:
+    def get_reinforcement(self, turn):
+        if turn:
             return 1
         else:
             return -1
