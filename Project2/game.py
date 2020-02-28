@@ -6,7 +6,7 @@ class Game:
     def __init__(self, P, initial_state):
         self.P = P  # starting player option
         turn = self.set_starting_player()
-        self.root = Node(turn, initial_state)
+        self.root = Node(turn, initial_state, is_root=True)
 
     def set_starting_player(self):
         if self.P == 1:
@@ -16,19 +16,19 @@ class Game:
         else:
             return random.random() >= 0.5
 
-    def generate_child_states(self, node):
+    def generate_children(self, node):
         num_child = 1
         for action in self.generate_valid_actions(node.state):
             child = Node(not node.turn, self.next_state(
-                node.state, action), num_child, node, action)
+                node.state, action), node, action, num_child)
             node.add_child(child)
             num_child += 1
 
-    def get_reinforcement(self, turn):
-        if turn:
+    def get_reinforcement(self, node, starting_player):
+        if node.parent.turn == starting_player.turn:
             return 1
         else:
-            return -1
+            return 0
 
 
 class NIM(Game):
@@ -44,12 +44,11 @@ class NIM(Game):
     def generate_valid_actions(self, pile_count):
         return list(range(1, min(pile_count, self.K) + 1))
 
-    def final_state(self, pile_count):
-        return pile_count == 0
+    def final_state(self, node):
+        return node.state == 0
 
     def print_move(self, node):
-        turn = node.parent.turn
-        player = 1 if turn else 2
+        player = 1 if node.parent.turn else 2
         action = node.prev_action
         remaining = "Remaining stones = {:<2}".format(node.state)
         stones = "{:<1} stones".format(
@@ -94,8 +93,8 @@ class Ledge(Game):
             [valid.append((i + 1, j)) for j in to]
         return valid
 
-    def final_state(self, board):
-        return board.count(2) == 0
+    def final_state(self, node):
+        return node.state.count(2) == 0
 
     def print_move(self, node):
         turn = node.parent.turn

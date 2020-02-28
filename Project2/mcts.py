@@ -1,65 +1,108 @@
 from game import NIM, Ledge
 import random
 from tqdm import tqdm
+from tree import Node
+
 
 class MCTS:
-    def __init__(self, B, M, c):
+    def __init__(self, G, M, c):
         self.G = G
         self.M = M
         self.c = c
 
-    def tree_search(self, game_mode, P, N, K, B, verbose):
-        win = 0
+    def play_games(self, game_mode, P, N, K, B, verbose):
+        wins = 0
         run_list = range(self.G) if verbose else tqdm(range(self.G))
         for i in run_list:
-            self.env = NIM(P, N, K) if game_mode == 0 else Ledge(P, B)
-            current_root = self.env.root
-            if verbose: print("Initial state: {}".format(current_root.state))
-            while not self.env.final_state(current_root.state):
-                for j in range(self.M):
-                    leaf = self.__find_best_leaf(current_root) # select
-                    self.env.generate_child_states(leaf) # expand
-                    rollout_node = random.choice(leaf.children) if leaf.children else leaf
-                    reward = self.__rollout(rollout_node) # simulation
-                    self.__backprop(rollout_node, reward) # backpropegation
-                current_root = current_root.get_best_child(leaf_search = False, verbose = True)
-                if verbose: self.env.print_move(current_root)
-            if current_root.parent.turn == self.env.root.turn:
-                win += 1
+            if game_mode == 0:
+                self.env = NIM(P, N, K)
+            else:
+                self.env = Ledge(P, B)
+            current = self.env.root
             if verbose:
-                print("Player {} wins after {} moves\n".format(
-                    1 if leaf.parent.turn else 2, leaf.count_parents()))
+                print("Initial state: {}".format(current.state))
+            while self.__non_terminal(current):
+                current = self.__tree_search(current)
+                if verbose:
+                    self.env.print_move(current)
+            if verbose:
+                print("Player {} wins".format(1 if current.parent.turn else 2))
+            if current.turn != self.env.root.turn:
+                wins += 1
+        print("Starting player wins {}/{} ({:.0f}%)".format(wins, self.G, 100 * wins / self.G))
 
-        print("Starting player wins: {}/{} ({:.2f}%)".format(
-            win, self.G, win * 100 / self.G))
+    def __tree_search(self, root):
+        for i in range(self.M):
+            leaf = self.__traverse(root)  # leaf = unvisited node
+            simulation_result = self.__rollout(leaf, root)
+            self.__backpropagate(leaf, simulation_result)
+        best_child = self.__best_child(root)
+        best_child.reset()
+        return best_child
 
-    def __find_best_leaf(self, node):
-        current = node
-        while current.children:
-            current = current.get_best_child(leaf_search = True, verbose = False)
-        return current
+    def __traverse(self, node):
+        while self.__fully_expanded(node):
+            node = self.__best_uct(node)
+        if not node.children:
+            self.env.generate_children(node)
+        return self.__pick_unvisited(node.children) if self.__non_terminal(node) else node
 
-    def __rollout(self, node):
-        state = node.state
-        turn = node.turn
-        while not self.env.final_state(state):
-            action = random.choice(self.env.generate_valid_actions(state))
-            state = self.env.next_state(state, action)
-            turn = not turn
-        return self.env.get_reinforcement(not turn)
+    def __best_uct(self, node):
+        best_value = float("-inf")
+        best_nodes = []
+        for child in node.children:
+            if child.Q + child.u > best_value:
+                best_value = child.Q + child.u
+                best_nodes = [child]
+            elif child.Q + child.u == best_value:
+                best_nodes.append(child)
+        return random.choice(best_nodes)
 
-    def __backprop(self, node, reinforcement):
-        current = node
-        current.visits += 1
-        while current != self.env.root:
-            current.parent.visits += 1
-            current.update_values(reinforcement, self.c)
-            current = current.parent
+    def __fully_expanded(self, node):
+        if not node.children:
+            return False
+        for child in node.children:
+            if child.visits == 0:
+                return False
+        return True
+
+    def __pick_unvisited(self, children):
+        unvisited = []
+        for child in children:
+            if child.visits == 0:
+                unvisited.append(child)
+        return random.choice(unvisited)
+
+    def __rollout(self, node, starting_player):
+        while self.__non_terminal(node):
+            action = random.choice(self.env.generate_valid_actions(node.state))
+            new_state = self.env.next_state(node.state, action)
+            node = Node(not node.turn, new_state, node, action)
+        return self.env.get_reinforcement(node, starting_player)
+
+    def __non_terminal(self, node):
+        return not self.env.final_state(node)
+
+    def __backpropagate(self, node, result):
+        node.visits += 1
+        while not node.is_root:
+            node.update_values(result, self.c)
+            node = node.parent
+
+    def __best_child(self, node):
+        max_visits = float("-inf")
+        best = None
+        for child in node.children:
+            if child.visits > max_visits:
+                max_visits = child.visits
+                best = child
+        return best
+
 
 if __name__ == '__main__':
-    G = 50  # number of games in batch
+    G = 10  # number of games in batch
     M = 500  # number of rollouts per game move
-    P = 2  # (1/2/3): Player 1 starts/Player 2 starts/Random player startsudfar
+    P = 1  # (1/2/3): Player 1 starts/Player 2 starts/Random player startsudfar
     c = 1  # exploration constant
     N = 10  # Inittial pile for NIM
     K = 3  # Max pieces for each action in NIM
@@ -68,5 +111,5 @@ if __name__ == '__main__':
 
     mcts = MCTS(G, M, c)
 
-    verbose = False
-    mcts.tree_search(game_mode, P, N, K, B, False)
+    verbose = True
+    mcts.play_games(game_mode, P, N, K, B, verbose)
