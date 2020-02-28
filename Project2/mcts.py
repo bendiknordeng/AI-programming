@@ -9,29 +9,31 @@ class MCTS:
         self.G = G
         self.M = M
         self.c = c
+        self.env = env
 
-    def play_games(self, game_mode, P, N, K, B, verbose):
-        wins = 0
-        run_list = range(self.G) if verbose else tqdm(range(self.G))
-        for i in run_list:
-            if game_mode == 0:
-                self.env = NIM(P, N, K)
-            else:
-                self.env = Ledge(P, B)
-            current = self.env.root
-            if verbose:
-                print("Initial state: {}".format(current.state))
-            while self.__non_terminal(current):
-                current = self.__tree_search(current)
-                if verbose:
-                    self.env.print_move(current)
-            if verbose:
-                print("Player {} wins".format(1 if current.parent.turn else 2))
-            if current.turn != self.env.root.turn:
-                wins += 1
-        print("Starting player wins {}/{} ({:.0f}%)".format(wins, self.G, 100 * wins / self.G))
+    #def play_games(self, game_mode, P, N, K, B, verbose):
+    #    wins = 0
+    #    run_list = range(self.G) if verbose else tqdm(range(self.G))
+    #    for i in run_list:
+    #        if game_mode == 0:
+    #            self.env = NIM(P, N, K)
+    #        else:
+    #            self.env = Ledge(P, B)
+    #        current = self.env.root
+    #        if verbose:
+    #            print("Initial state: {}".format(current.state))
+    #        while self.__non_terminal(current):
+    #            current = self.__tree_search(current)
+    #            if verbose:
+    #                self.env.print_move(current)
+    #        if verbose:
+    #            print("Player {} wins".format(1 if current.parent.turn else 2))
+    #        if current.turn != self.env.root.turn:
+    #            wins += 1
+    #    print("Starting player wins {}/{} ({:.0f}%)".format(wins, self.G, 100 * wins / self.G))
 
-    def __tree_search(self, root):
+    def tree_search(self):
+        root = self.env.root
         for i in range(self.M):
             leaf = self.__traverse(root)  # leaf = unvisited node
             simulation_result = self.__rollout(leaf, root)
@@ -42,6 +44,7 @@ class MCTS:
 
     def __traverse(self, node):
         while self.__fully_expanded(node):
+            print(node.children)
             node = self.__best_uct(node)
         if not node.children:
             self.env.generate_children(node)
@@ -100,8 +103,8 @@ class MCTS:
 
 
 if __name__ == '__main__':
-    G = 10  # number of games in batch
-    M = 500  # number of rollouts per game move
+    G = 1  # number of games in batch
+    M = 10  # number of rollouts per game move
     P = 1  # (1/2/3): Player 1 starts/Player 2 starts/Random player startsudfar
     c = 1  # exploration constant
     N = 10  # Inittial pile for NIM
@@ -109,7 +112,12 @@ if __name__ == '__main__':
     B = [1, 0, 0, 2]  # board for ledge
     game_mode = 0  # (0/1): NIM/Ledge
 
+    env = NIM(P, N, K) if game_mode == 0 else Ledge(P, B)
     mcts = MCTS(G, M, c)
 
-    verbose = True
-    mcts.play_games(game_mode, P, N, K, B, verbose)
+    action = mcts.tree_search()
+    print(action.parent)
+    print(action.prev_action)
+
+    #verbose = True
+    #mcts.play_games(game_mode, P, N, K, B, verbose)
