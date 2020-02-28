@@ -1,13 +1,14 @@
 import numpy as np
 from collections import defaultdict
-
+import random
 
 class Node:
-    def __init__(self, state, parent=None):
+    def __init__(self, state, action=None, parent=None):
         self.state = state
+        self.prev_action = action
         self.parent = parent
         self.children = []
-        self._number_of_visits = 0.
+        self._number_of_visits = 0
         self._results = defaultdict(int)
         self._untried_actions = None
 
@@ -22,7 +23,7 @@ class Node:
         return self.children[np.argmax(choices_weights)]
 
     def rollout_policy(self, possible_moves):
-        return possible_moves[np.random.randint(len(possible_moves))]
+        return random.choice(possible_moves)
 
     @property
     def untried_actions(self):
@@ -32,20 +33,22 @@ class Node:
 
     @property
     def q(self):
-        wins = self._results[self.parent.state.next_to_move]
-        loses = self._results[-1 * self.parent.state.next_to_move]
-        return wins - loses
+        wins = self._results[self.parent.state.turn]
+        losses = self._results[-1 * self.parent.state.turn]
+        return wins - losses
 
     @property
     def n(self):
         return self._number_of_visits
 
+    @property
+    def game_state(self):
+        return self.state.state
+
     def expand(self):
         action = self.untried_actions.pop()
         next_state = self.state.move(action)
-        child_node = TwoPlayersGameMonteCarloTreeSearchNode(
-            next_state, parent=self
-        )
+        child_node = Node(next_state, action, parent=self)
         self.children.append(child_node)
         return child_node
 
