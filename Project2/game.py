@@ -1,86 +1,62 @@
-import random
-from tree import Node
+import numpy as np
 
 
-class Game:
-    def __init__(self, P, initial_state):
-        self.P = P  # starting player option
-        turn = self.set_starting_player()
-        self.root = Node(turn, initial_state, is_root=True)
+class GameState:
+    def __init__(self, state, next_to_move=1):
+        self.state = state
+        self.next_to_move = next_to_move
 
-    def set_starting_player(self):
-        if self.P == 1:
-            return True
-        elif self.P == 2:
-            return False
-        else:
-            return random.random() >= 0.5
-
-    def generate_children(self, node):
-        num_child = 1
-        for action in self.generate_valid_actions(node.state):
-            child = Node(not node.turn, self.next_state(
-                node.state, action), node, action, num_child)
-            node.add_child(child)
-            num_child += 1
-
-    def get_reinforcement(self, node, starting_player):
-        if node.parent.turn == starting_player.turn:
-            return 1
-        else:
-            return 0
+    def game_result(self):
+        if self.is_game_over():
+            if self.next_to_move == 2:
+                return 1
+            elif self.next_to_move == 1:
+                return -1
+        return None
 
 
-class NIM(Game):
-    def __init__(self, P, N, K):
-        super().__init__(P, N)
+class NIMState:
+    def __init__(self, state, K, next_to_move=1):
+        super().__init__(state, next_to_move)
         self.K = K
 
-    def next_state(self, pile_count, action):
-        assert action <= self.K and pile_count - action >= 0, str(
-            action) + " is not a valid amount of pieces. Max allowed is " + str(min(pile_count, self.K))
-        return pile_count - action
+    def is_game_over(self):
+        return self.state == 0
 
-    def generate_valid_actions(self, pile_count):
-        return list(range(1, min(pile_count, self.K) + 1))
+    def move(self, action):
+        new_state = np.copy(self.state)
+        return NIMState(new_state, self.K, 3 - self.next_to_move)
 
-    def final_state(self, node):
-        return node.state == 0
-
-    def print_move(self, node):
-        player = 1 if node.parent.turn else 2
-        action = node.prev_action
-        remaining = "Remaining stones = {:<2}".format(node.state)
-        stones = "{:<1} stones".format(
-            action) if action > 1 else "{:<2} stone".format(action)
-        print("{:<2}: Player {} selects {:>8}: {:>21}".format(
-            node.count_parents(), player, stones, remaining))
+    def get_legal_actions(self):
+        return list(range(1, min(self.state, self.K) + 1))
 
 
-class Ledge(Game):
-    def __init__(self, P, board):
-        super().__init__(P, board)
-        assert board.count(
-            2) == 1, "There can only be one gold coin on the board, you put " + str(board.count(2))
-        self.board_length = len(board)
+class LedgeState(GameState):
+    def __init__(self, state, next_to_move=1):
+        super().__init__(state, next_to_move)
 
-    def next_state(self, board, action):
-        temp_board = board.copy()
+    def is_game_over(self):
+        return self.state.count(2) == 0
+
+    def move(self, action):
+        new_board = np.copy(self.state)
         if action == 0:
-            assert temp_board[0] != 0, 'There is no coin on the ledge'
-            temp_board[0] = 0
+            assert new_board[0] != 0, 'There is no coin on the ledge'
+            new_board[0] = 0
         else:
             i, j = action
-            assert temp_board[i] != 0, 'There is no coin in spot {}'.format(i)
-            assert temp_board[j] == 0, 'You cannot put a coin in spot {}'.format(
+            assert new_board[i] != 0, 'There is no coin in spot {}'.format(i)
+            assert new_board[j] == 0, 'You cannot put a coin in spot {}'.format(
                 j)
-            temp_board[j] = temp_board[i]
-            temp_board[i] = 0
-        return temp_board
+            new_board[j] = new_board[i]
+            new_board[i] = 0
 
-    def generate_valid_actions(self, board):
+        return LedgeState(new_board, 3 - self.next_to_move)
+
+    def get_legal_actions(self):
         valid = []
-        for i in range(self.board_length - 1):
+        board_length = len(self.state)
+        for i in range(board_length - 1):
             if i == 0 and board[0] != 0:
                 valid.append(0)
                 continue
@@ -93,18 +69,24 @@ class Ledge(Game):
             [valid.append((i + 1, j)) for j in to]
         return valid
 
-    def final_state(self, node):
-        return node.state.count(2) == 0
+# def print_move(self, node):
+#    player = 1 if node.parent.turn else 2
+#    action = node.prev_action
+#    remaining = "Remaining stones = {:<2}".format(node.state)
+#    stones = "{:<1} stones".format(
+#        action) if action > 1 else "{:<2} stone".format(action)
+#    print("{:<2}: Player {} selects {:>8}: {:>21}".format(
+#        node.count_parents(), player, stones, remaining))
 
-    def print_move(self, node):
-        turn = node.parent.turn
-        player = 1 if turn else 2
-        action = node.prev_action
-        if action == 0:
-            coin = "copper" if node.parent.state[0] == 1 else "gold"
-            print("{:<2}: P{} picks up {}: {}".format(
-                node.count_parents(), player, coin, str(node.state)))
-        else:
-            coin = "copper" if node.parent.state[action[0]] == 1 else "gold"
-            print("{:<2}: P{} moves {} from cell {} to {}: {}".format(
-                node.count_parents(), player, coin, action[0], action[1], str(node.state)))
+# def print_move(self, node):
+#    turn = node.parent.turn
+#    player = 1 if turn else 2
+#    action = node.prev_action
+#    if action == 0:
+#        coin = "copper" if node.parent.state[0] == 1 else "gold"
+#        print("{:<2}: P{} picks up {}: {}".format(
+#            node.count_parents(), player, coin, str(node.state)))
+#    else:
+#        coin = "copper" if node.parent.state[action[0]] == 1 else "gold"
+#        print("{:<2}: P{} moves {} from cell {} to {}: {}".format(
+#            node.count_parents(), player, coin, action[0], action[1], str(node.state)))
