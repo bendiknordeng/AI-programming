@@ -22,7 +22,7 @@ class MCTS:
                     rollout_node = random.choice(leaf.children) if leaf.children else leaf
                     reward = self.__rollout(rollout_node) # simulation
                     self.__backprop(rollout_node, reward) # backpropegation
-                current_root = current_root.get_best_child(leaf_search = False, verbose = True)
+                current_root = current_root.get_best_child()
                 if verbose: self.env.print_move(current_root)
             if current_root.parent.turn == self.env.root.turn:
                 win += 1
@@ -36,7 +36,7 @@ class MCTS:
     def __find_best_leaf(self, node):
         current = node
         while current.children:
-            current = current.get_best_child(leaf_search = True, verbose = False)
+            current = current.get_best_uct()
         return current
 
     def __rollout(self, node):
@@ -59,11 +59,11 @@ class MCTS:
 if __name__ == '__main__':
     G = 50  # number of games in batch
     M = 500  # number of rollouts per game move
-    P = 2  # (1/2/3): Player 1 starts/Player 2 starts/Random player startsudfar
+    P = 1  # (1/2/3): Player 1 starts/Player 2 starts/Random player startsudfar
     c = 1  # exploration constant
     N = 10  # Inittial pile for NIM
     K = 3  # Max pieces for each action in NIM
-    B = [1, 0, 0, 2]  # board for ledge
+    B = [1, 0, 0, 2, 1]  # board for ledge
     game_mode = 0  # (0/1): NIM/Ledge
 
     mcts = MCTS(G, M, c)

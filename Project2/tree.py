@@ -31,24 +31,21 @@ class Node:
             current = current.parent
         return parents
 
-    def get_best_child(self, leaf_search=False, verbose=False):
+
+    def get_best_uct(self):
         assert self.children, "Current node does not have children"
         values = {}
         for child in self.children:
-            if leaf_search:
-                values[child] = (
-                    child.Q + child.u) if self.turn else (child.Q - child.u)
-            else:
-                values[child] = child.Q
-        chosen = max(values, key=values.get) if self.turn else min(
+            values[child] = (child.Q + child.u) if self.turn else (child.Q - child.u)
+        return max(values, key=values.get) if self.turn else min(
             values, key=values.get)
-        if verbose:
-            print("P{} is choosing".format(1 if self.turn else 2))
-            for n in values:
-                print("child: {}, Q: {:.2f}, u: {:.2f}, total value: {:.2f}, visits: {}, E: {}".format(
-                    n.num_child, n.Q, n.u, n.Q + n.u if n.parent.turn else n.Q - n.u, n.visits, n.E))
-            print("Chosen: {}\n".format(chosen))
-        return chosen
+
+    def get_best_child(self):
+        assert self.children, "Current node does not have children"
+        values = {}
+        for child in self.children:
+            values[child] = child.visits
+        return max(values, key=values.get)
 
     def get_node_id(self): # Returns which path is taken from root to given node
         current = self
