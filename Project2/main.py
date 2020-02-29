@@ -16,16 +16,7 @@ def get_best_action(simulations_number, game_mode, game_state, K):
     mcts = MonteCarloTreeSearch(node)
     return mcts.best_action(simulations_number)
 
-if __name__ == '__main__':
-    G = 10
-    M = 500
-    N = 8
-    K = 3
-    P = 1
-    B = [0, 0, 0, 1, 0, 2, 1, 0, 0, 0]
-    game_mode = 0
-    verbose = True
-
+def run_batch(G, M, N, K, B, P, game_mode, verbose):
     win = 0
     verbose_message = ""
     for i in tqdm(range(G)):
@@ -36,8 +27,7 @@ if __name__ == '__main__':
         player = initial_player
         while True:
             iteration += 1
-            game_state = action.game_state
-            action = get_best_action(M, game_mode, game_state, K)
+            action = get_best_action(M, game_mode, action.game_state, K)
             if verbose:
                 verbose_message += str(iteration) + ": "
                 verbose_message += NIMState.print_move(action, player) if game_mode == 0 else LedgeState.print_move(action, player)
@@ -47,7 +37,19 @@ if __name__ == '__main__':
         verbose_message += "Player "+str(player)+" won\n\n"
         if initial_player == player:
             win += 1
-
     if verbose: print(verbose_message)
-
     print("Starting player won {}/{} ({}%)".format(win, G, 100 * win / G))
+
+
+if __name__ == '__main__':
+    G = 50
+    M = 500
+    N = 10
+    K = 3
+    B = [0, 0, 0, 1, 0, 2, 1, 0, 0, 0]
+    P = 1
+    game_mode = 0
+    verbose = True
+
+    run_batch(G, M, N, K, B, P, game_mode, verbose)
+    #[print(get_best_action(M,0,10,K).game_state) for i in range(50)]
