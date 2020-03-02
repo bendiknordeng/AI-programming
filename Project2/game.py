@@ -62,6 +62,7 @@ class LedgeState(GameState):
         return LedgeState(new_board, 3 - self.turn)
 
     def get_legal_actions(self):
+        if self.state[0] == 2: return [0] # make it only possible to pick up gold if possible
         valid = []
         board = self.state
         board_length = len(self.state)

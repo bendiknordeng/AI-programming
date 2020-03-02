@@ -3,7 +3,6 @@ class MonteCarloTreeSearch:
         self.root = node
 
     def best_action(self, simulations_number):
-        current = self.root
         for i in range(simulations_number):
             leaf = self.tree_policy()
             result = leaf.rollout()

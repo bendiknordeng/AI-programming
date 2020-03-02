@@ -10,7 +10,7 @@ def set_starting_player(P):
         return random.choice([1,2])
     return P
 
-def get_best_action(simulations_number, game_mode, game_state, K):
+def get_best_action(simulations_number, game_mode, game_state, K = 3):
     state = NIMState(game_state, K) if game_mode == 0 else LedgeState(game_state)
     node = Node(state)
     mcts = MonteCarloTreeSearch(node)
@@ -46,10 +46,10 @@ if __name__ == '__main__':
     M = 500
     N = 10
     K = 3
-    B = [1, 0, 0, 0, 2]
+    B = [1, 0, 0, 2, 0, 1, 0, 0, 0, 1]
     P = 1
     game_mode = 1
     verbose = True
 
     run_batch(G, M, N, K, B, P, game_mode, verbose)
-    #[print(get_best_action(M,0,10,K).game_state) for i in range(50)]
+    #[print(get_best_action(M,1,B).game_state) for i in range(50)]
