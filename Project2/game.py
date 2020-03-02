@@ -1,83 +1,90 @@
-import random
-from tree import Node, Edge
+import numpy as np
 
-class Game:
-    def __init__(self, P, initial_state):
-        self.P = P  # starting player option
-        self.turn = self.set_starting_player()
-        self.root = Node(self.turn, initial_state)
 
-    def set_starting_player(self):
-        if self.P == 1:
-            return True
-        elif self.P == 2:
-            return False
-        else:
-            return random.random() >= 0.5
+class GameState:
+    def __init__(self, state, turn=1):
+        self.state = state
+        self.turn = turn
 
-    def generate_child_states(self, node):
-        for action in self.generate_valid_actions(node.state):
-            child = Node(not node.turn, self.next_state(node.state, action), node)
-            edge = Edge(action, node, child)
+    @property
+    def game_result(self):
+        if self.is_game_over():
+            if self.turn == 2:
+                return 1
+            elif self.turn == 1:
+                return -1
+        return None
 
-    def get_reinforcement(self, node):
-        if not self.final_state(node.state): return 0
-        if node.turn:
-            return 1
-        else:
-            return -1
-
-class NIM(Game):
-    def __init__(self, P, N, K):
-        super().__init__(P, N)
+class NIMState(GameState):
+    def __init__(self, state, K, turn=1):
+        super().__init__(state, turn)
         self.K = K
 
-    def next_state(self, pile_count, action):
-        assert action <= self.K and pile_count - action >= 0, str(
-            action) + " is not a valid amount of pieces. Max allowed is " + str(min(pile_count, self.K))
-        return pile_count-action
+    def is_game_over(self):
+        return self.state == 0
 
-    def generate_valid_actions(self, pile_count):
-        return list(range(1, min(pile_count, self.K)+1))
+    def move(self, action):
+        new_state = np.copy(self.state)
+        new_state -= action
+        return NIMState(new_state, self.K, 3 - self.turn)
 
-    def final_state(self, pile_count):
-        return pile_count == 0
+    def get_legal_actions(self):
+        return list(range(1, min(self.state, self.K) + 1))
+
+    @staticmethod
+    def print_move(node, turn):
+        action = node.prev_action
+        remaining = "Remaining stones = {:<2}".format(node.state.state)
+        stones = "{:<1} stones".format(action) if action > 1 else "{:<2} stone".format(action)
+        return "Player {} selects {:>8}: {:>21}\n".format(turn, stones, remaining)
 
 
-class Ledge(Game):
-    def __init__(self, P, board):
-        super().__init__(P, board)
-        assert board.count(
-            2) == 1, "There can only be one gold coin on the board, you put " + str(board.count(2))
-        self.board_length = len(board)
+class LedgeState(GameState):
+    def __init__(self, state, turn=1):
+        super().__init__(state, turn)
 
-    def next_state(self, board, action):
-        temp_board = board.copy()
+    def is_game_over(self):
+        return list(self.state).count(2) == 0
+
+    def move(self, action):
+        new_board = np.copy(self.state)
         if action == 0:
-            assert temp_board[0] != 0, 'There is no coin on the ledge'
-            temp_board[0] = 0
+            assert new_board[0] != 0, 'There is no coin on the ledge'
+            new_board[0] = 0
         else:
             i, j = action
-            assert temp_board[i] != 0, 'There is no coin in spot {}'.format(i)
-            assert temp_board[j] == 0, 'You cannot put a coin in spot {}'.format(j)
-            temp_board[j] = temp_board[i]
-            temp_board[i] = 0
-        return temp_board
+            assert new_board[i] != 0, 'There is no coin in spot {}'.format(i)
+            assert new_board[j] == 0, 'You cannot put a coin in spot {}'.format(
+                j)
+            new_board[j] = new_board[i]
+            new_board[i] = 0
 
-    def generate_valid_actions(self, board):
+        return LedgeState(new_board, 3 - self.turn)
+
+    def get_legal_actions(self):
+        if self.state[0] == 2: return [0] # make it only possible to pick up gold if possible
         valid = []
-        for i in range(self.board_length-1):
+        board = self.state
+        board_length = len(self.state)
+        for i in range(board_length - 1):
             if i == 0 and board[0] != 0:
                 valid.append(0)
                 continue
             to = []
-            if board[i+1] != 0:
+            if board[i + 1] != 0:
                 j = i
                 while j >= 0 and board[j] == 0:
                     to.append(j)
                     j -= 1
-            [valid.append((i+1,j)) for j in to]
+            [valid.append((i + 1, j)) for j in to]
         return valid
 
-    def final_state(self, board):
-        return board.count(2) == 0
+    @staticmethod
+    def print_move(node, turn):
+        action = node.prev_action
+        if action == 0:
+            coin = "copper" if node.parent.state.state[0] == 1 else "gold"
+            return "P{} picks up {}: {}\n".format(turn, coin, str(node.state.state))
+        else:
+            coin = "copper" if node.parent.state.state[action[0]] == 1 else "gold"
+            return "P{} moves {} from cell {} to {}: {}\n".format(turn, coin, action[0], action[1], str(node.state.state))
