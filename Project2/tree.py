@@ -1,69 +1,70 @@
-import math
-
+import random
+import numpy as np
+from collections import defaultdict
 
 class Node:
-    def __init__(self, turn, state, num_child=0, parent=None, prev_action=None):
-        self.turn = turn
+    def __init__(self, state, parent=None, prev_action=None):
         self.state = state
         self.children = []
-        self.visits = 0
+        self._number_of_visits = 0 # visits
+        self._results = defaultdict(int)
         self.parent = parent
-        self.num_child = num_child
         self.prev_action = prev_action
-        self.E = 0  # evaluation with respect to wins
-        self.Q = 0
-        self.u = 0
+        self._untried_actions = None
 
-    def add_child(self, child):
-        self.children.append(child)
+    def is_fully_expanded(self):
+        return len(self.untried_actions) == 0
 
-    def update_values(self, reinforcement, c):
-        self.E += reinforcement
-        self.Q = self.E / self.visits
-        self.u = c * \
-            math.sqrt(math.log(self.parent.visits) / (1 + self.visits))
+    def best_child(self, c_param=1.4):
+        choices_weights = [
+            (c.q / c.n) + c_param * np.sqrt((np.log(self.n) /(1+c.n)))
+            for c in self.children
+        ]
+        return self.children[np.argmax(choices_weights)]
 
-    def count_parents(self):
-        parents = 1
-        current = self
-        while current.parent:
-            parents += 1
-            current = current.parent
-        return parents
+    @property
+    def untried_actions(self):
+        if self._untried_actions is None:
+            self._untried_actions = self.state.get_legal_actions()
+        return self._untried_actions
 
-    def get_best_child(self, leaf_search=False, verbose=False):
-        assert self.children, "Current node does not have children"
-        values = {}
-        for child in self.children:
-            if leaf_search:
-                values[child] = (
-                    child.Q + child.u) if self.turn else (child.Q - child.u)
-            else:
-                values[child] = child.Q
-        chosen = max(values, key=values.get) if self.turn else min(
-            values, key=values.get)
-        if verbose:
-            print("P{} is choosing".format(1 if self.turn else 2))
-            for n in values:
-                print("child: {}, Q: {:.2f}, u: {:.2f}, total value: {:.2f}, visits: {}, E: {}".format(
-                    n.num_child, n.Q, n.u, n.Q + n.u if n.parent.turn else n.Q - n.u, n.visits, n.E))
-            print("Chosen: {}\n".format(chosen))
-        return chosen
+    @property
+    def q(self):
+        wins = self._results[self.parent.state.turn]
+        losses = self._results[-1 * self.parent.state.turn]
+        return (wins - losses) / self.n
 
-    def get_node_id(self): # Returns which path is taken from root to given node
-        current = self
-        id = "_"+str(current.num_child)
-        while True:
-            current = current.parent
-            id = "_"+str(current.num_child) + id
-            if current.parent == None:
-                return id
+    @property
+    def n(self):
+        return self._number_of_visits
 
-    def __str__(self):
-        turn = 1 if self.turn else 2
-        node = self.count_parents()
-        s = "P{} Node: {} ({}) Child: {}, Visits: {} value: {:.3f}, E: {}"
-        return s.format(turn, self.get_node_id(),node, self.num_child, self.visits, self.Q + self.u if self.parent.turn else self.Q - self.u, self.E)
+    @property
+    def game_state(self):
+        return self.state.state
 
-    def __repr__(self):
-        return "P{}_child{}_level{}".format(1 if self.turn else 2, self.num_child, self.count_parents())
+    def expand(self):
+        action = self.untried_actions.pop()
+        next_state = self.state.move(action)
+        child_node = Node(next_state, parent=self, prev_action=action)
+        self.children.append(child_node)
+        return child_node
+
+    def is_terminal_node(self):
+        return self.state.is_game_over()
+
+    def rollout(self):
+        current_rollout_state = self.state
+        while not current_rollout_state.is_game_over():
+            possible_moves = current_rollout_state.get_legal_actions()
+            action = self.rollout_policy(possible_moves)
+            current_rollout_state = current_rollout_state.move(action)
+        return current_rollout_state.game_result
+
+    def rollout_policy(self, possible_moves):
+        return random.choice(possible_moves)
+
+    def backpropagate(self, result):
+        self._number_of_visits += 1.
+        self._results[result] += 1.
+        if self.parent:
+            self.parent.backpropagate(result)
