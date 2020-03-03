@@ -46,9 +46,9 @@ if __name__ == '__main__':
     M = 500
     N = 10
     K = 3
-    B = [1, 0, 0, 2, 0, 1, 0, 0, 0, 1]
+    B = [0, 2, 0, 0, 0, 1]
     P = 1
-    game_mode = 1
+    game_mode = 1 # (0/1): NIM/Ledge
     verbose = True
 
     run_batch(G, M, N, K, B, P, game_mode, verbose)
