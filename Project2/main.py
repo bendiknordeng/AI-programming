@@ -10,8 +10,8 @@ def set_starting_player(P):
         return random.choice([1,2])
     return P
 
-def get_best_action(simulations_number, game_mode, game_state, K = 3):
-    state = NIMState(game_state, K) if game_mode == 0 else LedgeState(game_state)
+def get_best_action(simulations_number, state):
+    state.turn = 1 # algorithm always plays from perspective of player 1
     node = Node(state)
     mcts = MonteCarloTreeSearch(node)
     return mcts.best_action(simulations_number)
@@ -24,16 +24,15 @@ def run_batch(G, M, N, K, B, P, game_mode, verbose):
         verbose_message += "Initial state: {}\n".format(action.game_state)
         iteration = 0
         initial_player = set_starting_player(P)
-        player = initial_player
-        while True:
+        player = 3 - initial_player
+        while not action.is_terminal_node():
+            player = 3 - player
+            import pdb; pdb.set_trace()
+            action = get_best_action(M, action.state)
             iteration += 1
-            action = get_best_action(M, game_mode, action.game_state, K)
             if verbose:
                 verbose_message += str(iteration) + ": "
                 verbose_message += NIMState.print_move(action, player) if game_mode == 0 else LedgeState.print_move(action, player)
-            if action.is_terminal_node():
-                break
-            player = 3 - player
         verbose_message += "Player "+str(player)+" won\n\n"
         if initial_player == player:
             win += 1
@@ -44,11 +43,11 @@ def run_batch(G, M, N, K, B, P, game_mode, verbose):
 if __name__ == '__main__':
     G = 10
     M = 500
-    N = 10
+    N = 15
     K = 3
-    B = [0, 2, 0, 0, 0, 1]
+    B = [0, 0, 0, 2, 0, 1]
     P = 1
-    game_mode = 1 # (0/1): NIM/Ledge
+    game_mode = 0 # (0/1): NIM/Ledge
     verbose = True
 
     run_batch(G, M, N, K, B, P, game_mode, verbose)
