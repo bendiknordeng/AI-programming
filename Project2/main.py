@@ -27,7 +27,6 @@ def run_batch(G, M, N, K, B, P, game_mode, verbose):
         player = 3 - initial_player
         while not action.is_terminal_node():
             player = 3 - player
-            import pdb; pdb.set_trace()
             action = get_best_action(M, action.state)
             iteration += 1
             if verbose:
