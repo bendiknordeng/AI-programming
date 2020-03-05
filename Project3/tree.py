@@ -53,12 +53,12 @@ class Node:
         return self.state.is_game_over()
 
     def rollout(self):
-        current_rollout_state = self.state
-        while not current_rollout_state.is_game_over():
-            possible_moves = current_rollout_state.get_legal_actions()
+        state = self.state
+        while not state.is_game_over():
+            possible_moves = state.get_legal_actions()
             action = self.rollout_policy(possible_moves)
-            current_rollout_state = current_rollout_state.move(action)
-        return current_rollout_state.game_result
+            state = state.move(action)
+        return state.game_result
 
     def rollout_policy(self, possible_moves):
         return random.choice(possible_moves)
