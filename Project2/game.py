@@ -9,10 +9,7 @@ class GameState:
     @property
     def game_result(self):
         if self.is_game_over():
-            if self.turn == 2:
-                return 1
-            elif self.turn == 1:
-                return -1
+            return 3-self.turn
         return None
 
 class NIMState(GameState):
