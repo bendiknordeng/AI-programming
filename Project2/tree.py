@@ -42,6 +42,9 @@ class Node:
     def game_state(self):
         return self.state.state
 
+    def get_player(self):
+        return self.state.turn
+
     def expand(self):
         action = self.untried_actions.pop()
         next_state = self.state.move(action)

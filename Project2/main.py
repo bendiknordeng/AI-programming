@@ -20,14 +20,13 @@ def run_batch(G, M, N, K, B, P, game_mode, verbose):
     win = 0
     verbose_message = ""
     for i in tqdm(range(G)):
-        action = Node(NIMState(N, K) if game_mode == 0 else LedgeState(B))
+        initial_player = set_starting_player(P)
+        action = Node(NIMState(N, K, initial_player) if game_mode == 0 else LedgeState(B, initial_player))
         verbose_message += "Initial state: {}\n".format(action.game_state)
         iteration = 0
-        initial_player = set_starting_player(P)
-        player = 3 - initial_player
         while not action.is_terminal_node():
-            player = 3 - player
-            action = get_best_action(M, action.state)
+            player = action.get_player()
+            action = MonteCarloTreeSearch(action).best_action(M)
             iteration += 1
             if verbose:
                 verbose_message += str(iteration) + ": "
@@ -42,10 +41,10 @@ def run_batch(G, M, N, K, B, P, game_mode, verbose):
 if __name__ == '__main__':
     G = 10
     M = 500
-    N = 15
+    N = 10
     K = 3
     B = [0, 0, 0, 2, 0, 1]
-    P = 1
+    P = 2
     game_mode = 0 # (0/1): NIM/Ledge
     verbose = True
 
