@@ -1,4 +1,4 @@
-import copy
+import numpy as np
 
 
 class GameState:
@@ -21,7 +21,7 @@ class NIMState(GameState):
         return self.state == 0
 
     def move(self, action):
-        new_state = copy.copy(self.state)
+        new_state = np.copy(self.state)
         new_state -= action
         return NIMState(new_state, self.K, 3 - self.turn)
 
@@ -44,7 +44,7 @@ class LedgeState(GameState):
         return list(self.state).count(2) == 0
 
     def move(self, action):
-        new_board = copy.copy(self.state)
+        new_board = np.copy(self.state)
         if action == 0:
             assert new_board[0] != 0, 'There is no coin on the ledge'
             new_board[0] = 0
