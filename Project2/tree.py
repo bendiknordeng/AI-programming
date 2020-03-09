@@ -31,16 +31,16 @@ class Node:
 
     @property
     def q(self):
-        wins = self.wins[(str(self.parent.game_state), str(self.prev_action))]
+        wins = Node.wins[(self.parent.game_state, self.prev_action)]
         return wins / self.n
 
     @property
     def n(self):
-        return self.visits[str(self.game_state)]
+        return Node.visits[self.game_state]
 
     @property
     def game_state(self):
-        return self.state.state
+        return str(self.state.state)
 
     @property
     def player(self):
@@ -68,9 +68,9 @@ class Node:
         return random.choice(possible_moves)
 
     def backpropagate(self, result):
-        self.visits[str(self.game_state)] += 1
+        Node.visits[self.game_state] += 1
         if self.parent:
-            self.wins[(str(self.parent.game_state), str(self.prev_action))] += 1 if self.parent.player == result else -1
+            Node.wins[(self.parent.game_state, self.prev_action)] += 1 if self.parent.player == result else -1
             self.parent.backpropagate(result)
 
     def __repr__(self):
