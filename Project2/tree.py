@@ -31,8 +31,8 @@ class Node:
     @property
     def q(self):
         wins = self._results[self.parent.player]
-        #losses = self._results[self.player]
-        return wins / self.n
+        losses = self._results[self.player]
+        return (wins-losses) / self.n
 
     @property
     def n(self):
