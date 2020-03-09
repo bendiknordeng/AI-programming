@@ -15,9 +15,9 @@ class Node:
     def is_fully_expanded(self):
         return len(self.untried_actions) == 0
 
-    def best_child(self, c_param=1.4):
+    def best_child(self, c_param=1.):
         choices_weights = [
-            (c.q / c.n) + c_param * np.sqrt((np.log(self.n) /(1+c.n)))
+            c.q + c_param * np.sqrt((np.log(self.n) /(1+c.n)))
             for c in self.children
         ]
         return self.children[np.argmax(choices_weights)]
@@ -30,9 +30,9 @@ class Node:
 
     @property
     def q(self):
-        wins = self._results[self.parent.state.turn]
-        losses = self._results[-1 * self.parent.state.turn]
-        return (wins - losses) / self.n
+        wins = self._results[self.parent.player]
+        losses = self._results[self.player]
+        return (wins-losses) / self.n
 
     @property
     def n(self):
@@ -41,6 +41,10 @@ class Node:
     @property
     def game_state(self):
         return self.state.state
+
+    @property
+    def player(self):
+        return self.state.turn
 
     def expand(self):
         action = self.untried_actions.pop()
@@ -53,12 +57,12 @@ class Node:
         return self.state.is_game_over()
 
     def rollout(self):
-        current_rollout_state = self.state
-        while not current_rollout_state.is_game_over():
-            possible_moves = current_rollout_state.get_legal_actions()
+        state = self.state
+        while not state.is_game_over():
+            possible_moves = state.get_legal_actions()
             action = self.rollout_policy(possible_moves)
-            current_rollout_state = current_rollout_state.move(action)
-        return current_rollout_state.game_result
+            state = state.move(action)
+        return state.game_result
 
     def rollout_policy(self, possible_moves):
         return random.choice(possible_moves)
@@ -68,3 +72,6 @@ class Node:
         self._results[result] += 1.
         if self.parent:
             self.parent.backpropagate(result)
+
+    def __repr__(self):
+        return str({"Action": self.prev_action, "Result": self._results, "Q": self.q, "n": self.n})
