@@ -3,11 +3,12 @@ import numpy as np
 from collections import defaultdict
 
 class Node:
+    wins = defaultdict(int)
+    visits = defaultdict(int)
+
     def __init__(self, state, parent=None, prev_action=None):
         self.state = state
         self.children = []
-        self._number_of_visits = 0 # visits
-        self._results = defaultdict(int)
         self.parent = parent
         self.prev_action = prev_action
         self._untried_actions = None
@@ -15,7 +16,7 @@ class Node:
     def is_fully_expanded(self):
         return len(self.untried_actions) == 0
 
-    def best_child(self, c_param=1.):
+    def best_child(self, c_param=1.4):
         choices_weights = [
             c.q + c_param * np.sqrt((np.log(self.n) /(1+c.n)))
             for c in self.children
@@ -30,13 +31,12 @@ class Node:
 
     @property
     def q(self):
-        wins = self._results[self.parent.player]
-        losses = self._results[self.player]
-        return (wins-losses) / self.n
+        wins = self.wins[(self.parent.game_state, self.prev_action)]
+        return wins / self.n
 
     @property
     def n(self):
-        return self._number_of_visits
+        return self.visits[self.game_state]
 
     @property
     def game_state(self):
@@ -68,10 +68,10 @@ class Node:
         return random.choice(possible_moves)
 
     def backpropagate(self, result):
-        self._number_of_visits += 1.
-        self._results[result] += 1.
+        self.visits[self.game_state] += 1
         if self.parent:
+            self.wins[(self.parent.game_state, self.prev_action)] += 1 if self.parent.player == result else -1
             self.parent.backpropagate(result)
 
     def __repr__(self):
-        return str({"Action": self.prev_action, "Result": self._results, "Q": self.q, "n": self.n})
+        return str({"Action": self.prev_action, "Q": self.q, "n": self.n})

@@ -28,13 +28,15 @@ def run_batch(G, M, N, K, B, P, game_mode, verbose):
         verbose_message += "Player "+str(player)+" won\n\n"
         if initial_player == player:
             win += 1
+        Node.wins.clear()
+        Node.visits.clear()
     if verbose: print(verbose_message)
     print("Starting player won {}/{} ({}%)".format(win, G, 100 * win / G))
 
 
 if __name__ == '__main__':
     G = 50
-    M = 200
+    M = 150
     N = 10
     K = 3
     B = [0, 0, 0, 2, 0, 1]
