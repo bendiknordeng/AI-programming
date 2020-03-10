@@ -18,7 +18,7 @@ def print_last_move(iteration, action, player, game_mode):
     return msg
 
 def run_batch(G, M, N, K, B, P, game_mode, verbose):
-    win = 0
+    wins = 0
     verbose_message = ""
     for i in tqdm(range(G)):
         initial_player = set_starting_player(P)
@@ -33,20 +33,20 @@ def run_batch(G, M, N, K, B, P, game_mode, verbose):
                 verbose_message += "{}: ".format(iteration)
                 verbose_message += NIMState.print_move(action.prev_action, player, action.game_state) if game_mode == 0 else LedgeState.print_move(action.prev_action, player, action.parent.game_state)
         if initial_player == 3-player:
-            win += 1
+            wins += 1
         verbose_message += print_last_move(iteration, action, player, game_mode)
     if verbose: print(verbose_message)
-    print("Starting player won {}/{} ({}%)".format(win, G, 100 * win / G))
+    print("Starting player won {}/{} ({}%)".format(wins, G, 100 * wins / G))
 
 
 if __name__ == '__main__':
     G = 10
-    M = 500
+    M = 1500
     N = 10
     K = 9
-    B = [0, 0, 0, 2, 0, 1]
-    P = 3
-    game_mode = 0 # (0/1): NIM/Ledge
+    B = [0, 0, 0, 1, 0, 2, 0, 0, 1, 0]
+    P = 1
+    game_mode = 1 # (0/1): NIM/Ledge
     verbose = True
 
     run_batch(G, M, N, K, B, P, game_mode, verbose)

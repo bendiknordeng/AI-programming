@@ -3,32 +3,26 @@ from mcts import MonteCarloTreeSearch
 from tree import Node
 import networkx as nx
 import matplotlib.pyplot as plt
+from collections import defaultdict
 
 class HexBoardMove:
-    def __init__(self, cell, turn):
+    def __init__(self, cell, player):
         self.i, self.j = cell
-        self.turn = turn
+        self.player = player
 
     def __repr__(self):
         return "({},{})".format(self.i,self.j)
 
 class HexState:
     neighbors = {}
-    blue_edges = []
-    red_edges = []
+    edges = defaultdict(list)
 
-    def __init__(self, size, state=None, turn=1):
+    def __init__(self, size, state=None, player=1):
         self.size = size
         self.state = state if state else self.generate_initial_state()
         if len(self.neighbors) == 0:
-            self.generate_neighbors()
-        self.turn = turn
-        if len(self.blue_edges) == 0:
-            self.blue_edges.append([(i,0) for i in range(self.size)])
-            self.blue_edges.append([(i,self.size-1) for i in range(self.size)])
-            self.red_edges.append([(0,i) for i in range(self.size)])
-            self.red_edges.append([(self.size-1,i) for i in range(self.size)])
-        self.game_over = False
+            self.__generate_neighbors()
+        self.player = player
 
     def generate_initial_state(self):
         state = {}
@@ -37,7 +31,7 @@ class HexState:
                 state[(i,j)] = 0 # empty cell
         return state
 
-    def generate_neighbors(self):
+    def __generate_neighbors(self):
         corner = self.size-1
         for i in range(self.size):
             for j in range(self.size):
@@ -58,47 +52,33 @@ class HexState:
                     else:
                         self.neighbors[(i,j)] = [(i,j-1),(i-1,j),(i-1,j+1),(i,j+1)]
 
+        self.edges[1].append([(i,0) for i in range(self.size)])
+        self.edges[1].append([(i,self.size-1) for i in range(self.size)])
+        self.edges[2].append([(0,i) for i in range(self.size)])
+        self.edges[2].append([(self.size-1,i) for i in range(self.size)])
+
     @property
     def game_result(self):
         if self.is_game_over():
-            if self.turn == 2:
-                return 1
-            elif self.turn == 1:
-                return -1
+            return 3-self.player
         return None
 
     def is_game_over(self):
-        if self.game_over: return True
-        for cell in self.blue_edges[1]:
-            if self.state[cell] == 1:
-                self.game_over = self.__propegate_path(cell, 1)
-            if self.game_over:
-                return True
-        for cell in self.red_edges[1]:
-            if self.state[cell] == 2:
-                self.game_over = self.__propegate_path(cell, 2)
-            if self.game_over:
-                return True
+        for cell in self.edges[3-self.player][1]:
+            if self.state[cell] == 3-self.player:
+                if self.depth_first(cell, []):
+                    return True
         return False
 
-    def __propegate_path(self, cell, player, path=[]):
+    def depth_first(self, cell, path):
         for n in self.neighbors[cell]:
-            if player == 1:
-                if self.state[n] == 1 and n not in path:
-                    if n in self.blue_edges[0]:
+            if self.state[n] == 3-self.player and n not in path:
+                if n in self.edges[3-self.player][0]:
+                    return True
+                else:
+                    path.append(n)
+                    if self.depth_first(n, path):
                         return True
-                    else:
-                        path.append(n)
-                        found = self.__propegate_path(n, player, path)
-                        if found: return True
-            elif player == 2:
-                if self.state[n] == 2 and n not in path:
-                    if n in self.red_edges[0]:
-                        return True
-                    else:
-                        path.append(n)
-                        found = self.__propegate_path(n, player, path)
-                        if found: return True
         return False
 
     def move(self, action):
@@ -107,8 +87,8 @@ class HexState:
         Returns: new state - use np.copy(self.state)
         """
         board = self.state.copy()
-        board[(action.i,action.j)] = action.turn
-        return HexState(self.size, board, 3-self.turn)
+        board[(action.i,action.j)] = action.player
+        return HexState(self.size, board, 3-self.player)
 
     def get_legal_actions(self):
         """
@@ -117,7 +97,7 @@ class HexState:
         valid_actions = []
         for cell in self.state:
             if self.state[cell] == 0:
-                valid_actions.append(HexBoardMove(cell,self.turn))
+                valid_actions.append(HexBoardMove(cell,self.player))
         return valid_actions
 
     def cell_states(self):
@@ -169,30 +149,30 @@ class HexState:
             plt.show(block = True)
 
     @staticmethod
-    def print_move(node, turn):
+    def print_move(player, action):
         """
         Returns: string for verbose mode
         """
-        return "Player {} put a piece on {}".format(1 if turn else 2, node.prev_action)
+        return "Player {} put a piece on {}".format(player, action)
 
 if __name__ == "__main__":
-    hex = HexState(4)
-    new_state = hex.state.copy()
-    red_cells = [(0, 1), (0, 2), (0, 3), (1, 0), (1, 1), (1, 2), (3, 0)]
-    for cell in red_cells:
-        new_state[cell] = 2
+    #hex = HexState(4)
+    #new_state = hex.state.copy()
+    #red_cells = [(0, 1), (0, 2), (0, 3), (1, 0), (1, 1), (1, 2), (2, 0), (3, 0)]
+    #for cell in red_cells:
+    #    new_state[cell] = 2
 
-    blue_cells = [(0, 0), (1, 3), (2, 1), (2, 2), (2, 3), (3, 1), (3, 2), (3, 3)]
-    for cell in blue_cells:
-        new_state[cell] = 1
+    #blue_cells = [(0, 0), (1, 3), (2, 1), (2, 2), (2, 3), (3, 1), (3, 2), (3, 3)]
+    #for cell in blue_cells:
+    #    new_state[cell] = 1
 
-    hex = HexState(4, new_state, 2)
-    hex.draw()
+    #hex = HexState(4, new_state, 1)
+    ##hex.draw()
+    #print(hex.is_game_over())
+    #print(hex.game_result)
+
+    state = HexState(4)
+    node = Node(state)
+    mcts = MonteCarloTreeSearch(node)
+    action = mcts.best_action(1000)
     import pdb; pdb.set_trace()
-    print(hex.game_result)
-
-    #state = HexState(4)
-    #node = Node(state)
-    #mcts = MonteCarloTreeSearch(node)
-    #action = mcts.best_action(500)
-    #import pdb; pdb.set_trace()
