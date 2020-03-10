@@ -36,12 +36,12 @@ def run_batch(G, M, N, K, B, P, game_mode, verbose):
 
 if __name__ == '__main__':
     G = 10
-    M = 1500
-    N = 15
-    K = 5
+    M = 500
+    N = 75
+    K = 74
     B = [1, 1, 1, 2, 0, 1]
     P = 1
-    game_mode = 0 # (0/1): NIM/Ledge
+    game_mode = 1 # (0/1): NIM/Ledge
     verbose = True
 
     run_batch(G, M, N, K, B, P, game_mode, verbose)

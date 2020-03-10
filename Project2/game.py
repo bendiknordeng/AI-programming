@@ -18,7 +18,7 @@ class NIMState(GameState):
         self.K = K
 
     def is_game_over(self):
-        return self.state == 0
+        return self.state <= self.K
 
     def move(self, action):
         new_state = np.copy(self.state)
@@ -41,7 +41,7 @@ class LedgeState(GameState):
         super().__init__(state, turn)
 
     def is_game_over(self):
-        return list(self.state).count(2) == 0
+        return self.state[0] == 2
 
     def move(self, action):
         new_board = np.copy(self.state)
