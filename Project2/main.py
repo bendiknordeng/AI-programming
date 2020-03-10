@@ -23,22 +23,24 @@ def run_batch(G, M, N, K, B, P, game_mode, verbose):
             action = MonteCarloTreeSearch(action).best_action(M)
             iteration += 1
             if verbose:
-                verbose_message += str(iteration) + ": "
-                verbose_message += NIMState.print_move(action, player) if game_mode == 0 else LedgeState.print_move(action, player)
-        verbose_message += "Player "+str(player)+" won\n\n"
-        if initial_player == player:
+                verbose_message += "{}: ".format(iteration)
+                verbose_message += NIMState.print_move(action.prev_action, player, action.game_state) if game_mode == 0 else LedgeState.print_move(action.prev_action, player, action.parent.game_state)
+        verbose_message += "{}: ".format(iteration+1)
+        verbose_message += NIMState.print_move(action.game_state, 3-player, 0) if game_mode == 0 else LedgeState.print_move(0, 3-player, action.game_state)
+        verbose_message += "Player "+str(3-player)+" won\n\n"
+        if initial_player == 3-player:
             win += 1
     if verbose: print(verbose_message)
     print("Starting player won {}/{} ({}%)".format(win, G, 100 * win / G))
 
 
 if __name__ == '__main__':
-    G = 50
-    M = 200
-    N = 10
-    K = 3
+    G = 5
+    M = 500
+    N = 15
+    K = 5
     B = [0, 0, 0, 2, 0, 1]
-    P = 1
+    P = 3
     game_mode = 0 # (0/1): NIM/Ledge
     verbose = True
 

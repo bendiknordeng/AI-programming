@@ -9,7 +9,7 @@ class GameState:
     @property
     def game_result(self):
         if self.is_game_over():
-            return 3-self.turn
+            return self.turn
         return None
 
 class NIMState(GameState):
@@ -18,7 +18,7 @@ class NIMState(GameState):
         self.K = K
 
     def is_game_over(self):
-        return self.state == 0
+        return self.state <= self.K
 
     def move(self, action):
         new_state = np.copy(self.state)
@@ -29,11 +29,10 @@ class NIMState(GameState):
         return list(range(1, min(self.state, self.K) + 1))
 
     @staticmethod
-    def print_move(node, turn):
-        action = node.prev_action
-        remaining = "Remaining stones = {:<2}".format(node.state.state)
+    def print_move(action, player, state):
+        remaining = "Remaining stones = {:<2}".format(state)
         stones = "{:<1} stones".format(action) if action > 1 else "{:<2} stone".format(action)
-        return "Player {} selects {:>8}: {:>21}\n".format(turn, stones, remaining)
+        return "Player {} selects {:>8}: {:>21}\n".format(player, stones, remaining)
 
 
 class LedgeState(GameState):
@@ -41,7 +40,7 @@ class LedgeState(GameState):
         super().__init__(state, turn)
 
     def is_game_over(self):
-        return list(self.state).count(2) == 0
+        return self.state[0] == 2
 
     def move(self, action):
         new_board = np.copy(self.state)
@@ -77,11 +76,15 @@ class LedgeState(GameState):
         return valid
 
     @staticmethod
-    def print_move(node, turn):
-        action = node.prev_action
+    def print_move(action, player, state):
+        new_board = np.copy(state)
         if action == 0:
-            coin = "copper" if node.parent.state.state[0] == 1 else "gold"
-            return "P{} picks up {}: {}\n".format(turn, coin, str(node.state.state))
+            coin = "copper" if state[0] == 1 else "gold"
+            new_board[0] = 0
+            return "P{} picks up {}: {}\n".format(player, coin, str(new_board))
         else:
-            coin = "copper" if node.parent.state.state[action[0]] == 1 else "gold"
-            return "P{} moves {} from cell {} to {}: {}\n".format(turn, coin, action[0], action[1], str(node.state.state))
+            coin = "copper" if state[action[0]] == 1 else "gold"
+            i, j = action
+            new_board[j] = new_board[i]
+            new_board[i] = 0
+            return "P{} moves {} from cell {} to {}: {}\n".format(player, coin, action[0], action[1], str(new_board))
