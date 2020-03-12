@@ -60,12 +60,8 @@ class Node:
         state = self.state
         while not state.is_game_over():
             possible_moves = state.get_legal_actions()
-            try:
-                action = self.rollout_policy(possible_moves)
-            except:
-                import pdb; pdb.set_trace()
+            action = self.rollout_policy(possible_moves)
             state = state.move(action)
-            state.print_move(3-state.player, action)
         return state.game_result
 
     def rollout_policy(self, possible_moves):

@@ -14,7 +14,7 @@ class HexBoardMove:
         return "({},{})".format(self.i,self.j)
 
 class HexState:
-    neighbors = {}
+    neighbors = defaultdict(list)
     edges = defaultdict(list)
 
     def __init__(self, size, state=None, player=1):
@@ -32,25 +32,30 @@ class HexState:
         return state
 
     def __generate_neighbors(self):
-        corner = self.size-1
+        edge = self.size-1
         for i in range(self.size):
             for j in range(self.size):
-                if i > 0 and j > 0 and i < corner and j < corner:
-                    self.neighbors[(i,j)] = [(i,j-1),(i-1,j),(i-1,j+1),(i,j+1),(i+1,j),(i+1,j-1)]
-                elif i == 0:
+                if i == 0:
                     if j == 0:
                         self.neighbors[(i,j)] = [(i+1,j),(i,j+1)]
-                    elif j == corner:
+                    elif j == edge:
                         self.neighbors[(i,j)] = [(i,j-1),(i+1,j),(i+1,j-1)]
                     else:
                         self.neighbors[(i,j)] = [(i,j-1),(i,j+1),(i+1,j),(i+1,j-1)]
-                else: # i == edge
+                elif i == edge:
                     if j == 0:
                         self.neighbors[(i,j)] = [(i-1,j),(i-1,j+1),(i,j+1)]
-                    elif j == corner:
+                    elif j == edge:
                         self.neighbors[(i,j)] = [(i-1,j),(i,j-1)]
                     else:
                         self.neighbors[(i,j)] = [(i,j-1),(i-1,j),(i-1,j+1),(i,j+1)]
+                else:
+                    if j == 0:
+                        self.neighbors[(i,j)] = [(i-1,j),(i-1,j+1),(i,j+1),(i+1,j)]
+                    elif j == edge:
+                        self.neighbors[(i,j)] = [(i-1,j),(i,j-1),(i+1,j-1),(i+1,j)]
+                    else:
+                        self.neighbors[(i,j)] = [(i,j-1),(i-1,j),(i-1,j+1),(i,j+1),(i+1,j),(i+1,j-1)]
 
         self.edges[1].append([(i,0) for i in range(self.size)])
         self.edges[1].append([(i,self.size-1) for i in range(self.size)])
@@ -64,7 +69,7 @@ class HexState:
         return None
 
     def is_game_over(self):
-        for cell in self.edges[3-self.player][1]:
+        for cell in self.edges[3-self.player][0]:
             if self.state[cell] == 3-self.player:
                 if self.depth_first(cell, []):
                     return True
@@ -73,7 +78,7 @@ class HexState:
     def depth_first(self, cell, path):
         for n in self.neighbors[cell]:
             if self.state[n] == 3-self.player and n not in path:
-                if n in self.edges[3-self.player][0]:
+                if n in self.edges[3-self.player][1]:
                     return True
                 else:
                     path.append(n)
