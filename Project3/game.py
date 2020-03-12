@@ -7,11 +7,11 @@ from collections import defaultdict
 
 class HexBoardMove:
     def __init__(self, cell, player):
-        self.i, self.j = cell
+        self.r, self.c = cell
         self.player = player
 
     def __repr__(self):
-        return "({},{})".format(self.i,self.j)
+        return "({},{})".format(self.r,self.c)
 
 class HexState:
     neighbors = defaultdict(list)
@@ -26,41 +26,41 @@ class HexState:
 
     def generate_initial_state(self):
         state = {}
-        for i in range(self.size):
-            for j in range(self.size):
-                state[(i,j)] = 0 # empty cell
+        for r in range(self.size):
+            for col in range(self.size):
+                state[(r,col)] = 0 # empty cell
         return state
 
     def __generate_neighbors(self):
         edge = self.size-1
-        for i in range(self.size):
-            for j in range(self.size):
-                if i == 0:
-                    if j == 0:
-                        self.neighbors[(i,j)] = [(i+1,j),(i,j+1)]
-                    elif j == edge:
-                        self.neighbors[(i,j)] = [(i,j-1),(i+1,j),(i+1,j-1)]
+        for r in range(self.size):
+            for c in range(self.size):
+                if r == 0:
+                    if c == 0:
+                        self.neighbors[(r,c)] = [(r+1,c),(r,c+1)]
+                    elif c == edge:
+                        self.neighbors[(r,c)] = [(r,c-1),(r+1,c),(r+1,c-1)]
                     else:
-                        self.neighbors[(i,j)] = [(i,j-1),(i,j+1),(i+1,j),(i+1,j-1)]
-                elif i == edge:
-                    if j == 0:
-                        self.neighbors[(i,j)] = [(i-1,j),(i-1,j+1),(i,j+1)]
-                    elif j == edge:
-                        self.neighbors[(i,j)] = [(i-1,j),(i,j-1)]
+                        self.neighbors[(r,c)] = [(r,c-1),(r,c+1),(r+1,c),(r+1,c-1)]
+                elif r == edge:
+                    if c == 0:
+                        self.neighbors[(r,c)] = [(r-1,c),(r-1,c+1),(r,c+1)]
+                    elif c == edge:
+                        self.neighbors[(r,c)] = [(r-1,c),(r,c-1)]
                     else:
-                        self.neighbors[(i,j)] = [(i,j-1),(i-1,j),(i-1,j+1),(i,j+1)]
+                        self.neighbors[(r,c)] = [(r,c-1),(r-1,c),(r-1,c+1),(r,c+1)]
                 else:
-                    if j == 0:
-                        self.neighbors[(i,j)] = [(i-1,j),(i-1,j+1),(i,j+1),(i+1,j)]
-                    elif j == edge:
-                        self.neighbors[(i,j)] = [(i-1,j),(i,j-1),(i+1,j-1),(i+1,j)]
+                    if c == 0:
+                        self.neighbors[(r,c)] = [(r-1,c),(r-1,c+1),(r,c+1),(r+1,c)]
+                    elif c == edge:
+                        self.neighbors[(r,c)] = [(r-1,c),(r,c-1),(r+1,c-1),(r+1,c)]
                     else:
-                        self.neighbors[(i,j)] = [(i,j-1),(i-1,j),(i-1,j+1),(i,j+1),(i+1,j),(i+1,j-1)]
+                        self.neighbors[(r,c)] = [(r,c-1),(r-1,c),(r-1,c+1),(r,c+1),(r+1,c),(r+1,c-1)]
 
-        self.edges[1].append([(i,0) for i in range(self.size)])
-        self.edges[1].append([(i,self.size-1) for i in range(self.size)])
-        self.edges[2].append([(0,i) for i in range(self.size)])
-        self.edges[2].append([(self.size-1,i) for i in range(self.size)])
+        self.edges[1].append([(0,c) for c in range(self.size)])
+        self.edges[1].append([(self.size-1,c) for c in range(self.size)])
+        self.edges[2].append([(r,0) for r in range(self.size)])
+        self.edges[2].append([(r,self.size-1) for r in range(self.size)])
 
     @property
     def game_result(self):
@@ -92,7 +92,7 @@ class HexState:
         Returns: new state - use np.copy(self.state)
         """
         board = self.state.copy()
-        board[(action.i,action.j)] = action.player
+        board[(action.r,action.c)] = action.player
         return HexState(self.size, board, 3-self.player)
 
     def get_legal_actions(self):
@@ -140,11 +140,11 @@ class HexState:
         graph.add_edges_from(self.__cell_edges())
         fig = plt.figure(figsize = (9,7))
         plt.axes()
-        empty, blues, reds = self.cell_states()
+        empty, reds, blacks = self.cell_states()
         positions = self.__cell_positions()
-        nx.draw(graph, pos=positions, nodelist=empty, node_color='black', node_size=800, ax=fig.axes[0])
-        nx.draw(graph, pos=positions, nodelist=blues, node_color='blue', node_size=800, ax=fig.axes[0])
-        nx.draw(graph, pos=positions, nodelist=reds, node_color='red', node_size=800, ax=fig.axes[0])
+        nx.draw(graph, pos=positions, nodelist=empty, node_color='white', edgecolors='black', node_size=800, ax=fig.axes[0])
+        nx.draw(graph, pos=positions, nodelist=reds, node_color='red', edgecolors='black', node_size=800, ax=fig.axes[0])
+        nx.draw(graph, pos=positions, nodelist=blacks, node_color='black', edgecolors='black', node_size=800, ax=fig.axes[0])
 
         if animation_delay: # run animation automatically if delay > 0
             plt.show(block = False)
@@ -176,8 +176,8 @@ if __name__ == "__main__":
     #print(hex.is_game_over())
     #print(hex.game_result)
 
-    state = HexState(4)
+    state = HexState(3)
     node = Node(state)
     mcts = MonteCarloTreeSearch(node)
-    action = mcts.best_action(1000)
+    action = mcts.best_action(5000)
     import pdb; pdb.set_trace()
