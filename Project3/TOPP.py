@@ -63,6 +63,5 @@ if __name__ == '__main__':
     #players = []
     #for i in range(int(episodes//ann_save_interval)):
     #    players.append(ANN.model.load_weights('models/model_'+str(i*ann_save_interval)+'_simulations'))
-    #import pdb; pdb.set_trace()
     #tournament = TOPP(players, board_size)
     #tournament.run_tournament(games_to_be_played)

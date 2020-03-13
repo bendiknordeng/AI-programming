@@ -26,14 +26,16 @@ class ANN:
         }[optimizer]
 
     def fit(self, x, y):
-        self.model.fit(x, y, epochs=self.epochs, verbose=0)
+        self.model.fit(x, y, epochs=self.epochs, verbose=1)
 
     def get_move(self, state, all_moves, possible_moves):
         probabilities = self.model.predict(state)[0]
         for i in range(len(probabilities)):
             if all_moves[i] not in possible_moves:
                 probabilities[i] = 0
-        probabilities = [p/sum(probabilities) for p in probabilities]
+        sum_probs = sum(probabilities)
+        probabilities = [p/sum_probs for p in probabilities]
+        print(probabilities)
         return all_moves[np.argmax(probabilities)]
 
 

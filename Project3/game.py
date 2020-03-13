@@ -8,6 +8,7 @@ from collections import defaultdict
 class HexState:
     neighbors = defaultdict(list)
     edges = defaultdict(list)
+    all_moves = []
 
     def __init__(self, size, state=None, player=1):
         self.size = size
@@ -27,6 +28,7 @@ class HexState:
         edge = self.size-1
         for r in range(self.size):
             for c in range(self.size):
+                self.all_moves.append((r,c))
                 if r == 0:
                     if c == 0:
                         self.neighbors[(r,c)] = [(r+1,c),(r,c+1)]
@@ -60,13 +62,6 @@ class HexState:
         for cell in self.state:
             state.append(self.state[cell])
         return np.array([state])
-
-    @property
-    def all_moves(self):
-        moves = []
-        for cell in self.state:
-            moves.append(cell)
-        return moves
 
     @property
     def game_result(self):
