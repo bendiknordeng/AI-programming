@@ -43,6 +43,10 @@ class Node:
         return self.state.state
 
     @property
+    def flat_game_state(self):
+        return self.state.flat_state
+
+    @property
     def player(self):
         return self.state.player
 
@@ -56,16 +60,27 @@ class Node:
     def is_terminal_node(self):
         return self.state.is_game_over()
 
-    def rollout(self):
+    def rollout(self, ANN, eps):
         state = self.state
+        all_moves = state.all_moves
         while not state.is_game_over():
             possible_moves = state.get_legal_actions()
-            action = self.rollout_policy(possible_moves)
+            action = self.rollout_policy(all_moves, possible_moves, ANN, eps)
             state = state.move(action)
         return state.game_result
 
-    def rollout_policy(self, possible_moves):
-        return random.choice(possible_moves)
+    def rollout_policy(self, all_moves, possible_moves, ANN, eps):
+        if random.random() < eps:
+            return random.choice(possible_moves)
+        else:
+            return ANN.get_move(self.state.flat_state, all_moves, possible_moves)
+
+    def get_normalized_visits(self, tot_visits):
+        all_moves = self.state.all_moves
+        norm_visits = defaultdict(float, {k:0. for k in all_moves})
+        for c in self.children:
+            norm_visits[c.prev_action] = c.n/tot_visits
+        return np.array([list(norm_visits.values())])
 
     def backpropagate(self, result):
         self._number_of_visits += 1.

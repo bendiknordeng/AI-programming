@@ -5,14 +5,6 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from collections import defaultdict
 
-class HexBoardMove:
-    def __init__(self, cell, player):
-        self.r, self.c = cell
-        self.player = player
-
-    def __repr__(self):
-        return "({},{})".format(self.r,self.c)
-
 class HexState:
     neighbors = defaultdict(list)
     edges = defaultdict(list)
@@ -27,8 +19,8 @@ class HexState:
     def generate_initial_state(self):
         state = {}
         for r in range(self.size):
-            for col in range(self.size):
-                state[(r,col)] = 0 # empty cell
+            for c in range(self.size):
+                state[(r,c)] = 0 # empty cell
         return state
 
     def __generate_neighbors(self):
@@ -63,6 +55,20 @@ class HexState:
         self.edges[2].append([(r,self.size-1) for r in range(self.size)])
 
     @property
+    def flat_state(self):
+        state = []
+        for cell in self.state:
+            state.append(self.state[cell])
+        return np.array([state])
+
+    @property
+    def all_moves(self):
+        moves = []
+        for cell in self.state:
+            moves.append(cell)
+        return moves
+
+    @property
     def game_result(self):
         if self.is_game_over():
             return 3-self.player
@@ -92,7 +98,7 @@ class HexState:
         Returns: new state - use np.copy(self.state)
         """
         board = self.state.copy()
-        board[(action.r,action.c)] = action.player
+        board[(action[0],action[1])] = self.player
         return HexState(self.size, board, 3-self.player)
 
     def get_legal_actions(self):
@@ -102,7 +108,7 @@ class HexState:
         valid_actions = []
         for cell in self.state:
             if self.state[cell] == 0:
-                valid_actions.append(HexBoardMove(cell,self.player))
+                valid_actions.append(cell)
         return valid_actions
 
     def cell_states(self):
@@ -142,9 +148,9 @@ class HexState:
         plt.axes()
         empty, reds, blacks = self.cell_states()
         positions = self.__cell_positions()
-        nx.draw(graph, pos=positions, nodelist=empty, node_color='white', edgecolors='black', node_size=800, ax=fig.axes[0])
-        nx.draw(graph, pos=positions, nodelist=reds, node_color='red', edgecolors='black', node_size=800, ax=fig.axes[0])
-        nx.draw(graph, pos=positions, nodelist=blacks, node_color='black', edgecolors='black', node_size=800, ax=fig.axes[0])
+        nx.draw(graph, pos=positions, nodelist=empty, node_color='white', edgecolors='black', node_size=1300-100*(self.size), ax=fig.axes[0])
+        nx.draw(graph, pos=positions, nodelist=reds, node_color='red', edgecolors='black', node_size=1300-100*(self.size), ax=fig.axes[0])
+        nx.draw(graph, pos=positions, nodelist=blacks, node_color='black', edgecolors='black', node_size=1300-100*(self.size), ax=fig.axes[0])
 
         if animation_delay: # run animation automatically if delay > 0
             plt.show(block = False)
@@ -161,23 +167,8 @@ class HexState:
         return "Player {} put a piece on {}".format(player, action)
 
 if __name__ == "__main__":
-    #hex = HexState(4)
-    #new_state = hex.state.copy()
-    #red_cells = [(0, 1), (0, 2), (0, 3), (1, 0), (1, 1), (1, 2), (2, 0), (3, 0)]
-    #for cell in red_cells:
-    #    new_state[cell] = 2
-
-    #blue_cells = [(0, 0), (1, 3), (2, 1), (2, 2), (2, 3), (3, 1), (3, 2), (3, 3)]
-    #for cell in blue_cells:
-    #    new_state[cell] = 1
-
-    #hex = HexState(4, new_state, 1)
-    ##hex.draw()
-    #print(hex.is_game_over())
-    #print(hex.game_result)
-
-    state = HexState(3)
+    state = HexState(4)
     node = Node(state)
     mcts = MonteCarloTreeSearch(node)
-    action = mcts.best_action(5000)
+    action = mcts.best_action(500)
     import pdb; pdb.set_trace()

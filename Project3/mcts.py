@@ -1,11 +1,13 @@
 class MonteCarloTreeSearch:
-    def __init__(self, node):
+    def __init__(self, node, ANN, eps):
         self.root = node
+        self.ANN = ANN
+        self.eps = eps
 
-    def best_action(self, simulations_number):
-        for i in range(simulations_number):
+    def best_action(self, simulations):
+        for i in range(simulations):
             leaf = self.tree_policy()
-            result = leaf.rollout()
+            result = leaf.rollout(self.ANN, self.eps)
             leaf.backpropagate(result)
         return self.root.best_child(c_param = 0)
 
