@@ -64,16 +64,15 @@ class Node:
         state = self.state
         all_moves = state.all_moves
         while not state.is_game_over():
-            possible_moves = state.get_legal_actions()
-            action = self.rollout_policy(all_moves, possible_moves, ANN, eps)
+            action = self.rollout_policy(ANN, eps)
             state = state.move(action)
         return state.game_result
 
-    def rollout_policy(self, all_moves, possible_moves, ANN, eps):
+    def rollout_policy(self, ANN, eps):
         if random.random() < eps:
-            return random.choice(possible_moves)
+            return random.choice(self.state.get_legal_actions())
         else:
-            return ANN.get_move(self.state.flat_state, all_moves, possible_moves)
+            return ANN.get_move(self.state)
 
     def get_normalized_visits(self, tot_visits):
         all_moves = self.state.all_moves
