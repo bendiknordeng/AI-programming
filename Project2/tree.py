@@ -77,32 +77,5 @@ class Node:
         else: #player 2
             return q - c * np.sqrt(np.log(nVisits)/(nChosen+1)) #+1 in case of nChosen == 0
 
-    def expand(self):
-        action = self.untried_actions.pop()
-        next_state = self.state.move(action)
-        child_node = Node(next_state, parent=self, prev_action=action)
-        self.children.append(child_node)
-        return child_node
-
-    def is_terminal_node(self):
-        return self.state.is_game_over()
-
-    def rollout(self):
-        state = self.state
-        while not state.is_game_over():
-            possible_moves = state.get_legal_actions()
-            action = self.rollout_policy(possible_moves)
-            state = state.move(action)
-        return state.game_result
-
-    def rollout_policy(self, possible_moves):
-        return random.choice(possible_moves)
-
-    def backpropagate(self, result):
-        self._number_of_visits += 1.
-        self._results[result] += 1.
-        if self.parent:
-            self.parent.backpropagate(result)
-
     def __repr__(self):
         return str({"Node",self.state, self.player})
