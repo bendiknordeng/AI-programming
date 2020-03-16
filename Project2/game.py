@@ -1,32 +1,39 @@
 import numpy as np
 
 
-class GameState:
-    def __init__(self, state, turn=1):
+class Board:
+    def __init__(self, state, player=1):
         self.state = state
-        self.turn = turn
+        self.player = player
+
+    def getState(self):
+        return (self.player, self.state)
 
     @property
-    def game_result(self):
+    def player1Won(self):
         if self.is_game_over():
-            return self.turn
+            return 3 - self.player == 1 #will return True if player 1 moved to final state
         return None
 
-class NIMState(GameState):
-    def __init__(self, state, K, turn=1):
-        super().__init__(state, turn)
+
+class NIMBoard(Board):
+    def __init__(self, state, K, player=1):
+        super().__init__(state, player)
         self.K = K
 
     def is_game_over(self):
-        return self.state <= self.K
+        #print(self.getState()[1])
+        return self.getState()[1] <= self.K
 
     def move(self, action):
-        new_state = np.copy(self.state)
-        new_state -= action
-        return NIMState(new_state, self.K, 3 - self.turn)
+        self.state = np.copy(self.state) - action
+        self.player = 3 - self.player #switch player after each move
 
     def get_legal_actions(self):
         return list(range(1, min(self.state, self.K) + 1))
+
+    def setPosition(self, state):
+        self.player, self.state = state
 
     @staticmethod
     def print_move(action, player, state):
@@ -35,9 +42,9 @@ class NIMState(GameState):
         return "Player {} selects {:>8}: {:>21}\n".format(player, stones, remaining)
 
 
-class LedgeState(GameState):
-    def __init__(self, state, turn=1):
-        super().__init__(state, turn)
+class LedgeBoard(Board):
+    def __init__(self, state, player=1):
+        super().__init__(state, player)
 
     def is_game_over(self):
         return self.state[0] == 2
@@ -55,7 +62,7 @@ class LedgeState(GameState):
             new_board[j] = new_board[i]
             new_board[i] = 0
 
-        return LedgeState(new_board, 3 - self.turn)
+        return LedgeBoard(new_board, 3 - self.player)
 
     def get_legal_actions(self):
         if self.state[0] == 2: return [0] # make it only possible to pick up gold if possible

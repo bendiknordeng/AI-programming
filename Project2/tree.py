@@ -2,49 +2,80 @@ import random
 import numpy as np
 from collections import defaultdict
 
+
+class Tree:
+    def __init__(self):
+        self.stateToNode = {} #key: (player, boardState), value: Node-object
+
+    def getNode(self, state): # lookup Node in tree
+        if self.hasState(state):
+            return self.stateToNode[state] #state is list [player, boardState]
+        return None
+
+    def hasState(self, state):
+        return self.stateToNode.get(state) != None
+
+    def addState(self, state, legal_actions):
+        if not self.hasState(state):
+            self.stateToNode[state] = Node(state, legal_actions)
+
+    def defaultPolicy(self, board):
+        return random.choice(board.get_legal_actions()) #choose random action
+
+    def treePolicy(self, state, c):
+        import pdb; pdb.set_trace()
+        node = self.getNode(state)
+        actions = list(node.actions.keys())
+        bestAction = random.choice(actions)
+        bestValue = -1 * np.infty if state[0] == 1 else np.infty
+        for action in actions:
+            actionValue = node.getActionValue(action, c)
+            if state[0] == 1: # player 1
+                if actionValue >= bestValue:
+                    bestValue = actionValue
+                    bestAction = action
+            else: #player 2
+                if actionValue <= bestValue:
+                    bestValue = actionValue
+                    bestAction = action
+        return bestAction
+
+    def backup(self, nodes, z):
+        for node in nodes:
+            node.incrementVisit()
+            node.incrementLastAction()
+            node.updateQ(z)
+
+
 class Node:
-    def __init__(self, state, parent=None, prev_action=None):
-        self.state = state
-        self.children = []
-        self._number_of_visits = 0 # visits
-        self._results = defaultdict(int)
-        self.parent = parent
-        self.prev_action = prev_action
-        self._untried_actions = None
+    def __init__(self, state, legal_actions):
+        self.player, self.state = state
+        self.nVisits = 1
+        self.actions = {} # key: action, value: [number_of_times_chosen, q_value]
+        for action in legal_actions:
+            self.actions[action] = [0,0]
+        self.prev_action = None
 
-    def is_fully_expanded(self):
-        return len(self.untried_actions) == 0
+    def incrementVisit(self):
+        self.nVisits += 1
 
-    def best_child(self, c_param=1.):
-        choices_weights = [
-            c.q + c_param * np.sqrt((np.log(self.n) /(1+c.n)))
-            for c in self.children
-        ]
-        return self.children[np.argmax(choices_weights)]
+    def incrementLastAction(self):
+        self.actions[self.prev_action][0] += 1
 
-    @property
-    def untried_actions(self):
-        if self._untried_actions is None:
-            self._untried_actions = self.state.get_legal_actions()
-        return self._untried_actions
+    def setLastAction(self, action):
+        self.prev_action = action
 
-    @property
-    def q(self):
-        wins = self._results[3-self.player]
-        losses = self._results[self.player]
-        return (wins-losses) / self.n
 
-    @property
-    def n(self):
-        return self._number_of_visits
+    def updateQ(self, z):
+        self.actions[self.prev_action][1] += (z - self.actions[self.prev_action][1])/(self.actions[self.prev_action][0])
 
-    @property
-    def game_state(self):
-        return self.state.state
-
-    @property
-    def player(self):
-        return self.state.turn
+    def getActionValue(self, action, c):
+        nVisits = self.nVisits
+        nChosen, q = self.actions[action]
+        if self.player == 1: #player 1
+            return q + c * np.sqrt(np.log(nVisits)/(nChosen+1)) #+1 in case of nChosen == 0
+        else: #player 2
+            return q - c * np.sqrt(np.log(nVisits)/(nChosen+1)) #+1 in case of nChosen == 0
 
     def expand(self):
         action = self.untried_actions.pop()
@@ -74,4 +105,4 @@ class Node:
             self.parent.backpropagate(result)
 
     def __repr__(self):
-        return str({"Action": self.prev_action, "Result": self._results, "Q": self.q, "n": self.n})
+        return str({"Node",self.state, self.player})
