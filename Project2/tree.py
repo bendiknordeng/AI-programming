@@ -1,6 +1,5 @@
 import random
 import numpy as np
-from collections import defaultdict
 
 class Tree:
     def __init__(self):
@@ -11,7 +10,7 @@ class Tree:
         if self.state_to_node.get(state):
             return self.state_to_node[state] #state is list [player, boardState]
         else:
-            self.state_to_node[state] = Node(state, env.get_legal_actions())
+            self.state_to_node[state] = Node(state[0], env.get_legal_actions())
             return False
 
     def rollout_policy(self, board):
@@ -41,13 +40,14 @@ class Tree:
             node.update_Q(z)
 
 class Node:
-    def __init__(self, state, legal_actions):
-        self.player, self.state = state
+    def __init__(self, player, legal_actions):
+        self.player = player
         self.visits = 1
         self.actions = {} # key: action, value: [number_of_times_chosen, q_value]
         for action in legal_actions:
             self.actions[action] = [0,0]
         self.prev_action = None
+        import pdb; pdb.set_trace()
 
     def increment_visits(self):
         self.visits += 1
@@ -67,3 +67,6 @@ class Node:
             return q + c * np.sqrt(np.log(self.visits)/(n+1)) #+1 in case n == 0
         else: #player 2
             return q - c * np.sqrt(np.log(self.visits)/(n+1)) #+1 in case n == 0
+
+    def __repr__(self):
+        return "Player: {}, Visits: {}, Actions: {}, Previous action: {}".format(self.player, self.visits, self.actions, self.prev_action)
