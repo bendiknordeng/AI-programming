@@ -11,8 +11,7 @@ def set_starting_player(P):
     return P
 
 def print_last_move(iteration, action, board, game_mode):
-    player = board.getState()[0]
-    state = board.getState()[1]
+    player, state = board.getState()
     msg = ""
     msg += "{}: ".format(iteration+1)
     msg += NIMBoard.print_move(state, player, 0) if game_mode == 0 else LedgeBoard.print_move(0, player, state)
@@ -45,11 +44,11 @@ def run_batch(G, M, N, K, B, P, game_mode, verbose):
 
 
 if __name__ == '__main__':
-    G = 20
-    M = 200
-    N = 20
-    K = 5
-    B = [0, 1, 0, 1, 0, 1, 0, 0, 2, 0, 1, 0, 1]
+    G = 10
+    M = 500
+    N = 15
+    K = 3
+    B = [1, 0, 0, 2, 0, 1, 0, 1]
     P = 1
     game_mode = 1 # (0/1): NIM/Ledge
     verbose = True
