@@ -4,7 +4,7 @@ import copy
 class MonteCarloTreeSearch:
     def __init__(self, c = 1):
         self.tree = Tree()
-        self.c = c #exploration constant
+        self.c = c # exploration constant
 
     def init_tree(self, env):
         self.tree.state_to_node.clear()
@@ -17,7 +17,7 @@ class MonteCarloTreeSearch:
 
     def simulate(self, env):
         traversed_nodes = self.sim_tree(env)
-        z = self.rollout(env) #rollout env
+        z = self.rollout(env) # rollout env
         self.tree.backup(traversed_nodes, z)
 
     def sim_tree(self, env):
