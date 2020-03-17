@@ -34,15 +34,14 @@ def run_batch(G, M, M_decay, N, K, B, P, game_mode, verbose):
         verbose_message += "Initial state: {}\n".format(board.get_state()[1])
         MCTS.init_tree(board)
         iteration = 0
-        start_M = M
+        simulations = M
         while not board.is_game_over():
             iteration += 1
-            action = MCTS.search(board, M)
+            action = MCTS.search(board, simulations)
             verbose_message += "{}: ".format(iteration)
             verbose_message += board.print_move(action)
             board.move(action)
-            M = math.ceil(M * M_decay)
-        M = start_M
+            simulations = math.ceil(simulations * M_decay)
         if initial_player == board.player:
             wins += 1
         verbose_message += print_last_move(iteration, board, game_mode)
@@ -53,13 +52,13 @@ def run_batch(G, M, M_decay, N, K, B, P, game_mode, verbose):
 
 if __name__ == '__main__':
     G = 10
-    M = 500
-    M_decay = 0.5
-    N = 35
+    M = 250
+    M_decay = 0
+    N = 15
     K = 3
-    B = [1, 0, 2, 1, 0, 0, 0, 1]
+    B = [0, 0, 1, 1, 0, 2]
     P = 1
-    game_mode = 0  # (0/1): NIM/Ledge
+    game_mode = 1  # (0/1): NIM/Ledge
     verbose = True
 
     run_batch(G, M, M_decay, N, K, B, P, game_mode, verbose)
