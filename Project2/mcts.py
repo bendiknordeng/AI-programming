@@ -1,22 +1,28 @@
 from tree import Tree
 class MonteCarloTreeSearch:
-    def __init__(self, board, state, c = 1):
+    def __init__(self, c = 1):
         self.tree = Tree()
+        self.c = c #exploration constant
+
+    def initTree(self, board):
+        self.tree.stateToNode.clear()
+        self.tree.addState(board.getState(), board.get_legal_actions())
+
+    def search(self, board, simulations_number):
         self.board = board
         self.search_start_state = board.getState()
-        self.c = c #exploration constant
-        self.root = board
-
-    def search(self, simulations_number):
         for i in range(simulations_number):
             self.simulate(self.board, self.search_start_state)
+
         self.board.setPosition(self.search_start_state)
-        return self.tree.treePolicy(self.search_start_state, 0) #find greedy best action
+        action = self.tree.treePolicy(self.search_start_state, 0)
+        return action#find greedy best action
 
     def simulate(self, board, state):
         self.board.setPosition(state)
         traversedNodes = self.simTree(board)
         z = self.simDefault(board) #rollout board
+
         self.tree.backup(traversedNodes, z)
 
     def simTree(self, board):

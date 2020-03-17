@@ -23,7 +23,6 @@ class Tree:
         return random.choice(board.get_legal_actions()) #choose random action
 
     def treePolicy(self, state, c):
-        import pdb; pdb.set_trace()
         node = self.getNode(state)
         actions = list(node.actions.keys())
         bestAction = random.choice(actions)
@@ -46,6 +45,15 @@ class Tree:
             node.incrementLastAction()
             node.updateQ(z)
 
+    def __repr__(self):
+        msg = "\n"
+        for state in self.stateToNode:
+            msg += "(" + str(state[0]) + "," +  str(state[1]) +"): "
+            for action in self.stateToNode[state].actions:
+                msg += "(" + str(action) +", " + str(self.stateToNode[state].getActionValue(action, 1)) +"), "
+            msg += "\n"
+        return msg
+
 
 class Node:
     def __init__(self, state, legal_actions):
@@ -64,7 +72,6 @@ class Node:
 
     def setLastAction(self, action):
         self.prev_action = action
-
 
     def updateQ(self, z):
         self.actions[self.prev_action][1] += (z - self.actions[self.prev_action][1])/(self.actions[self.prev_action][0])

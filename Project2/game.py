@@ -12,7 +12,7 @@ class Board:
     @property
     def player1Won(self):
         if self.is_game_over():
-            return 3 - self.player == 1 #will return True if player 1 moved to final state
+            return self.player == 1 # will return True if player 1 moved to final state
         return None
 
 
@@ -22,7 +22,7 @@ class NIMBoard(Board):
         self.K = K
 
     def is_game_over(self):
-        #print(self.getState()[1])
+
         return self.getState()[1] <= self.K
 
     def move(self, action):
