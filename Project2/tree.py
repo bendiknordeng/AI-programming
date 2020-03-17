@@ -13,8 +13,8 @@ class Tree:
             self.state_to_node[state] = Node(state[0], env.get_legal_actions())
             return False
 
-    def rollout_policy(self, board):
-        return random.choice(board.get_legal_actions()) #choose random action
+    def rollout_policy(self, env):
+        return random.choice(env.get_legal_actions()) #choose random action
 
     def tree_policy(self, env, c):
         player, _ = env.get_state()
