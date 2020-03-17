@@ -35,7 +35,7 @@ class NIMBoard(Board):
 
     @staticmethod
     def print_move(action, player, state):
-        remaining = "Remaining stones = {:<2}".format(state)
+        remaining = "Remaining stones = {:<2}".format(state-action if state>0 else 0)
         stones = "{:<1} stones".format(action) if action > 1 else "{:<2} stone".format(action)
         return "Player {} selects {:>8}: {:>21}\n".format(player, stones, remaining)
 
