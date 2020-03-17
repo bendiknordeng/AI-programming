@@ -23,17 +23,8 @@ class Tree:
         actions = list(node.actions.keys())
         best_action = random.choice(actions)
         best_value = -np.infty if player == 1 else np.infty
-        for action in actions:
-            action_value = node.get_action_value(action, c)
-            if player == 1:
-                if action_value > best_value:
-                    best_value = action_value
-                    best_action = action
-            else:
-                if action_value < best_value:
-                    best_value = action_value
-                    best_action = action
-        return best_action
+        action_values = [node.get_action_value(a, c) for a in actions]
+        return actions[np.argmax(action_values) if player == 1 else np.argmin(action_values)]
 
     def backup(self, nodes, z):
         for node in nodes:
@@ -44,7 +35,7 @@ class Node:
     def __init__(self, player, legal_actions):
         self.player = player
         self.visits = 1
-        # key: action, value: [number_of_times_chosen, q_value]
+        # key: action, value: [visits, q_value]
         self.actions = {}
         for action in legal_actions:
             self.actions[action] = [0, 0]
@@ -63,10 +54,8 @@ class Node:
         visits = self.visits
         n, q = self.actions[action]
         if self.player == 1:
-            # +1 in case n == 0
             return q + c * np.sqrt(np.log(self.visits) / (n + 1))
         else:
-            # +1 in case n == 0
             return q - c * np.sqrt(np.log(self.visits) / (n + 1))
 
     def __repr__(self):
