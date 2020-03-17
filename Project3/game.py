@@ -58,7 +58,7 @@ class HexState:
 
     @property
     def flat_state(self):
-        state = []
+        state = [self.player]
         for cell in self.state:
             state.append(self.state[cell])
         return np.array([state])

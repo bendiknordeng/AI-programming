@@ -9,12 +9,12 @@ class ANN:
         self.epochs = epochs
         # Build model of type Sequential()
         self.model = Sequential()
-        self.model.add(Dense(io_layer_size, input_dim=io_layer_size))
+        self.model.add(Dense(io_layer_size, input_dim=1+io_layer_size))
         for i in range(len(hidden_layer_sizes)):
             self.model.add(Dense(hidden_layer_sizes[i], activation=activation_func))
         self.model.add(Dense(io_layer_size, activation=tf.keras.activations.softmax))
         optimizer = self.__choose_optimizer(optimizer)
-        self.model.compile(optimizer=optimizer,loss=tf.keras.losses.MeanSquaredError())
+        self.model.compile(optimizer=optimizer,loss=tf.keras.losses.BinaryCrossentropy())
         if weights:
             self.model.load_weights(weights)
 
@@ -22,7 +22,7 @@ class ANN:
         return {
             "Adagrad": tf.keras.optimizers.Adagrad(learning_rate=self.alpha),
             "SGD": tf.keras.optimizers.SGD(learning_rate=self.alpha),
-            "RMSProp": tf.keras.optimizers.RMSprop(learning_rate=self.alpha),
+            "RMSprop": tf.keras.optimizers.RMSprop(learning_rate=self.alpha),
             "Adam": tf.keras.optimizers.Adam(learning_rate=self.alpha),
         }[optimizer]
 
