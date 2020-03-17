@@ -11,11 +11,10 @@ def set_starting_player(P):
     return P
 
 def print_last_move(iteration, action, board, game_mode):
-    player, state = board.getState()
     msg = ""
     msg += "{}: ".format(iteration+1)
-    msg += NIMBoard.print_move(state, player, 0) if game_mode == 0 else LedgeBoard.print_move(0, player, state)
-    msg += "Player "+str(player)+" won\n\n"
+    msg += NIMBoard.print_move(board.get_state()[1],board) if game_mode == 0 else LedgeBoard.print_move(0, board)
+    msg += "Player "+str(board.get_state()[0])+" won\n\n"
     return msg
 
 def run_batch(G, M, N, K, B, P, game_mode, verbose):
@@ -25,18 +24,18 @@ def run_batch(G, M, N, K, B, P, game_mode, verbose):
     for i in tqdm(range(G)):
         initial_player = set_starting_player(P)
         board = NIMBoard(N, K, initial_player) if game_mode == 0 else LedgeBoard(B, initial_player)
-        state = board.getState()[1]
+        _, state = board.get_state()
         verbose_message += "Initial state: {}\n".format(state)
         iteration = 0
         while not board.is_game_over():
             iteration += 1
-            MCTS.initTree(board, game_mode)
+            MCTS.init_tree(board)
             action = MCTS.search(board, M)
             if verbose:
                 verbose_message += "{}: ".format(iteration)
-                verbose_message += NIMBoard.print_move(action, 3-board.getState()[0], board.getState()[1]) if game_mode == 0 else LedgeBoard.print_move(action, 3-board.getState()[0], board.getState()[1])
+                verbose_message += NIMBoard.print_move(action, board) if game_mode == 0 else LedgeBoard.print_move(action, board)
             board.move(action)
-        if (initial_player == 1 and board.player1Won()) or (initial_player == 2 and not board.player1Won()):
+        if (initial_player == 1 and board.player1_won()) or (initial_player == 2 and not board.player1_won()):
             wins += 1
         verbose_message += print_last_move(iteration, action, board, game_mode)
     if verbose: print(verbose_message)
@@ -46,11 +45,11 @@ def run_batch(G, M, N, K, B, P, game_mode, verbose):
 if __name__ == '__main__':
     G = 10
     M = 500
-    N = 15
+    N = 25
     K = 3
     B = [1, 0, 0, 2, 0, 1, 0, 1]
     P = 1
-    game_mode = 1 # (0/1): NIM/Ledge
+    game_mode = 0 # (0/1): NIM/Ledge
     verbose = True
 
     run_batch(G, M, N, K, B, P, game_mode, verbose)

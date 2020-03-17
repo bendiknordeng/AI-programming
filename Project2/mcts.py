@@ -1,44 +1,39 @@
 from tree import Tree
+import copy
+
 class MonteCarloTreeSearch:
     def __init__(self, c = 1):
         self.tree = Tree()
         self.c = c #exploration constant
 
-    def initTree(self, board, game_mode):
-        self.tree.setGameMode(game_mode)
-        self.tree.stateToNode.clear()
-        self.tree.addState(board.getState(), board.get_legal_actions())
+    def init_tree(self, env):
+        self.tree.state_to_node.clear()
 
-    def search(self, board, simulations_number):
-        self.board = board
-        self.search_start_state = board.getState()
+    def search(self, env, simulations_number):
         for i in range(simulations_number):
-            self.simulate(self.board, self.search_start_state)
-        self.board.setPosition(self.search_start_state)
-        return self.tree.treePolicy(self.search_start_state, 0) # find greedy best action
+            simulation_env = copy.copy(env)
+            self.simulate(simulation_env)
+        return self.tree.tree_policy(env, 0) # find greedy best action
 
-    def simulate(self, board, state):
-        self.board.setPosition(state)
-        traversedNodes = self.simTree(board)
-        z = self.simDefault(board) #rollout board
-        self.tree.backup(traversedNodes, z)
+    def simulate(self, env):
+        traversed_nodes = self.sim_tree(env)
+        z = self.rollout(env) #rollout env
+        self.tree.backup(traversed_nodes, z)
 
-    def simTree(self, board):
+    def sim_tree(self, env):
         c = self.c
         path = [] #list of nodes traversed
-        while not board.is_game_over():
-            state = board.getState()
-            if not self.tree.hasState(state):
-                self.tree.addState(state, board.get_legal_actions())
+        while not env.is_game_over():
+            if not self.tree.get_node(env):
                 return path
-            path.append(self.tree.getNode(state))
-            action = self.tree.treePolicy(state, self.c) # find next action
-            self.tree.getNode(state).setLastAction(action)
-            board.move(action)
+            path.append(self.tree.get_node(env))
+            action = self.tree.tree_policy(env, self.c) # find next action
+            self.tree.get_node(env).set_last_action(action)
+            env.move(action)
         return path
 
-    def simDefault(self, board):
-        while not board.is_game_over():
-            action = self.tree.defaultPolicy(board)
-            board.move(action)
-        return board.player1Won()
+    def rollout(self, env):
+        while not env.is_game_over():
+            action = self.tree.rollout_policy(env)
+            env.move(action)
+        return env.player1_won()
