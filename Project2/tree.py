@@ -9,7 +9,6 @@ class Tree:
     def get_node(self, env):  # lookup Node in tree
         state = env.get_state()
         if self.state_to_node.get(state):
-            # state is list [player, boardState]
             return self.state_to_node[state]
         else:
             self.state_to_node[state] = Node(state[0], env.get_legal_actions())
@@ -27,11 +26,11 @@ class Tree:
         for action in actions:
             action_value = node.get_action_value(action, c)
             if player == 1:
-                if action_value >= best_value:
+                if action_value > best_value:
                     best_value = action_value
                     best_action = action
             else:
-                if action_value <= best_value:
+                if action_value < best_value:
                     best_value = action_value
                     best_action = action
         return best_action

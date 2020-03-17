@@ -13,11 +13,9 @@ def set_starting_player(P):
     return P
 
 
-def print_last_move(iteration, board, game_mode):
-    msg = ""
-    msg += "{}: ".format(iteration + 1)
-    msg += board.print_move(0)
-    msg += "Player " + str(board.get_state()[0]) + " won\n\n"
+def print_last_move(iteration, env):
+    msg = "{}: {}".format(iteration, env.print_move(0))
+    msg += "Player " + str(env.player) + " won\n\n"
     return msg
 
 
@@ -26,25 +24,24 @@ def run_batch(G, M, M_decay, N, K, B, P, game_mode, verbose):
     verbose_message = "\n"
     MCTS = MonteCarloTreeSearch()
     for i in tqdm(range(G)):
-        initial_player = set_starting_player(P)
+        starting_player = set_starting_player(P)
         if game_mode == 0:
-            board = NIMBoard(N, K, initial_player)
+            env = NIMBoard(N, K, starting_player)
         else:
-            board = LedgeBoard(B, initial_player)
-        verbose_message += "Initial state: {}\n".format(board.get_state()[1])
-        MCTS.init_tree(board)
-        iteration = 0
+            env = LedgeBoard(B, starting_player)
+        verbose_message += "Initial state: {}\n".format(env.get_state()[1])
+        MCTS.init_tree(env)
+        iteration = 1
         simulations = M
-        while not board.is_game_over():
+        while not env.is_game_over():
+            action = MCTS.search(env, simulations) # find best move
+            verbose_message += "{}: {}".format(iteration, env.print_move(action))
+            env.move(action)
             iteration += 1
-            action = MCTS.search(board, simulations)
-            verbose_message += "{}: ".format(iteration)
-            verbose_message += board.print_move(action)
-            board.move(action)
-            simulations = math.ceil(simulations * M_decay)
-        if initial_player == board.player:
+            simulations = math.ceil(simulations * M_decay) # (optional) speed up for mcts
+        if starting_player == env.player:
             wins += 1
-        verbose_message += print_last_move(iteration, board, game_mode)
+        verbose_message += print_last_move(iteration, env)
     if verbose:
         print(verbose_message)
     print("Starting player won {}/{} ({}%)".format(wins, G, 100 * wins / G))
