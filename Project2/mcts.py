@@ -36,4 +36,4 @@ class MonteCarloTreeSearch:
         while not env.is_game_over():
             action = self.tree.rollout_policy(env)
             env.move(action)
-        return env.player1_won()
+        return env.result()

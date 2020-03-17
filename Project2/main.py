@@ -35,7 +35,7 @@ def run_batch(G, M, N, K, B, P, game_mode, verbose):
                 verbose_message += "{}: ".format(iteration)
                 verbose_message += NIMBoard.print_move(action, board) if game_mode == 0 else LedgeBoard.print_move(action, board)
             board.move(action)
-        if (initial_player == 1 and board.player1_won()) or (initial_player == 2 and not board.player1_won()):
+        if ((initial_player == 1 and board.result() == 1) or (initial_player == 2 and board.result() == -1)):
             wins += 1
         verbose_message += print_last_move(iteration, action, board, game_mode)
     if verbose: print(verbose_message)
@@ -45,7 +45,7 @@ def run_batch(G, M, N, K, B, P, game_mode, verbose):
 if __name__ == '__main__':
     G = 10
     M = 500
-    N = 25
+    N = 30
     K = 3
     B = [1, 0, 0, 2, 0, 1, 0, 1]
     P = 1

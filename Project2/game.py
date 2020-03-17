@@ -6,9 +6,9 @@ class Board:
         self.state = state
         self.player = player
 
-    def player1_won(self):
+    def result(self):
         if self.is_game_over():
-            return self.player == 1 # will return True if player 1 moved to final state
+            return 1 if self.player == 1 else -1 # will return True if player 1 moved to final state
 
     def get_state(self):
         if type(self.state) == int:
