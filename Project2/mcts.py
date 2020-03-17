@@ -4,7 +4,8 @@ class MonteCarloTreeSearch:
         self.tree = Tree()
         self.c = c #exploration constant
 
-    def initTree(self, board):
+    def initTree(self, board, game_mode):
+        self.tree.setGameMode(game_mode)
         self.tree.stateToNode.clear()
         self.tree.addState(board.getState(), board.get_legal_actions())
 
@@ -13,16 +14,13 @@ class MonteCarloTreeSearch:
         self.search_start_state = board.getState()
         for i in range(simulations_number):
             self.simulate(self.board, self.search_start_state)
-
         self.board.setPosition(self.search_start_state)
-        action = self.tree.treePolicy(self.search_start_state, 0)
-        return action#find greedy best action
+        return self.tree.treePolicy(self.search_start_state, 0) # find greedy best action
 
     def simulate(self, board, state):
         self.board.setPosition(state)
         traversedNodes = self.simTree(board)
         z = self.simDefault(board) #rollout board
-
         self.tree.backup(traversedNodes, z)
 
     def simTree(self, board):
@@ -32,7 +30,6 @@ class MonteCarloTreeSearch:
             state = board.getState()
             if not self.tree.hasState(state):
                 self.tree.addState(state, board.get_legal_actions())
-                #path.append(self.tree.getNode(state))
                 return path
             path.append(self.tree.getNode(state))
             action = self.tree.treePolicy(state, self.c) # find next action
@@ -44,4 +41,4 @@ class MonteCarloTreeSearch:
         while not board.is_game_over():
             action = self.tree.defaultPolicy(board)
             board.move(action)
-        return board.player1Won
+        return board.player1Won()

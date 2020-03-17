@@ -1,21 +1,26 @@
 import random
 import numpy as np
-from collections import defaultdict
-
 
 class Tree:
     def __init__(self):
+        self.game_mode = 0
         self.stateToNode = {} #key: (player, boardState), value: Node-object
 
+    def setGameMode(self, game_mode):
+        self.game_mode = game_mode
+
     def getNode(self, state): # lookup Node in tree
+        state = (state[0] , tuple(state[1])) if self.game_mode else state #make tuple if Ledge
         if self.hasState(state):
             return self.stateToNode[state] #state is list [player, boardState]
         return None
 
     def hasState(self, state):
+        state = (state[0] , tuple(state[1])) if self.game_mode else state #make tuple if Ledge
         return self.stateToNode.get(state) != None
 
     def addState(self, state, legal_actions):
+        state = (state[0] , tuple(state[1])) if self.game_mode else state #make tuple if Ledge
         if not self.hasState(state):
             self.stateToNode[state] = Node(state, legal_actions)
 
@@ -23,6 +28,7 @@ class Tree:
         return random.choice(board.get_legal_actions()) #choose random action
 
     def treePolicy(self, state, c):
+        state = (state[0] , tuple(state[1])) if self.game_mode else state #make tuple if Ledge
         node = self.getNode(state)
         actions = list(node.actions.keys())
         bestAction = random.choice(actions)
@@ -45,16 +51,6 @@ class Tree:
             node.incrementLastAction()
             node.updateQ(z)
 
-    def __repr__(self):
-        msg = "\n"
-        for state in self.stateToNode:
-            msg += "(" + str(state[0]) + "," +  str(state[1]) +"): "
-            for action in self.stateToNode[state].actions:
-                msg += "(" + str(action) +", " + str(self.stateToNode[state].getActionValue(action, 1)) +"), "
-            msg += "\n"
-        return msg
-
-
 class Node:
     def __init__(self, state, legal_actions):
         self.player, self.state = state
@@ -74,15 +70,13 @@ class Node:
         self.prev_action = action
 
     def updateQ(self, z):
-        self.actions[self.prev_action][1] += (z - self.actions[self.prev_action][1])/(self.actions[self.prev_action][0])
+        nChosen, q = self.actions[self.prev_action]
+        self.actions[self.prev_action][1] += (z - q)/(nChosen)
 
     def getActionValue(self, action, c):
         nVisits = self.nVisits
         nChosen, q = self.actions[action]
         if self.player == 1: #player 1
-            return q + c * np.sqrt(np.log(nVisits)/(nChosen+1)) #+1 in case of nChosen == 0
+            return q + c * np.sqrt(np.log(nVisits)/(nChosen+1)) #+1 in case nChosen == 0
         else: #player 2
-            return q - c * np.sqrt(np.log(nVisits)/(nChosen+1)) #+1 in case of nChosen == 0
-
-    def __repr__(self):
-        return str({"Node",self.state, self.player})
+            return q - c * np.sqrt(np.log(nVisits)/(nChosen+1)) #+1 in case nChosen == 0

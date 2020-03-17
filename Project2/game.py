@@ -6,14 +6,10 @@ class Board:
         self.state = state
         self.player = player
 
-    def getState(self):
-        return (self.player, self.state)
 
-    @property
     def player1Won(self):
         if self.is_game_over():
             return self.player == 1 # will return True if player 1 moved to final state
-        return None
 
 
 class NIMBoard(Board):
@@ -22,15 +18,17 @@ class NIMBoard(Board):
         self.K = K
 
     def is_game_over(self):
-
-        return self.getState()[1] <= self.K
+        return self.state <= self.K
 
     def move(self, action):
-        self.state = np.copy(self.state) - action
+        self.state -= action
         self.player = 3 - self.player #switch player after each move
 
     def get_legal_actions(self):
         return list(range(1, min(self.state, self.K) + 1))
+
+    def getState(self):
+        return (self.player, self.state)
 
     def setPosition(self, state):
         self.player, self.state = state
@@ -49,6 +47,12 @@ class LedgeBoard(Board):
     def is_game_over(self):
         return self.state[0] == 2
 
+    def getState(self):
+        return (self.player, self.state)
+
+    def setPosition(self, state):
+        self.player, self.state = state
+
     def move(self, action):
         new_board = np.copy(self.state)
         if action == 0:
@@ -61,8 +65,8 @@ class LedgeBoard(Board):
                 j)
             new_board[j] = new_board[i]
             new_board[i] = 0
-
-        return LedgeBoard(new_board, 3 - self.player)
+        self.state = new_board
+        self.player = 3 - self.player
 
     def get_legal_actions(self):
         if self.state[0] == 2: return [0] # make it only possible to pick up gold if possible
