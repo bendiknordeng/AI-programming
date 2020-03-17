@@ -22,7 +22,7 @@ class Tree:
         node = self.get_node(env)
         actions = list(node.actions.keys())
         best_action = random.choice(actions)
-        best_value = -1 * np.infty if player == 1 else np.infty
+        best_value = -np.infty if player == 1 else np.infty
         for action in actions:
             action_value = node.get_action_value(action, c)
             if player == 1:
