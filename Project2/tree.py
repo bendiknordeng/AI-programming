@@ -1,77 +1,71 @@
 import random
 import numpy as np
-from collections import defaultdict
+
+class Tree:
+    def __init__(self):
+        self.state_to_node = {} #key: (player, boardState), value: Node-object
+
+    def get_node(self, env): # lookup Node in tree
+        state = env.get_state()
+        if self.state_to_node.get(state):
+            return self.state_to_node[state] #state is list [player, boardState]
+        else:
+            self.state_to_node[state] = Node(state[0], env.get_legal_actions())
+            return False
+
+    def rollout_policy(self, env):
+        return random.choice(env.get_legal_actions()) #choose random action
+
+    def tree_policy(self, env, c):
+        player, _ = env.get_state()
+        node = self.get_node(env)
+        actions = list(node.actions.keys())
+        best_action = random.choice(actions)
+        best_value = -np.infty if player == 1 else np.infty
+        for action in actions:
+            action_value = node.get_action_value(action, c)
+            if player == 1:
+                if action_value >= best_value:
+                    best_value = action_value
+                    best_action = action
+            else:
+                if action_value <= best_value:
+                    best_value = action_value
+                    best_action = action
+        return best_action
+
+    def backup(self, nodes, z):
+        for node in nodes:
+            node.increment_visits()
+            node.update_Q(z)
 
 class Node:
-    def __init__(self, state, parent=None, prev_action=None):
-        self.state = state
-        self.children = []
-        self._number_of_visits = 0 # visits
-        self._results = defaultdict(int)
-        self.parent = parent
-        self.prev_action = prev_action
-        self._untried_actions = None
+    def __init__(self, player, legal_actions):
+        self.player = player
+        self.visits = 1
+        self.actions = {} # key: action, value: [number_of_times_chosen, q_value]
+        for action in legal_actions:
+            self.actions[action] = [0,0]
+        self.prev_action = None
 
-    def is_fully_expanded(self):
-        return len(self.untried_actions) == 0
+    def increment_visits(self):
+        self.visits += 1
+        self.actions[self.prev_action][0] += 1
 
-    def best_child(self, c_param=1.):
-        choices_weights = [
-            c.q + c_param * np.sqrt((np.log(self.n) /(1+c.n)))
-            for c in self.children
-        ]
-        return self.children[np.argmax(choices_weights)]
+    def set_last_action(self, action):
+        self.prev_action = action
 
-    @property
-    def untried_actions(self):
-        if self._untried_actions is None:
-            self._untried_actions = self.state.get_legal_actions()
-        return self._untried_actions
+    def update_Q(self, z):
+        n, q = self.actions[self.prev_action]
+        self.actions[self.prev_action][1] += (z - q)/n
 
-    @property
-    def q(self):
-        wins = self._results[3-self.player]
-        losses = self._results[self.player]
-        return (wins-losses) / self.n
-
-    @property
-    def n(self):
-        return self._number_of_visits
-
-    @property
-    def game_state(self):
-        return self.state.state
-
-    @property
-    def player(self):
-        return self.state.turn
-
-    def expand(self):
-        action = self.untried_actions.pop()
-        next_state = self.state.move(action)
-        child_node = Node(next_state, parent=self, prev_action=action)
-        self.children.append(child_node)
-        return child_node
-
-    def is_terminal_node(self):
-        return self.state.is_game_over()
-
-    def rollout(self):
-        state = self.state
-        while not state.is_game_over():
-            possible_moves = state.get_legal_actions()
-            action = self.rollout_policy(possible_moves)
-            state = state.move(action)
-        return state.game_result
-
-    def rollout_policy(self, possible_moves):
-        return random.choice(possible_moves)
-
-    def backpropagate(self, result):
-        self._number_of_visits += 1.
-        self._results[result] += 1.
-        if self.parent:
-            self.parent.backpropagate(result)
+    def get_action_value(self, action, c):
+        visits = self.visits
+        n, q = self.actions[action]
+        if self.player == 1: #player 1
+            return q + c * np.sqrt(np.log(self.visits)/(n+1)) #+1 in case n == 0
+        else: #player 2
+            return q - c * np.sqrt(np.log(self.visits)/(n+1)) #+1 in case n == 0
 
     def __repr__(self):
-        return str({"Action": self.prev_action, "Result": self._results, "Q": self.q, "n": self.n})
+        return "Player: {}, Visits: {}, Actions: {}, Previous action: {}".format(self.player, self.visits, self.actions, self.prev_action)

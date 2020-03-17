@@ -1,43 +1,51 @@
 import numpy as np
 
 
-class GameState:
-    def __init__(self, state, turn=1):
+class Board:
+    def __init__(self, state, player=1):
         self.state = state
-        self.turn = turn
+        self.player = player
 
-    @property
-    def game_result(self):
+    def player1_won(self):
         if self.is_game_over():
-            return self.turn
-        return None
+            return self.player == 1 # will return True if player 1 moved to final state
 
-class NIMState(GameState):
-    def __init__(self, state, K, turn=1):
-        super().__init__(state, turn)
+    def get_state(self):
+        if type(self.state) == int:
+            state = self.state
+        else:
+            state = tuple(self.state)
+        return (self.player, state)
+
+    def __repr__(self):
+        return "Player: {}, State: {}".format(self.player, self.state)
+
+class NIMBoard(Board):
+    def __init__(self, state, K, player=1):
+        super().__init__(state, player)
         self.K = K
 
     def is_game_over(self):
         return self.state <= self.K
 
     def move(self, action):
-        new_state = np.copy(self.state)
-        new_state -= action
-        return NIMState(new_state, self.K, 3 - self.turn)
+        self.state -= action
+        self.player = 3 - self.player #switch player after each move
 
     def get_legal_actions(self):
         return list(range(1, min(self.state, self.K) + 1))
 
     @staticmethod
-    def print_move(action, player, state):
-        remaining = "Remaining stones = {:<2}".format(state)
+    def print_move(action, board):
+        player, state = board.get_state()
+        remaining = "Remaining stones = {:<2}".format(state-action if state>0 else 0)
         stones = "{:<1} stones".format(action) if action > 1 else "{:<2} stone".format(action)
         return "Player {} selects {:>8}: {:>21}\n".format(player, stones, remaining)
 
 
-class LedgeState(GameState):
-    def __init__(self, state, turn=1):
-        super().__init__(state, turn)
+class LedgeBoard(Board):
+    def __init__(self, state, player=1):
+        super().__init__(state, player)
 
     def is_game_over(self):
         return self.state[0] == 2
@@ -54,8 +62,8 @@ class LedgeState(GameState):
                 j)
             new_board[j] = new_board[i]
             new_board[i] = 0
-
-        return LedgeState(new_board, 3 - self.turn)
+        self.state = new_board
+        self.player = 3 - self.player
 
     def get_legal_actions(self):
         if self.state[0] == 2: return [0] # make it only possible to pick up gold if possible
@@ -76,7 +84,8 @@ class LedgeState(GameState):
         return valid
 
     @staticmethod
-    def print_move(action, player, state):
+    def print_move(action, board):
+        player, state = board.get_state()
         new_board = np.copy(state)
         if action == 0:
             coin = "copper" if state[0] == 1 else "gold"

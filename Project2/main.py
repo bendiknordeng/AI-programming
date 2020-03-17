@@ -1,4 +1,4 @@
-from game import NIMState, LedgeState
+from game import NIMBoard, LedgeBoard
 from tree import Node
 from mcts import MonteCarloTreeSearch
 import random
@@ -10,31 +10,34 @@ def set_starting_player(P):
         return random.choice([1,2])
     return P
 
-def print_last_move(iteration, action, player, game_mode):
+def print_last_move(iteration, action, board, game_mode):
     msg = ""
     msg += "{}: ".format(iteration+1)
-    msg += NIMState.print_move(action.game_state, 3-player, 0) if game_mode == 0 else LedgeState.print_move(0, 3-player, action.game_state)
-    msg += "Player "+str(3-player)+" won\n\n"
+    msg += NIMBoard.print_move(board.get_state()[1],board) if game_mode == 0 else LedgeBoard.print_move(0, board)
+    msg += "Player "+str(board.get_state()[0])+" won\n\n"
     return msg
 
 def run_batch(G, M, N, K, B, P, game_mode, verbose):
     wins = 0
-    verbose_message = ""
+    verbose_message = "\n"
+    MCTS = MonteCarloTreeSearch()
     for i in tqdm(range(G)):
         initial_player = set_starting_player(P)
-        action = Node(NIMState(N, K, initial_player) if game_mode == 0 else LedgeState(B, initial_player))
-        verbose_message += "Initial state: {}\n".format(action.game_state)
+        board = NIMBoard(N, K, initial_player) if game_mode == 0 else LedgeBoard(B, initial_player)
+        _, state = board.get_state()
+        verbose_message += "Initial state: {}\n".format(state)
         iteration = 0
-        while not action.is_terminal_node():
-            player = action.player
-            action = MonteCarloTreeSearch(action).best_action(M)
+        while not board.is_game_over():
             iteration += 1
+            MCTS.init_tree(board)
+            action = MCTS.search(board, M)
             if verbose:
                 verbose_message += "{}: ".format(iteration)
-                verbose_message += NIMState.print_move(action.prev_action, player, action.game_state) if game_mode == 0 else LedgeState.print_move(action.prev_action, player, action.parent.game_state)
-        if initial_player == 3-player:
+                verbose_message += NIMBoard.print_move(action, board) if game_mode == 0 else LedgeBoard.print_move(action, board)
+            board.move(action)
+        if (initial_player == 1 and board.player1_won()) or (initial_player == 2 and not board.player1_won()):
             wins += 1
-        verbose_message += print_last_move(iteration, action, player, game_mode)
+        verbose_message += print_last_move(iteration, action, board, game_mode)
     if verbose: print(verbose_message)
     print("Starting player won {}/{} ({}%)".format(wins, G, 100 * wins / G))
 
@@ -42,11 +45,11 @@ def run_batch(G, M, N, K, B, P, game_mode, verbose):
 if __name__ == '__main__':
     G = 10
     M = 500
-    N = 50
-    K = 10
-    B = [0, 1, 0, 1, 0, 1, 0, 0, 2, 0, 1, 0, 1]
+    N = 25
+    K = 3
+    B = [1, 0, 0, 2, 0, 1, 0, 1]
     P = 1
-    game_mode = 1 # (0/1): NIM/Ledge
+    game_mode = 0 # (0/1): NIM/Ledge
     verbose = True
 
     run_batch(G, M, N, K, B, P, game_mode, verbose)
