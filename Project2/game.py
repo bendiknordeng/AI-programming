@@ -17,6 +17,9 @@ class Board:
             state = tuple(self.state)
         return (self.player, state)
 
+    def __repr__(self):
+        return "Player: {}, State: {}".format(self.player, self.state)
+
 class NIMBoard(Board):
     def __init__(self, state, K, player=1):
         super().__init__(state, player)

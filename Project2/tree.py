@@ -47,7 +47,6 @@ class Node:
         for action in legal_actions:
             self.actions[action] = [0,0]
         self.prev_action = None
-        import pdb; pdb.set_trace()
 
     def increment_visits(self):
         self.visits += 1
