@@ -6,7 +6,7 @@ class Board:
         self.state = state
         self.player = player
 
-    def player1_won(self):
+    def result(self):
         if self.is_game_over():
             return self.player == 1  # will return True if player 1 moved to final state
 

@@ -35,8 +35,7 @@ class Node:
     def __init__(self, player, legal_actions):
         self.player = player
         self.visits = 1
-        # key: action, value: [visits, q_value]
-        self.actions = {}
+        self.actions = {}  # key: action, value: [visits, q_value]
         for action in legal_actions:
             self.actions[action] = [0, 0]
         self.prev_action = None
