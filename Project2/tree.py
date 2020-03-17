@@ -18,18 +18,18 @@ class Tree:
         return random.choice(board.get_legal_actions()) #choose random action
 
     def tree_policy(self, env, c):
-        state = env.get_state()
+        player, _ = env.get_state()
         node = self.get_node(env)
         actions = list(node.actions.keys())
         best_action = random.choice(actions)
-        best_value = -1 * np.infty if state[0] == 1 else np.infty
+        best_value = -1 * np.infty if player == 1 else np.infty
         for action in actions:
             action_value = node.get_action_value(action, c)
-            if state[0] == 1: # player 1
+            if player == 1:
                 if action_value >= best_value:
                     best_value = action_value
                     best_action = action
-            else: #player 2
+            else:
                 if action_value <= best_value:
                     best_value = action_value
                     best_action = action
@@ -64,6 +64,6 @@ class Node:
         visits = self.visits
         n, q = self.actions[action]
         if self.player == 1: #player 1
-            return q + c * np.sqrt(np.log(self.visits)/(n+1)) #+1 in case nChosen == 0
+            return q + c * np.sqrt(np.log(self.visits)/(n+1)) #+1 in case n == 0
         else: #player 2
-            return q - c * np.sqrt(np.log(self.visits)/(n+1)) #+1 in case nChosen == 0
+            return q - c * np.sqrt(np.log(self.visits)/(n+1)) #+1 in case n == 0
