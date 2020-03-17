@@ -29,13 +29,13 @@ def run_batch(G, M, N, K, B, P, game_mode, verbose):
         verbose_message += "Initial state: {}\n".format(state)
         iteration = 0
         while not board.is_game_over():
+            iteration += 1
             MCTS.initTree(board, game_mode)
             action = MCTS.search(board, M)
-            board.move(action)
-            iteration += 1
             if verbose:
                 verbose_message += "{}: ".format(iteration)
                 verbose_message += NIMBoard.print_move(action, 3-board.getState()[0], board.getState()[1]) if game_mode == 0 else LedgeBoard.print_move(action, 3-board.getState()[0], board.getState()[1])
+            board.move(action)
         if (initial_player == 1 and board.player1Won()) or (initial_player == 2 and not board.player1Won()):
             wins += 1
         verbose_message += print_last_move(iteration, action, board, game_mode)
