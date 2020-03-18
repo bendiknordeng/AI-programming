@@ -5,7 +5,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from collections import defaultdict
 
-class HexState:
+class HexGame:
     neighbors = defaultdict(list)
     edges = defaultdict(list)
     all_moves = []
@@ -16,6 +16,10 @@ class HexState:
         if len(self.neighbors) == 0:
             self.__generate_neighbors()
         self.player = player
+
+    def get_state(self):
+        state = tuple(self.state.values())
+        return (self.player, state)
 
     def generate_initial_state(self):
         state = {}
@@ -56,18 +60,9 @@ class HexState:
         self.edges[2].append([(r,0) for r in range(self.size)])
         self.edges[2].append([(r,self.size-1) for r in range(self.size)])
 
-    @property
-    def flat_state(self):
-        state = [self.player]
-        for cell in self.state:
-            state.append(self.state[cell])
-        return np.array([state])
-
-    @property
-    def game_result(self):
+    def result(self):
         if self.is_game_over():
-            return 3-self.player
-        return None
+            return self.player == 1
 
     def is_game_over(self):
         for cell in self.edges[3-self.player][0]:
@@ -92,7 +87,7 @@ class HexState:
         Input: action to be executed
         Returns: new state - use np.copy(self.state)
         """
-        self.board[(action[0],action[1])] = self.player
+        self.state[(action[0],action[1])] = self.player
         self.player = 3 - self.player
 
     def get_legal_actions(self):
@@ -160,8 +155,8 @@ class HexState:
         return "Player {} put a piece on {}".format(self.player, action)
 
 if __name__ == "__main__":
-    state = HexState(4)
-    node = Node(state)
-    mcts = MonteCarloTreeSearch(node)
-    action = mcts.best_action(500)
+    env = HexGame(4)
+    MCTS = MonteCarloTreeSearch()
+    MCTS.init_tree(env)
+    action = MCTS.search(env, 100)
     import pdb; pdb.set_trace()
