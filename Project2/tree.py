@@ -46,10 +46,8 @@ class Node:
 
     def get_action_value(self, action, c):
         n, q = self.actions[action]
-        if self.player == 1:
-            return q + c * np.sqrt(np.log(self.visits) / (n + 1))
-        else:
-            return q - c * np.sqrt(np.log(self.visits) / (n + 1))
+        c *= 1 if self.player == 1 else -1
+        return q + c * np.sqrt(np.log(self.visits) / (n + 1))
 
     def __repr__(self):
         return "Player: {}, Visits: {}, Actions: {}, Previous action: {}".format(self.player, self.visits, self.actions, self.prev_action)
