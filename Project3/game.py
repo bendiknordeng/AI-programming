@@ -65,7 +65,7 @@ class HexGame:
 
     def result(self):
         if self.is_game_over():
-            return self.player == 1
+            return 3-self.player == 1
 
     def is_game_over(self):
         for cell in self.edges[3-self.player][0]:
@@ -158,7 +158,7 @@ class HexGame:
         return "Player {} put a piece on {}".format(self.player, action)
 
 if __name__ == "__main__":
-    env = HexGame(4)
+    env = HexGame(3)
     #reds = [(1, 0), (1, 1), (2, 1), (2, 2), (2, 3), (3, 3)]
     #blacks = [(0, 0), (0, 1), (0, 2), (0, 3), (1, 3), (3, 1)]
 
@@ -171,6 +171,7 @@ if __name__ == "__main__":
     #print(env.is_game_over())
     #import pdb; pdb.set_trace()
 
-    MCTS = MonteCarloTreeSearch()
-    action = MCTS.search(env, 100)
+    MCTS = MonteCarloTreeSearch(1.4)
+    action = MCTS.search(env, 500)
     import pdb; pdb.set_trace()
+    print(action)

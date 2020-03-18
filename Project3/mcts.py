@@ -12,14 +12,15 @@ class MonteCarloTreeSearch:
 
     def search(self, env, simulations_number):
         for i in range(simulations_number):
-            simulation_env = copy.copy(env)
+            simulation_env = copy.deepcopy(env)
             self.simulate(simulation_env)
         return self.tree.tree_policy(env, 0)  # find greedy best action
 
     def simulate(self, env):
         traversed_nodes = self.sim_tree(env)
-        result = self.rollout(env)  # rollout env
-        self.tree.backup(traversed_nodes, result)
+        if traversed_nodes:
+            result = self.rollout(env)  # rollout env
+            self.tree.backup(traversed_nodes, result)
 
     def sim_tree(self, env):
         path = []  # list of nodes traversed
