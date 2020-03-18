@@ -7,7 +7,7 @@ class MonteCarloTreeSearch:
         self.tree = Tree()
         self.c = c  # exploration constant
 
-    def init_tree(self, env):
+    def init_tree(self):
         self.tree.state_to_node.clear()
 
     def search(self, env, simulations_number):
