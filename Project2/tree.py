@@ -18,13 +18,10 @@ class Tree:
         return random.choice(env.get_legal_actions())  # choose random action
 
     def tree_policy(self, env, c):
-        player, _ = env.get_state()
         node = self.get_node(env)
         actions = list(node.actions.keys())
-        best_action = random.choice(actions)
-        best_value = -np.infty if player == 1 else np.infty
         action_values = [node.get_action_value(a, c) for a in actions]
-        return actions[np.argmax(action_values) if player == 1 else np.argmin(action_values)]
+        return actions[np.argmax(action_values) if env.player == 1 else np.argmin(action_values)]
 
     def backup(self, nodes, result):
         for node in nodes:
