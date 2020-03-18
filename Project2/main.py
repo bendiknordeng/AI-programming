@@ -1,7 +1,6 @@
 from game import NIMBoard, LedgeBoard
 from tree import Node
 from mcts import MonteCarloTreeSearch
-import config as cfg
 import random
 import math
 from tqdm import tqdm
@@ -48,14 +47,14 @@ def run_batch(G, M, M_decay, N, K, B, P, game_mode, verbose):
     print("Starting player won {}/{} ({}%)".format(wins, G, 100 * wins / G))
 
 if __name__ == '__main__':
-    G = cfg.G
-    M = cfg.M
-    M_decay = cfg.M_decay
-    N = cfg.N
-    K = cfg.K
-    B = cfg.B
-    P = cfg.P
-    game_mode = cfg.game_mode  # (0/1): NIM/Ledge
-    verbose = cfg.verbose
+    G = 100
+    M = 250
+    M_decay = 0
+    N = 20
+    K = 5
+    B = [0, 0, 1, 1, 0, 2]
+    P = 1
+    game_mode = 0  # (0/1): NIM/Ledge
+    verbose = True
 
     run_batch(G, M, M_decay, N, K, B, P, game_mode, verbose)
