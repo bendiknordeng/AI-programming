@@ -18,11 +18,10 @@ class MonteCarloTreeSearch:
 
     def simulate(self, env):
         traversed_nodes = self.sim_tree(env)
-        z = self.rollout(env)  # rollout env
-        self.tree.backup(traversed_nodes, z)
+        result = self.rollout(env)  # rollout env
+        self.tree.backup(traversed_nodes, result)
 
     def sim_tree(self, env):
-        c = self.c
         path = []  # list of nodes traversed
         while not env.is_game_over():
             if not self.tree.get_node(env):

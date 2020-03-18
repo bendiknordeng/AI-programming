@@ -26,9 +26,9 @@ class Tree:
         action_values = [node.get_action_value(a, c) for a in actions]
         return actions[np.argmax(action_values) if player == 1 else np.argmin(action_values)]
 
-    def backup(self, nodes, z):
+    def backup(self, nodes, result):
         for node in nodes:
-            node.update_values(z)
+            node.update_values(result)
 
 
 class Node:
@@ -40,17 +40,16 @@ class Node:
             self.actions[action] = [0, 0]
         self.prev_action = None
 
-    def update_values(self, z):
+    def update_values(self, result):
         self.visits += 1
         self.actions[self.prev_action][0] += 1
         n, q = self.actions[self.prev_action]
-        self.actions[self.prev_action][1] += (z - q) / n
+        self.actions[self.prev_action][1] += (result - q) / n
 
     def set_last_action(self, action):
         self.prev_action = action
 
     def get_action_value(self, action, c):
-        visits = self.visits
         n, q = self.actions[action]
         if self.player == 1:
             return q + c * np.sqrt(np.log(self.visits) / (n + 1))

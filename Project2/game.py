@@ -10,7 +10,7 @@ class Board:
         if self.is_game_over():
             return self.player == 1  # will return True if player 1 moved to final state
 
-    def get_state(self):
+    def get_state(self): # make sure state is hashable
         if type(self.state) == int:
             state = self.state
         else:
@@ -40,10 +40,8 @@ class NIMBoard(Board):
         player, state = self.get_state()
         if action == 0:  # last move
             action = state
-        remaining = "Remaining stones = {:<2}".format(
-            state - action if state > 0 else 0)
-        stones = "{:<1} stones".format(
-            action) if action > 1 else "{:<2} stone".format(action)
+        remaining = "Remaining stones = {:<2}".format(state - action if state > 0 else 0)
+        stones = "{:<1} stones".format(action) if action > 1 else "{:<2} stone".format(action)
         return "Player {} selects {:>8}: {:>21}\n".format(player, stones, remaining)
 
 
@@ -57,13 +55,9 @@ class LedgeBoard(Board):
     def move(self, action):
         new_board = np.copy(self.state)
         if action == 0:
-            assert new_board[0] != 0, 'There is no coin on the ledge'
             new_board[0] = 0
         else:
             i, j = action
-            assert new_board[i] != 0, 'There is no coin in spot {}'.format(i)
-            assert new_board[j] == 0, 'You cannot put a coin in spot {}'.format(
-                j)
             new_board[j] = new_board[i]
             new_board[i] = 0
         self.state = new_board
