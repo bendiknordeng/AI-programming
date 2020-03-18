@@ -15,10 +15,7 @@ class Tree:
             return False
 
     def rollout_policy(self, env):
-        try:
-            return random.choice(env.get_legal_actions())  # choose random action
-        except:
-            import pdb; pdb.set_trace()
+        return random.choice(env.get_legal_actions())  # choose random action
 
     def tree_policy(self, env, c):
         node = self.get_node(env)

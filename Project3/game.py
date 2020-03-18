@@ -21,6 +21,9 @@ class HexGame:
         state = tuple(self.state.values())
         return (self.player, state)
 
+    def flattened_game_state(self):
+        return
+
     def generate_initial_state(self):
         state = {}
         for r in range(self.size):
@@ -67,7 +70,7 @@ class HexGame:
     def is_game_over(self):
         for cell in self.edges[3-self.player][0]:
             if self.state[cell] == 3-self.player:
-                if self.depth_first(cell, []):
+                if self.depth_first(cell, [cell]):
                     return True
         return False
 
@@ -156,7 +159,18 @@ class HexGame:
 
 if __name__ == "__main__":
     env = HexGame(4)
+    #reds = [(1, 0), (1, 1), (2, 1), (2, 2), (2, 3), (3, 3)]
+    #blacks = [(0, 0), (0, 1), (0, 2), (0, 3), (1, 3), (3, 1)]
+
+    #for cell in reds:
+    #    env.state[cell] = 1
+
+    #for cell in blacks:
+    #    env.state[cell] = 2
+
+    #print(env.is_game_over())
+    #import pdb; pdb.set_trace()
+
     MCTS = MonteCarloTreeSearch()
-    MCTS.init_tree(env)
     action = MCTS.search(env, 100)
     import pdb; pdb.set_trace()
