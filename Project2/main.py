@@ -47,14 +47,14 @@ def run_batch(G, M, M_decay, N, K, B, P, game_mode, verbose):
     print("Starting player won {}/{} ({}%)".format(wins, G, 100 * wins / G))
 
 if __name__ == '__main__':
-    G = 100
-    M = 250
-    M_decay = 0
+    G = 10
+    M = 10
+    M_decay = 1
     N = 20
     K = 5
-    B = [0, 0, 1, 1, 0, 2]
+    B = [0,1,0,1,0,1,0,1,0,0,2,0,0,1,1,1]
     P = 1
-    game_mode = 0  # (0/1): NIM/Ledge
+    game_mode = 1  # (0/1): NIM/Ledge
     verbose = True
 
     run_batch(G, M, M_decay, N, K, B, P, game_mode, verbose)

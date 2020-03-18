@@ -92,9 +92,8 @@ class HexState:
         Input: action to be executed
         Returns: new state - use np.copy(self.state)
         """
-        board = self.state.copy()
-        board[(action[0],action[1])] = self.player
-        return HexState(self.size, board, 3-self.player)
+        self.board[(action[0],action[1])] = self.player
+        self.player = 3 - self.player
 
     def get_legal_actions(self):
         """
@@ -154,12 +153,11 @@ class HexState:
         else: # show single figure if delay not given
             plt.show(block = True)
 
-    @staticmethod
-    def print_move(player, action):
+    def print_move(self, action):
         """
         Returns: string for verbose mode
         """
-        return "Player {} put a piece on {}".format(player, action)
+        return "Player {} put a piece on {}".format(self.player, action)
 
 if __name__ == "__main__":
     state = HexState(4)
