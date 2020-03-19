@@ -1,10 +1,12 @@
 from tree import Tree
-import copy
+import json
 
 
 class MonteCarloTreeSearch:
-    def __init__(self, c=1):
+    def __init__(self, ANN, c=1):
         self.tree = Tree()
+        self.ANN = ANN
+        self.eps = 1
         self.c = c  # exploration constant
 
     def init_tree(self):
@@ -12,9 +14,10 @@ class MonteCarloTreeSearch:
 
     def search(self, env, simulations_number):
         for i in range(simulations_number):
-            simulation_env = copy.deepcopy(env)
+            simulation_env = json.loads(json.dumps(env))
             self.simulate(simulation_env)
-        return self.tree.tree_policy(env, 0)  # find greedy best action
+        D = self.tree.get_distribution(env)
+        return self.tree.tree_policy(env, 0), D  # find greedy best action
 
     def simulate(self, env):
         traversed_nodes = self.sim_tree(env)
@@ -35,6 +38,6 @@ class MonteCarloTreeSearch:
 
     def rollout(self, env):
         while not env.is_game_over():
-            action = self.tree.rollout_policy(env)
+            action = self.tree.rollout_policy(env, self.ANN, self.eps)
             env.move(action)
         return env.result()

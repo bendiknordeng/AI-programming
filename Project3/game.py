@@ -21,8 +21,13 @@ class HexGame:
         state = tuple(self.state.values())
         return (self.player, state)
 
-    def flattened_game_state(self):
-        return
+    def reset(self):
+        for cell in self.state:
+            self.state[cell] = 0
+
+    @property
+    def flat_state(self):
+        return [self.player] + list(self.state.values())
 
     def generate_initial_state(self):
         state = {}
@@ -171,6 +176,7 @@ if __name__ == "__main__":
     #print(env.is_game_over())
     #import pdb; pdb.set_trace()
 
+    import pdb; pdb.set_trace()
     MCTS = MonteCarloTreeSearch(1.4)
     action = MCTS.search(env, 500)
     import pdb; pdb.set_trace()
