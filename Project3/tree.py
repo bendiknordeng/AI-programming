@@ -27,12 +27,10 @@ class Tree:
         if random.random() < eps:
             return random.choice(legal)  # choose random action
         else:
-            probs = ANN.forward(env.flat_state)
-            while True:
-                try:
-                    return env.all_moves[np.argmax(probs.data)]
-                except:
-                    pass
+            probs = ANN.forward(env.flat_state).data
+            factor = [1 if move in legal else 0 for move in env.all_moves]
+            index = np.argmax([0 if not factor[i] else probs[i] for i in range(env.size**2)])
+            return env.all_moves[index]
 
     def tree_policy(self, env, c):
         node = self.get_node(env)

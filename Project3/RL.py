@@ -17,7 +17,7 @@ def RL_algorithm(games, simulations, env, ANN, eps_decay, training_batch_size):
             action, D = MCTS.search(env, M)
             cases.append((env.flat_state,D))
             env.move(action)
-            #M = math.ceil(M*0.5)
+            M = math.ceil(M*0.5)
         ANN.fit(random.sample(cases, min(len(cases),training_batch_size)))
         #if (i+1) % save_interval == 0:
         #    ANN.model.save_weights(model_path.format(level=i+1))
@@ -28,7 +28,7 @@ if __name__ == '__main__':
     board_size = 3
 
     # MCTS/RL parameters
-    episodes = 10
+    episodes = 50
     simulations = 500
     training_batch_size = 100
     ann_save_interval = 5
@@ -47,4 +47,5 @@ if __name__ == '__main__':
     env = HexGame(board_size)
     ANN = ANN(io_dim, H_dims, alpha, optimizer, activation, epochs)
     RL_algorithm(episodes, simulations, env, ANN, eps_decay, training_batch_size)
+
     import pdb; pdb.set_trace()

@@ -49,6 +49,13 @@ class ANN:
     def forward(self, input):
         return self.model(torch.tensor(input).float())
 
+    def get_move(self, env):
+        legal = env.get_legal_actions()
+        probs = self.forward(env.flat_state).data
+        factor = [1 if move in legal else 0 for move in env.all_moves]
+        index = np.argmax([0 if not factor[i] else probs[i] for i in range(env.size**2)])
+        return env.all_moves[index]
+
 if __name__ == "__main__":
     from game import HexGame
     from mcts import MonteCarloTreeSearch
