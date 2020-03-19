@@ -15,19 +15,24 @@ class Tree:
             return False
 
     def get_distribution(self, env):
-        state = env.get_state()
-        node = self.state_to_node[state]
-        return [node.actions[action][0]/node.visits for action in node.actions]
+        moves = env.all_moves
+        node = self.state_to_node[env.get_state()]
+        D = np.zeros(env.size**2)
+        for i in range(env.size**2):
+            D[i] = node.actions[moves[i]][0]/node.visits if moves[i] in node.actions else 0
+        return D
 
-    def rollout_policy(self, ANN, env, eps):
+    def rollout_policy(self, env, ANN, eps):
         legal = env.get_legal_actions()
         if random.random() < eps:
             return random.choice(legal)  # choose random action
         else:
             probs = ANN.forward(env.flat_state)
-            factor = [1 if move in legal else 0 for move in env.all_moves]
-            probs = probs*factor # probs is tensor and factor is list
-            return env.all_moves[np.argmax(probs)]
+            while True:
+                try:
+                    return env.all_moves[np.argmax(probs.data)]
+                except:
+                    pass
 
     def tree_policy(self, env, c):
         node = self.get_node(env)

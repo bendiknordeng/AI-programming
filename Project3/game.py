@@ -25,6 +25,9 @@ class HexGame:
         for cell in self.state:
             self.state[cell] = 0
 
+    def sim_copy(self):
+        return HexGame(self.size, self.state.copy(), self.player)
+
     @property
     def flat_state(self):
         return [self.player] + list(self.state.values())

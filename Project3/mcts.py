@@ -1,6 +1,4 @@
 from tree import Tree
-import json
-
 
 class MonteCarloTreeSearch:
     def __init__(self, ANN, c=1):
@@ -14,7 +12,7 @@ class MonteCarloTreeSearch:
 
     def search(self, env, simulations_number):
         for i in range(simulations_number):
-            simulation_env = json.loads(json.dumps(env))
+            simulation_env = env.sim_copy()
             self.simulate(simulation_env)
         D = self.tree.get_distribution(env)
         return self.tree.tree_policy(env, 0), D  # find greedy best action

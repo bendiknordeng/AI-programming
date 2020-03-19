@@ -37,10 +37,10 @@ class ANN:
         }[optimizer]
 
     def fit(self, cases):
-        input = torch.tensor(cases[0])
-        target = torch.tensor(cases[1])
+        input = torch.tensor([case[0] for case in cases]).float()
+        target = torch.tensor([case[1] for case in cases]).float()
         for i in range(self.epochs):
-            pred = self.model(input.float())
+            pred = self.model(input)
             loss = self.loss_fn(pred, target)
             self.optimizer.zero_grad()
             loss.backward()
