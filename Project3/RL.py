@@ -36,8 +36,8 @@ if __name__ == '__main__':
     board_size = 3
 
     # MCTS/RL parameters
-    episodes = 50
-    simulations = 500
+    episodes = 80
+    simulations = 1000
     training_batch_size = 100
     ann_save_interval = 5
     eps_decay = 0.95
@@ -49,8 +49,8 @@ if __name__ == '__main__':
     H_dims = [10,10,10]
     io_dim = board_size * board_size # input and output layer sizes (always equal)
     activation = activation_functions[3]
-    optimizer = optimizers[0]
-    epochs = 10
+    optimizer = optimizers[3]
+    epochs = 40
 
     env = HexGame(board_size)
     ANN = ANN(io_dim, H_dims, alpha, optimizer, activation, epochs)
