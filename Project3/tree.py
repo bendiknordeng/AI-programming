@@ -1,6 +1,6 @@
 import random
 import numpy as np
-
+import time
 
 class Tree:
     def __init__(self):
@@ -24,13 +24,15 @@ class Tree:
 
     def rollout_policy(self, env, ANN, eps):
         legal = env.get_legal_actions()
+        ANN_used = False
         if random.random() < eps:
-            return random.choice(legal)  # choose random action
+            return ANN_used, random.choice(legal)  # choose random action
         else:
+            ANN_used = True
             probs = ANN.forward(env.flat_state).data
             factor = [1 if move in legal else 0 for move in env.all_moves]
             index = np.argmax([0 if not factor[i] else probs[i] for i in range(env.size**2)])
-            return env.all_moves[index]
+            return ANN_used, env.all_moves[index]
 
     def tree_policy(self, env, c):
         node = self.get_node(env)

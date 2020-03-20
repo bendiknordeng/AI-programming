@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-
+import time
 class ANN:
     def __init__(self, io_dim, H_dims, learning_rate, optimizer, activation_fn, epochs):
         self.alpha = learning_rate
@@ -28,7 +28,21 @@ class ANN:
             self.optimizer.step()
 
     def forward(self, input):
-        return self.model(torch.tensor(input).float())
+        float_tensor = torch.tensor(input).float()
+        #start = time.time()
+        #pred = self.model(float_tensor)
+        #w_grad = time.time()-start
+        #start = time.time()
+        with torch.no_grad():
+            pred = self.model(float_tensor)
+        #no_grad = time.time()-start
+
+        #print("prediction wi_grad", w_grad)
+        #print("prediction no_grad", no_grad)
+        #print("with_grad / no_grad", w_grad/no_grad)
+        #print()
+        return pred
+
 
     def get_move(self, env):
         legal = env.get_legal_actions()
