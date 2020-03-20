@@ -165,23 +165,3 @@ class HexGame:
         Returns: string for verbose mode
         """
         return "Player {} put a piece on {}".format(self.player, action)
-
-if __name__ == "__main__":
-    env = HexGame(3)
-    #reds = [(1, 0), (1, 1), (2, 1), (2, 2), (2, 3), (3, 3)]
-    #blacks = [(0, 0), (0, 1), (0, 2), (0, 3), (1, 3), (3, 1)]
-
-    #for cell in reds:
-    #    env.state[cell] = 1
-
-    #for cell in blacks:
-    #    env.state[cell] = 2
-
-    #print(env.is_game_over())
-    #import pdb; pdb.set_trace()
-
-    import pdb; pdb.set_trace()
-    MCTS = MonteCarloTreeSearch(1.4)
-    action = MCTS.search(env, 500)
-    import pdb; pdb.set_trace()
-    print(action)
