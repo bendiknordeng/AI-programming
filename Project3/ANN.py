@@ -28,21 +28,8 @@ class ANN:
             self.optimizer.step()
 
     def forward(self, input):
-        float_tensor = torch.tensor(input).float()
-        #start = time.time()
-        #pred = self.model(float_tensor)
-        #w_grad = time.time()-start
-        #start = time.time()
         with torch.no_grad():
-            pred = self.model(float_tensor)
-        #no_grad = time.time()-start
-
-        #print("prediction wi_grad", w_grad)
-        #print("prediction no_grad", no_grad)
-        #print("with_grad / no_grad", w_grad/no_grad)
-        #print()
-        return pred
-
+            return self.model(torch.tensor(input).float())
 
     def get_move(self, env):
         legal = env.get_legal_actions()

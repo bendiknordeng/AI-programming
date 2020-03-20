@@ -11,15 +11,12 @@ import numpy as np
 def RL_algorithm(games, simulations, env, ANN, eps_decay):
     cases = []
     MCTS = MonteCarloTreeSearch(ANN)
-    MCTS.eps = 0.5
-    time_rnd = []
-    time_ANN = []
     for i in tqdm(range(games)):
         env.reset()
         MCTS.init_tree()
         M = simulations
         while not env.is_game_over():
-            random_rollout, ANN_rollout, action, D = MCTS.search(env, M)
+            action, D = MCTS.search(env, M)
             cases.append((env.flat_state,D))
             env.move(action)
             M = math.ceil(M*0.5)
@@ -27,14 +24,6 @@ def RL_algorithm(games, simulations, env, ANN, eps_decay):
         #if (i+1) % save_interval == 0:
         #    ANN.model.save_weights(model_path.format(level=i+1))
         MCTS.eps *= eps_decay
-
-        for time in random_rollout:
-            time_rnd.append(time)
-        for time in ANN_rollout:
-            time_ANN.append(time)
-
-
-    return time_rnd, time_ANN
 
 def play(env, ANN, delay,verbose):
     env.reset()
@@ -50,8 +39,9 @@ if __name__ == '__main__':
     board_size = 3
 
     # MCTS/RL parameters
-    episodes = 1
-    simulations = 10
+    episodes = 50
+    simulations = 1000
+
     #training_batch_size = 100
     ann_save_interval = 5
     eps_decay = 1
@@ -68,9 +58,11 @@ if __name__ == '__main__':
 
     env = HexGame(board_size)
     ANN = ANN(io_dim, H_dims, alpha, optimizer, activation, epochs)
-    time_rnd, time_ANN = [], []
-    time_rnd, time_ANN = RL_algorithm(episodes, simulations, env, ANN, eps_decay)
+    RL_algorithm(episodes, simulations, env, ANN, eps_decay)
 
+    import pdb; pdb.set_trace()
+
+    """
     def calc_time(time_random = np.asarray(time_rnd), time_ANN = np.asarray(time_ANN)):
         sum_rnd = np.sum(time_random, axis=0)
         sum_ANN = np.sum(time_ANN, axis=0)
@@ -81,6 +73,4 @@ if __name__ == '__main__':
         print("sum_time_ann_rollout / sum_time_random_rollout",avg_ANN/avg_rnd)
         print("sum_rnd",sum_rnd)
         print("sum_ANN",sum_ANN)
-        #print("average ANN", np.mean(time_ANN, axis = 0))
-
-    #import pdb; pdb.set_trace()
+    """

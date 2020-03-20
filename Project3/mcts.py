@@ -7,8 +7,6 @@ class MonteCarloTreeSearch:
         self.ANN = ANN
         self.eps = 1
         self.c = c  # exploration constant
-        self.time_random_rollout = []
-        self.time_ANN_rollout = []
 
     def init_tree(self):
         self.tree.state_to_node.clear()
@@ -18,7 +16,7 @@ class MonteCarloTreeSearch:
             simulation_env = env.sim_copy()
             self.simulate(simulation_env)
         D = self.tree.get_distribution(env)
-        return self.time_random_rollout, self.time_ANN_rollout, self.tree.tree_policy(env, 0), D  # find greedy best action
+        return self.tree.tree_policy(env, 0), D  # find greedy best action
 
     def simulate(self, env):
         traversed_nodes = self.sim_tree(env)
@@ -39,12 +37,6 @@ class MonteCarloTreeSearch:
 
     def rollout(self, env):
         while not env.is_game_over():
-            start = time.time()
-            ANN_used, action = self.tree.rollout_policy(env, self.ANN, self.eps)
-            time_spent = time.time() - start
-            if ANN_used:
-                self.time_ANN_rollout.append(time_spent)
-            else:
-                self.time_random_rollout.append(time_spent)
+            action = self.tree.rollout_policy(env, self.ANN, self.eps)
             env.move(action)
         return env.result()
