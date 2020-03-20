@@ -4,8 +4,6 @@ from ANN import ANN
 import random
 from tqdm import tqdm
 import math
-import numpy as np
-
 
 
 def RL_algorithm(games, simulations, env, ANN, eps_decay):
@@ -36,41 +34,27 @@ def play(env, ANN, delay,verbose):
 
 if __name__ == '__main__':
     # Game parameters
-    board_size = 3
+    board_size = 4
 
     # MCTS/RL parameters
-    episodes = 50
-    simulations = 1000
+    episodes = 2000
+    simulations = 4000
 
     #training_batch_size = 100
     ann_save_interval = 5
-    eps_decay = 1
+    eps_decay = 0.999
 
     # ANN parameters
     activation_functions = ["linear", "sigmoid", "tanh", "relu"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
-    alpha = 0.01 # learning rate
+    alpha = 0.001 # learning rate
     H_dims = [board_size, board_size**2]
     io_dim = board_size * board_size # input and output layer sizes (always equal)
     activation = activation_functions[3]
     optimizer = optimizers[0]
-    epochs = 10
+    epochs = 5
 
     env = HexGame(board_size)
     ANN = ANN(io_dim, H_dims, alpha, optimizer, activation, epochs)
     RL_algorithm(episodes, simulations, env, ANN, eps_decay)
-
     import pdb; pdb.set_trace()
-
-    """
-    def calc_time(time_random = np.asarray(time_rnd), time_ANN = np.asarray(time_ANN)):
-        sum_rnd = np.sum(time_random, axis=0)
-        sum_ANN = np.sum(time_ANN, axis=0)
-        avg_rnd = sum_rnd / len(time_rnd)
-        avg_ANN = sum_ANN / len(time_ANN)
-        print("avg random",avg_rnd)
-        print("avg ann",avg_ANN)
-        print("sum_time_ann_rollout / sum_time_random_rollout",avg_ANN/avg_rnd)
-        print("sum_rnd",sum_rnd)
-        print("sum_ANN",sum_ANN)
-    """

@@ -1,6 +1,6 @@
 import random
 import numpy as np
-import time
+
 
 class Tree:
     def __init__(self):

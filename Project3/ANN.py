@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-import time
+
 class ANN:
     def __init__(self, io_dim, H_dims, learning_rate, optimizer, activation_fn, epochs):
         self.alpha = learning_rate

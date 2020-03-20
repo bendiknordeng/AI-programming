@@ -1,5 +1,4 @@
 from tree import Tree
-import time
 
 class MonteCarloTreeSearch:
     def __init__(self, ANN, c=1):
