@@ -22,7 +22,7 @@ class ANN:
             if activation_fn != None:
                 layers.append(activation_fn)
         layers.append(torch.nn.Linear(H_dims[-1],io_dim))
-        layers.append(torch.nn.Softmax(dim = io_dim))
+        layers.append(torch.nn.Softmax(dim = 0))
 
         self.model = torch.nn.Sequential(*layers)
         self.loss_fn = torch.nn.BCELoss(reduction="mean")
