@@ -22,6 +22,7 @@ class HexGame:
         return (self.player, state)
 
     def reset(self):
+        self.player = 1 # assuming player 1 always starts
         for cell in self.state:
             self.state[cell] = 0
 
