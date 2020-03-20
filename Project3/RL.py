@@ -23,6 +23,14 @@ def RL_algorithm(games, simulations, env, ANN, eps_decay, training_batch_size):
         #    ANN.model.save_weights(model_path.format(level=i+1))
         MCTS.eps *= eps_decay
 
+def play(env, ANN, delay,):
+    env.reset()
+    while not env.is_game_over():
+        env.draw(delay)
+        env.move(ANN.get_move(env))
+    env.draw()
+
+
 if __name__ == '__main__':
     # Game parameters
     board_size = 3
