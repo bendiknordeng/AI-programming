@@ -18,7 +18,7 @@ def RL_algorithm(games, simulations, env, ANN, eps_decay, epochs):
             action, D = MCTS.search(env, M)
             cases.append((env.flat_state,D))
             env.move(action)
-<<<<<<< HEAD
+
             #M = math.ceil(M*0.5)
         fit_cases = random.sample(cases, math.ceil(len(cases)/2))
         _ = ANN.fit(0, fit_cases)
@@ -26,13 +26,6 @@ def RL_algorithm(games, simulations, env, ANN, eps_decay, epochs):
 
         #if (i+1) % save_interval == 0:
         #    ANN.model.save_weights(model_path.format(level=i+1))
-=======
-            #env.draw(delay=0.5)
-        fit_cases = random.sample(cases, math.ceil(len(cases)/math.floor(math.sqrt(i+1))))
-        ANN.fit(fit_cases)
-        MCTS.eps *= eps_decay
-    #say()
->>>>>>> 2f073730c930e8853a5de479a5f486a2010e84bd
 
     #run through of training data
     ANN.accuracy(cases[0:10])
@@ -106,11 +99,9 @@ if __name__ == '__main__':
     board_size = 3
 
     # MCTS/RL parameters
-<<<<<<< HEAD
+
     episodes = 20
-=======
-    episodes = 100
->>>>>>> 2f073730c930e8853a5de479a5f486a2010e84bd
+
     simulations = 1000
 
     #training_batch_size = 100
@@ -125,8 +116,9 @@ if __name__ == '__main__':
     io_dim = board_size * board_size # input and output layer sizes (always equal)
     activation = activation_functions[3]
     optimizer = optimizers[3]
-<<<<<<< HEAD
+
     epochs = 1
+    
     for i in range(1):
         print(i)
         env = HexGame(board_size)
@@ -136,14 +128,5 @@ if __name__ == '__main__':
             play_game(dict, env,ann,-1,0)
         play()
     say()
-=======
-    epochs = 100
 
-    env = HexGame(board_size)
-    ANN = ANN(io_dim, H_dims, alpha, optimizer, activation, epochs)
-    RL_algorithm(episodes, simulations, env, ANN, eps_decay)
-    def play(env = env, ANN = ANN):
-        play_game(env,ANN)
-
->>>>>>> 2f073730c930e8853a5de479a5f486a2010e84bd
     import pdb; pdb.set_trace()
