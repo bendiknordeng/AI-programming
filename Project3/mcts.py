@@ -1,7 +1,7 @@
 from tree import Tree
 
 class MonteCarloTreeSearch:
-    def __init__(self, ANN, c=1):
+    def __init__(self, ANN, c=1.4):
         self.tree = Tree()
         self.ANN = ANN
         self.eps = 1

@@ -74,7 +74,7 @@ class HexGame:
 
     def result(self):
         if self.is_game_over():
-            return 3-self.player == 1
+            return 1 if 3-self.player == 1 else -1
 
     def is_game_over(self):
         for cell in self.edges[3-self.player][0]:
