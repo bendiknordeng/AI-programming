@@ -5,37 +5,88 @@ import random
 from tqdm import tqdm
 import math
 import numpy as np
+np.set_printoptions(linewidth=160) # print formatting
 
-
-def RL_algorithm(games, simulations, env, ANN, eps_decay):
+def RL_algorithm(games, simulations, env, ANN, eps_decay, epochs):
     cases = []
     MCTS = MonteCarloTreeSearch(ANN)
-    for i in range(games):#tqdm(range(games)):
+    for i in tqdm(range(games)):
         env.reset()
         MCTS.init_tree()
         M = simulations
         while not env.is_game_over():
             action, D = MCTS.search(env, M)
             cases.append((env.flat_state,D))
-            D = np.around(np.asarray(D), decimals = 3)
-            print(D)
             env.move(action)
-            env.draw()
-            M = math.ceil(M*0.5)
-        fit_cases = random.sample(cases, math.ceil(len(cases)/math.floor(math.sqrt(i+1))))
-        ANN.fit(random.sample(cases, math.ceil(len(cases)/math.floor(math.sqrt(i+1)))))
+            #M = math.ceil(M*0.5)
+        fit_cases = random.sample(cases, math.ceil(len(cases)/2))
+        _ = ANN.fit(0, fit_cases)
+        ANN.epochs += math.ceil(100/float(games)) #increment epochs
+
         #if (i+1) % save_interval == 0:
         #    ANN.model.save_weights(model_path.format(level=i+1))
-        MCTS.eps *= eps_decay
-    #say()
 
-def play_game(env, ANN, delay=0,verbose=True):
+    #run through of training data
+    ANN.accuracy(cases[0:10])
+    ANN.epochs = 300
+    random.shuffle(cases)
+    interval = math.floor(len(cases)/4)
+    for i in range(3): # leave out 25% of data
+        start = i*interval
+        end = ((i+1)*interval)
+        fit_cases = cases[start:end]
+        _ = ANN.fit(0, fit_cases)
+    ANN.epochs = 1 # only to make dict of known cases
+    dict = ANN.fit(games-1, cases)
+    ANN.accuracy(cases[0:10])
+    return dict
+
+
+def play_game(dict, env, ANN, delay = -1,verbose=True):
     env.reset()
+    inputs = []
+    moves = []
+    preds = []
+    j = 0
     while not env.is_game_over():
-        if verbose: print(ANN.forward(env.flat_state))
-        env.draw(delay)
-        env.move(ANN.get_move(env))
-    env.draw()
+        inputs.append(env.flat_state)
+        probs, action = ANN.get_move(env)
+        if verbose:
+            print()
+            input = tuple(env.flat_state)
+            print(input)
+            if dict.get(input) != None:
+                for tar, pred in dict[input]:
+                    print(tar, pred)
+            else:
+                print("No such case for input state")
+            print()
+            print(np.around(probs.numpy()*100, decimals = 1))
+            if delay > -1:
+                env.draw()
+        else:
+            if delay > -1:
+                env.draw(delay)
+
+        preds.append(np.around(probs.numpy()*100, decimals = 1))
+        moves.append(action)
+        env.move(action)
+        j += 1
+    winning_player =  3 - env.flat_state[0]
+    print("player", winning_player, "won after", j, "moves.")
+
+    """
+    print()
+    print()
+    print("played game")
+    for i in range(len(moves)):
+        print()
+        print(inputs[i])
+        print(preds[i], "  ",moves[i])
+    """
+    if delay > -1:
+        env.draw()
+
 
 def say():
     import os
@@ -47,7 +98,7 @@ if __name__ == '__main__':
     board_size = 3
 
     # MCTS/RL parameters
-    episodes = 10
+    episodes = 20
     simulations = 1000
 
     #training_batch_size = 100
@@ -61,13 +112,15 @@ if __name__ == '__main__':
     H_dims = [board_size, board_size**2]
     io_dim = board_size * board_size # input and output layer sizes (always equal)
     activation = activation_functions[3]
-    optimizer = optimizers[0]
-    epochs = 100
-
-    env = HexGame(board_size)
-    ANN = ANN(io_dim, H_dims, alpha, optimizer, activation, epochs)
-    RL_algorithm(episodes, simulations, env, ANN, eps_decay)
-    def play(env = env, ANN = ANN):
-        play_game(env,ANN)
-
-    #import pdb; pdb.set_trace()
+    optimizer = optimizers[3]
+    epochs = 1
+    for i in range(1):
+        print(i)
+        env = HexGame(board_size)
+        ann = ANN(io_dim, H_dims, alpha, optimizer, activation, epochs)
+        prediction_dictionary = RL_algorithm(episodes, simulations, env, ann, eps_decay, epochs)
+        def play(dict = prediction_dictionary, env = env, ANN = ann):
+            play_game(dict, env,ann,-1,0)
+        play()
+    say()
+    import pdb; pdb.set_trace()
