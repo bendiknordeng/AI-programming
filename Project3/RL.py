@@ -21,11 +21,9 @@ def RL_algorithm(games, simulations, env, ANN, eps_decay):
             print(D)
             env.move(action)
             env.draw()
-            M = math.ceil(M*0.5)
+            #M = math.ceil(M*0.5)
         fit_cases = random.sample(cases, math.ceil(len(cases)/math.floor(math.sqrt(i+1))))
-        ANN.fit(random.sample(cases, math.ceil(len(cases)/math.floor(math.sqrt(i+1)))))
-        #if (i+1) % save_interval == 0:
-        #    ANN.model.save_weights(model_path.format(level=i+1))
+        ANN.fit(fit_cases)
         MCTS.eps *= eps_decay
     #say()
 
@@ -47,12 +45,12 @@ if __name__ == '__main__':
     board_size = 3
 
     # MCTS/RL parameters
-    episodes = 10
-    simulations = 1000
+    episodes = 100
+    simulations = 500
 
     #training_batch_size = 100
-    ann_save_interval = 5
-    eps_decay = 0.99
+    ann_save_interval = 10
+    eps_decay = 0.95
 
     # ANN parameters
     activation_functions = ["linear", "sigmoid", "tanh", "relu"]
@@ -61,7 +59,7 @@ if __name__ == '__main__':
     H_dims = [board_size, board_size**2]
     io_dim = board_size * board_size # input and output layer sizes (always equal)
     activation = activation_functions[3]
-    optimizer = optimizers[0]
+    optimizer = optimizers[1]
     epochs = 100
 
     env = HexGame(board_size)
@@ -70,4 +68,4 @@ if __name__ == '__main__':
     def play(env = env, ANN = ANN):
         play_game(env,ANN)
 
-    #import pdb; pdb.set_trace()
+    import pdb; pdb.set_trace()
