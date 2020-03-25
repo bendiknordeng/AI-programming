@@ -28,7 +28,7 @@ def RL_algorithm(games, simulations, env, ANN, eps_decay, epochs):
         #    ANN.model.save_weights(model_path.format(level=i+1))
 
     #run through of training data
-    ANN.accuracy(cases[0:10])
+    print(ANN.accuracy(cases[0:math.floor(len(cases)/2)]))
     ANN.epochs = 300
     random.shuffle(cases)
     interval = math.floor(len(cases)/4)
@@ -39,7 +39,7 @@ def RL_algorithm(games, simulations, env, ANN, eps_decay, epochs):
         _ = ANN.fit(0, fit_cases)
     ANN.epochs = 1 # only to make dict of known cases
     dict = ANN.fit(games-1, cases)
-    ANN.accuracy(cases[0:10])
+    print(ANN.accuracy(cases[0:math.floor(len(cases)/2)]))
     return dict
 
 
@@ -111,14 +111,14 @@ if __name__ == '__main__':
     # ANN parameters
     activation_functions = ["linear", "sigmoid", "tanh", "relu"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
-    alpha = 0.001 # learning rate
+    alpha = 0.005 # learning rate
     H_dims = [board_size, board_size**2]
     io_dim = board_size * board_size # input and output layer sizes (always equal)
     activation = activation_functions[3]
     optimizer = optimizers[3]
 
     epochs = 1
-    
+
     for i in range(1):
         print(i)
         env = HexGame(board_size)

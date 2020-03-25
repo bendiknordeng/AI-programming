@@ -44,14 +44,11 @@ class ANN:
         target = torch.tensor([case[1] for case in cases]).float()
         with torch.no_grad():
             pred = self.model(input)
-        _, pred_indices = torch.max(pred, 0)
-        _, target_indices = torch.max(target, 0)
-        sum_torch = torch.eq(pred_indices, target_indices)
-        print(sum_torch)
-
-
-
-
+        pred_indices = torch.argmax(pred, 1)
+        target_indices = torch.argmax(target, 1)
+        eq_sum = torch.sum(torch.eq(pred_indices, target_indices))
+        print(eq_sum)
+        return (eq_sum/float(len(pred_indices))).data.numpy()
 
     def forward(self, input):
         with torch.no_grad():
