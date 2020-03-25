@@ -22,24 +22,33 @@ def RL_algorithm(games, simulations, env, ANN, eps_decay, epochs):
             #M = math.ceil(M*0.5)
         fit_cases = random.sample(cases, math.ceil(len(cases)/2))
         _ = ANN.fit(0, fit_cases)
-        ANN.epochs += math.ceil(100/float(games)) #increment epochs
+
+        ANN.epochs += math.ceil(10/float(games)) #increment epochs
 
         #if (i+1) % save_interval == 0:
         #    ANN.model.save_weights(model_path.format(level=i+1))
 
     #run through of training data
-    print(ANN.accuracy(cases[0:math.floor(len(cases)/2)]))
-    ANN.epochs = 300
-    random.shuffle(cases)
+    accuracies = []
+    ANN.epochs = 30
     interval = math.floor(len(cases)/4)
-    for i in range(3): # leave out 25% of data
-        start = i*interval
-        end = ((i+1)*interval)
-        fit_cases = cases[start:end]
-        _ = ANN.fit(0, fit_cases)
+    runs = 0
+    accuracy = 0
+    while accuracy < 0.6 and runs < 30: #run 10 * 30 epochs
+        runs += 1
+        random.shuffle(cases) #shuffle data before each split
+        for i in range(3): # leave out 25% of data
+            start = i*interval
+            end = ((i+1)*interval)
+            fit_cases = cases[start:end]
+            _ = ANN.fit(0, fit_cases)
+        accuracy = ANN.accuracy(cases[3*interval:4*interval])
+        accuracies.append(accuracy)
+    print("terminated after", runs, "runs.")
+    print("accuracy", accuracies)
+
     ANN.epochs = 1 # only to make dict of known cases
     dict = ANN.fit(games-1, cases)
-    print(ANN.accuracy(cases[0:math.floor(len(cases)/2)]))
     return dict
 
 
@@ -100,7 +109,7 @@ if __name__ == '__main__':
 
     # MCTS/RL parameters
 
-    episodes = 20
+    episodes = 30
 
     simulations = 1000
 
@@ -111,7 +120,7 @@ if __name__ == '__main__':
     # ANN parameters
     activation_functions = ["linear", "sigmoid", "tanh", "relu"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
-    alpha = 0.005 # learning rate
+    alpha = 0.001 # learning rate
     H_dims = [board_size, board_size**2]
     io_dim = board_size * board_size # input and output layer sizes (always equal)
     activation = activation_functions[3]
@@ -119,7 +128,7 @@ if __name__ == '__main__':
 
     epochs = 1
 
-    for i in range(1):
+    for i in range(30):
         print(i)
         env = HexGame(board_size)
         ann = ANN(io_dim, H_dims, alpha, optimizer, activation, epochs)

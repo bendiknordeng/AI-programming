@@ -47,7 +47,6 @@ class ANN:
         pred_indices = torch.argmax(pred, 1)
         target_indices = torch.argmax(target, 1)
         eq_sum = torch.sum(torch.eq(pred_indices, target_indices))
-        print(eq_sum)
         return (eq_sum/float(len(pred_indices))).data.numpy()
 
     def forward(self, input):
