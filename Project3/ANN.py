@@ -17,7 +17,7 @@ class ANN:
         self.loss_fn = torch.nn.BCELoss(reduction="mean")
         self.optimizer = self.__choose_optimizer(list(self.model.parameters()), optimizer)
 
-    def fit(self, game_number, cases):
+    def fit(self, cases, make_dict=False):
         input = torch.tensor([case[0] for case in cases]).float()
         target = torch.tensor([case[1] for case in cases]).float()
         for i in range(self.epochs):
@@ -26,18 +26,24 @@ class ANN:
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
+
+    def make_dict(self, cases):
+        input = torch.tensor([case[0] for case in cases]).float()
+        target = torch.tensor([case[1] for case in cases]).float()
+        with torch.no_grad():
+            pred = self.model(input)
         dict = {}
-        if game_number == 9: #make dictionary of all predictions
-            inputs = input.data.numpy()
-            targets = np.around(target.data.numpy()*100, decimals = 1)
-            preds = np.around(pred.data.numpy()*100, decimals = 1)
-            for j in range(len(target.data.numpy())):
-                input, tar, pred = tuple(inputs[j]), targets[j], preds[j]
-                if dict.get(input) == None:
-                    dict[input] = [(tar, pred)]
-                else:
-                    dict[input].append((tar, pred))
+        inputs = input.data.numpy()
+        targets = np.around(target.data.numpy()*100, decimals = 1)
+        preds = np.around(pred.data.numpy()*100, decimals = 1)
+        for j in range(len(target.data.numpy())):
+            input, tar, pred = tuple(inputs[j]), targets[j], preds[j]
+            if dict.get(input) == None:
+                dict[input] = [(tar, pred)]
+            else:
+                dict[input].append((tar, pred))
         return dict
+
 
     def accuracy(self, cases):
         input = torch.tensor([case[0] for case in cases]).float()
@@ -47,7 +53,7 @@ class ANN:
         pred_indices = torch.argmax(pred, 1)
         target_indices = torch.argmax(target, 1)
         eq_sum = torch.sum(torch.eq(pred_indices, target_indices))
-        return (eq_sum/float(len(pred_indices))).data.numpy()
+        return float((eq_sum/float(len(pred_indices))).data.numpy())
 
     def forward(self, input):
         with torch.no_grad():

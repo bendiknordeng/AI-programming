@@ -5,6 +5,7 @@ import random
 from tqdm import tqdm
 import math
 import numpy as np
+from matplotlib import pyplot as plt
 np.set_printoptions(linewidth=160) # print formatting
 
 def RL_algorithm(games, simulations, env, ANN, eps_decay, epochs):
@@ -18,41 +19,42 @@ def RL_algorithm(games, simulations, env, ANN, eps_decay, epochs):
             action, D = MCTS.search(env, M)
             cases.append((env.flat_state,D))
             env.move(action)
-
             #M = math.ceil(M*0.5)
         fit_cases = random.sample(cases, math.ceil(len(cases)/2))
-        _ = ANN.fit(0, fit_cases)
-
+        ANN.fit(fit_cases)
         ANN.epochs += math.ceil(10/float(games)) #increment epochs
-
         #if (i+1) % save_interval == 0:
         #    ANN.model.save_weights(model_path.format(level=i+1))
 
-    #run through of training data
+    #run through cases
     accuracies = []
-    ANN.epochs = 30
-    interval = math.floor(len(cases)/4)
+    epochs = []
+    ANN.epochs = 20
+    split = math.floor(len(cases)/10)
+    val_data = cases[0:split] #20% of data is validation data
+    train_data = cases[split:len(cases)]
+    train_split = math.floor(len(train_data)/4)
     runs = 0
     accuracy = 0
-    while accuracy < 0.6 and runs < 30: #run 10 * 30 epochs
+    accuracies.append(ANN.accuracy(val_data))
+    epochs.append(ANN.epochs*runs)
+    while accuracy < 0.8 and runs < 100: #run 10 * 30 epochs
         runs += 1
-        random.shuffle(cases) #shuffle data before each split
-        for i in range(3): # leave out 25% of data
-            start = i*interval
-            end = ((i+1)*interval)
-            fit_cases = cases[start:end]
-            _ = ANN.fit(0, fit_cases)
-        accuracy = ANN.accuracy(cases[3*interval:4*interval])
+        random.shuffle(train_data) #shuffle data before each split
+        for i in range(4): # train ann on train_data
+            start = i*train_split
+            end = ((i+1)*train_split)
+            ANN.fit(train_data[start:end])
+        accuracy = ANN.accuracy(val_data)
         accuracies.append(accuracy)
+        epochs.append(ANN.epochs*runs)
     print("terminated after", runs, "runs.")
-    print("accuracy", accuracies)
-
-    ANN.epochs = 1 # only to make dict of known cases
-    dict = ANN.fit(games-1, cases)
-    return dict
+    plt.plot(epochs, accuracies)
+    plt.show()
+    return ANN.make_dict(cases)
 
 
-def play_game(dict, env, ANN, delay = -1,verbose=True):
+def play_game(dict, env, ANN, delay=-1,verbose=True):
     env.reset()
     inputs = []
     moves = []
@@ -109,13 +111,13 @@ if __name__ == '__main__':
 
     # MCTS/RL parameters
 
-    episodes = 30
+    episodes = 100
 
     simulations = 1000
 
     #training_batch_size = 100
     ann_save_interval = 10
-    eps_decay = 0.95
+    eps_decay = 1
 
     # ANN parameters
     activation_functions = ["linear", "sigmoid", "tanh", "relu"]
@@ -128,7 +130,7 @@ if __name__ == '__main__':
 
     epochs = 1
 
-    for i in range(30):
+    for i in range(1):
         print(i)
         env = HexGame(board_size)
         ann = ANN(io_dim, H_dims, alpha, optimizer, activation, epochs)
@@ -136,6 +138,6 @@ if __name__ == '__main__':
         def play(dict = prediction_dictionary, env = env, ANN = ann):
             play_game(dict, env,ann,-1,0)
         play()
-    say()
+    #say()
 
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
