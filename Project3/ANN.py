@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import pdb
 
 class ANN:
     def __init__(self, io_dim, H_dims, learning_rate, optimizer, activation_fn, epochs):
@@ -17,19 +18,20 @@ class ANN:
         self.loss_fn = torch.nn.BCELoss(reduction="mean")
         self.optimizer = self.__choose_optimizer(list(self.model.parameters()), optimizer)
 
-    def fit(self, cases, make_dict=False):
-        input = torch.tensor([case[0] for case in cases]).float()
-        target = torch.tensor([case[1] for case in cases]).float()
+    def fit(self, cases, debug=False):
+        input = torch.tensor(cases[0]).float()
+        target = torch.tensor(cases[1]).float()
         for i in range(self.epochs):
             pred = self.model(input)
             loss = self.loss_fn(pred, target)
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
+            if debug: pdb.set_trace()
 
     def make_dict(self, cases):
-        input = torch.tensor([case[0] for case in cases]).float()
-        target = torch.tensor([case[1] for case in cases]).float()
+        input = torch.tensor(cases[0]).float()
+        target = torch.tensor(cases[1]).float()
         with torch.no_grad():
             pred = self.model(input)
         dict = {}
@@ -45,15 +47,17 @@ class ANN:
         return dict
 
 
-    def accuracy(self, cases):
-        input = torch.tensor([case[0] for case in cases]).float()
-        target = torch.tensor([case[1] for case in cases]).float()
+    def accuracy(self, cases, debug = False):
+        input = torch.tensor(cases[0]).float()
+        target = torch.tensor(cases[1]).float()
         with torch.no_grad():
             pred = self.model(input)
         pred_indices = torch.argmax(pred, 1)
         target_indices = torch.argmax(target, 1)
         eq_sum = torch.sum(torch.eq(pred_indices, target_indices))
-        return float((eq_sum/float(len(pred_indices))).data.numpy())
+        acc = float((eq_sum/float(len(pred_indices))).data.numpy())
+        if debug: pdb.set_trace()
+        return acc
 
     def forward(self, input):
         with torch.no_grad():

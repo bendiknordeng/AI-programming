@@ -20,9 +20,9 @@ class Tree:
         D = np.zeros(env.size**2)
         for i in range(env.size**2):
             D[i] = node.actions[moves[i]][0]/node.visits if moves[i] in node.actions else 0
-        return D
+        return np.asarray(D, dtype = np.float64)
 
-    def rollout_policy(self, env, ANN, eps):
+    def rollout_policy(self, env, ANN=0, eps=1):
         legal = env.get_legal_actions()
         if random.random() < eps:
             return random.choice(legal)  # choose random action

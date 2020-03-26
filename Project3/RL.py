@@ -9,46 +9,40 @@ from matplotlib import pyplot as plt
 np.set_printoptions(linewidth=160) # print formatting
 
 def RL_algorithm(games, simulations, env, ANN, eps_decay, epochs):
-    cases = []
+    cases = [[],[]]
     MCTS = MonteCarloTreeSearch(ANN)
-    epoch_increment = math.ceil(100/float(games))
     for i in tqdm(range(games)):
         env.reset()
         MCTS.init_tree()
         M = simulations
         while not env.is_game_over():
             action, D = MCTS.search(env, M)
-            cases.append((env.flat_state,D))
+            cases[0].append(env.flat_state)
+            cases[1].append(D)
             env.move(action)
             #M = math.ceil(M*0.8)
-        fit_cases = random.sample(cases, math.ceil(len(cases)/2))
-        ANN.fit(fit_cases)
-        ANN.epochs += math.floor(np.exp(i/(games/3))) #increment epochs
+        fit_cases = list(zip(cases[0],cases[1]))
+        fit_cases = random.sample(fit_cases, math.ceil(len(cases[0])/2))
+        ANN.fit(list(zip(*fit_cases)))
+        ANN.epochs += math.floor(np.exp(i*3/(games)))
         #if (i+1) % save_interval == 0:
         #    ANN.model.save_weights(model_path.format(level=i+1))
-    #run through cases
+
+    ANN.epochs = 1
     accuracies = []
     epochs = []
-    ANN.epochs = 20
-    split = math.floor(len(cases)/10)
-    val_data = cases[0:split] #20% of data is validation data
-    train_data = cases[split:len(cases)]
-    train_split = math.floor(len(train_data)/4)
-    runs = 0
-    accuracy = 0
-    accuracies.append(ANN.accuracy(val_data))
-    epochs.append(ANN.epochs*runs)
-    while accuracy < 0.5 and runs < 100: #run 10 * 30 epochs
-        runs += 1
-        random.shuffle(train_data) #shuffle data before each split
-        for i in range(4): # train ann on train_data
-            start = i*train_split
-            end = ((i+1)*train_split)
-            ANN.fit(train_data[start:end])
-        accuracy = ANN.accuracy(val_data)
-        accuracies.append(accuracy)
-        epochs.append(ANN.epochs*runs)
-    print("terminated after", runs, "runs.")
+    split = math.floor(len(cases[0])/10)
+    val_data = [cases[0][0:split], cases[1][0:split]] #10% of data is validation data
+    train_data = list(zip(cases[0][split:len(cases[0])],cases[1][split:len(cases[1])]))
+    print("fitting")
+    for epoch in tqdm(range(1000)):
+        random.shuffle(train_data)
+        ANN.fit(list(zip(*train_data)))
+        acc = ANN.accuracy(val_data)
+        accuracies.append(acc)
+        epochs.append(epoch)
+
+    print("terminated after epoch number", epoch)
     plt.plot(epochs, accuracies)
     plt.show()
     return ANN.make_dict(cases)
@@ -95,14 +89,53 @@ def say():
     import os
     os.system('say "gamle ørn, jeg er ferdig  "')
 
+def generate_cases(games, simulations, env):
+    cases = [[],[]]
+    MCTS = MonteCarloTreeSearch()
+    for i in tqdm(range(games)):
+        env.reset()
+        MCTS.init_tree()
+        M = simulations
+        while not env.is_game_over():
+            action, D = MCTS.search(env, M)
+            cases[0].append(env.flat_state)
+            cases[1].append(D)
+            env.move(action)
+    return cases
+
+def train_ann(inputs, targets, ANN):
+    ANN.epochs = 1
+    accuracies = []
+    epochs = []
+    split = math.floor(len(inputs)/10)
+    val_data = [inputs[0:split], targets[0:split]] #10% of data is validation data
+    train_data = list(zip(inputs[split:len(inputs)],targets[split:len(targets)]))
+    print("fitting")
+    for epoch in tqdm(range(1000)):
+        random.shuffle(train_data)
+        ANN.fit(list(zip(*train_data)))
+        acc = ANN.accuracy(val_data)
+        accuracies.append(acc)
+        epochs.append(epoch)
+
+    print("terminated after epoch number", epoch)
+    plt.plot(epochs, accuracies)
+    plt.show()
+
+def write_db(filename, object):
+    np.savetxt(filename, object)
+
+def load_db(filename):
+    return np.loadtxt(filename)
 
 if __name__ == '__main__':
     # Game parameters
-    board_size = 4
+    board_size = 6
+    env = HexGame(board_size)
 
     # MCTS/RL parameters
-    episodes = 100
-    simulations = 1000
+    episodes = 1000
+    simulations = 500
 
     #training_batch_size = 100
     ann_save_interval = 10
@@ -117,15 +150,27 @@ if __name__ == '__main__':
     activation = activation_functions[3]
     optimizer = optimizers[3]
     epochs = 1
+    ann = ANN(io_dim, H_dims, alpha, optimizer, activation, epochs)
 
+    #cases = generate_cases(episodes, simulations, HexGame(board_size))
+    #inputs = cases[0]
+    #targets = cases[1]
+    #write_db( , inputs)
+    #write_db( , targets)
+
+    inputs = load_db("size_four_inputs.txt")
+    targets = load_db("size_four_targets.txt")
+    train_ann(inputs,targets,ann)
+    def play(dict = pred_dict, env = env, ANN = ann):
+        play_game(dict, env,ann,-1,0)
+    play()
+    """
     for i in range(1):
         print(i)
-        env = HexGame(board_size)
-        ann = ANN(io_dim, H_dims, alpha, optimizer, activation, epochs)
         pred_dict = RL_algorithm(episodes, simulations, env, ann, eps_decay, epochs)
-        def play(dict = pred_dict, env = env, ANN = ann):
-            play_game(dict, env,ann,-1,0)
-        play()
-    #say()
 
-    import pdb; pdb.set_trace()
+        play()
+    """
+
+
+    #import pdb; pdb.set_trace()
