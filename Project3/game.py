@@ -74,26 +74,47 @@ class HexGame:
         self.edges[2].append([(r,self.size-1) for r in range(self.size)])
 
     def result(self):
-        if self.is_game_over():
+        if self.is_game_over()[0]:
             return 1 if 3-self.player == 1 else -1
 
     def is_game_over(self):
         for cell in self.edges[3-self.player][0]:
             if self.state[cell] == 3-self.player:
-                if self.depth_first(cell, [cell]):
-                    return True
+                winning_path = self.depth_first(cell, [cell])
+                if winning_path:
+                    return winning_path
         return False
 
     def depth_first(self, cell, path):
         for n in self.neighbors[cell]:
             if self.state[n] == 3-self.player and n not in path:
+                path.append(n)
                 if n in self.edges[3-self.player][1]:
-                    return True
+                    return path
                 else:
-                    path.append(n)
                     if self.depth_first(n, path):
-                        return True
+                        return path
         return False
+
+    def get_minimal_path(self, path):
+        redundant = []
+        for i in range(1,len(path)-1):
+            neighbor_count = 0
+            for n in self.neighbors[path[i]]:
+                if n in path:
+                    neighbor_count += 1
+            if neighbor_count > 3:
+                continue
+            elif path[i] in (self.edges[3-self.player][0] + self.edges[3-self.player][1]):
+                redundant.append(path[i])
+                continue
+            temp_state = self.sim_copy()
+            temp_state.state[path[i]] = 0
+            if temp_state.is_game_over():
+                redundant.append(path[i])
+        for cell in redundant:
+            path.remove(cell)
+        return path
 
     def move(self, action):
         """
@@ -143,7 +164,7 @@ class HexGame:
                     edges.append(((r,c),(i,j)))
         return edges
 
-    def draw(self, animation_delay = 0):
+    def draw(self, winning_path=False, animation_delay = 0):
         graph = nx.Graph()
         graph.add_nodes_from([cell for cell in self.state])
         graph.add_edges_from(self.__cell_edges())
@@ -154,6 +175,9 @@ class HexGame:
         nx.draw(graph, pos=positions, nodelist=empty, node_color='white', edgecolors='black', node_size=1300-100*(self.size), ax=fig.axes[0])
         nx.draw(graph, pos=positions, nodelist=reds, node_color='red', edgecolors='black', node_size=1300-100*(self.size), ax=fig.axes[0])
         nx.draw(graph, pos=positions, nodelist=blacks, node_color='black', edgecolors='black', node_size=1300-100*(self.size), ax=fig.axes[0])
+        if winning_path:
+            nx.draw(graph, pos=positions, nodelist=self.get_minimal_path(winning_path), node_color='blue', node_size=1300-150*(self.size), ax=fig.axes[0])
+            fig.axes[0].set_title("Player {} won".format(3-self.player))
 
         if animation_delay: # run animation automatically if delay > 0
             plt.show(block = False)
@@ -167,3 +191,16 @@ class HexGame:
         Returns: string for verbose mode
         """
         return "Player {} put a piece on {}".format(self.player, action)
+
+if __name__ == "__main__":
+    game = HexGame(6)
+    reds = [(1,2), (0, 3), (1, 0), (1, 3), (1, 4), (2, 2), (2, 3), (3, 3), (3, 5), (4, 1), (4, 2), (4, 3), (5, 1)]
+    blacks = [(0, 0), (0, 2), (0, 4), (2, 0), (2, 1), (3, 1), (3, 2), (3, 4), (4, 5), (5, 0), (5, 2)]
+    for cell in reds:
+        game.state[cell] = 1
+    for cell in blacks:
+        game.state[cell] = 2
+
+    game.player = 2
+    path = game.is_game_over()
+    game.draw(path)
