@@ -12,7 +12,7 @@ np.set_printoptions(linewidth=160)  # print formatting
 def play_game(dict, env, ANN, delay=-1, verbose=True):
     env.reset()
     j = 0
-    while not env.is_game_over():
+    while True:
         input = tuple(env.flat_state)
         probs, action = ANN.get_move(env)
         if verbose:
@@ -28,13 +28,16 @@ def play_game(dict, env, ANN, delay=-1, verbose=True):
                 print("No such case for input state")
             print(np.around(probs.numpy() * 100, decimals=1))
         if delay > -1:
-            env.draw(delay)
+            env.draw(animation_delay=delay)
         env.move(action)
         j += 1
+        winning_path = env.is_game_over()
+        if winning_path:
+            break
     winning_player = 3 - env.flat_state[0]
     print("player", winning_player, "won after", j, "moves.")
     if delay > -1:
-        env.draw()
+        env.draw(path=winning_path)
 
 
 def say():
@@ -42,9 +45,9 @@ def say():
     os.system('say "gamle ørn, jeg er ferdig  "')
 
 
-def generate_cases(games, simulations, env):
+def generate_cases(games, simulations, env, ann):
     cases = [[], []]
-    MCTS = MonteCarloTreeSearch()
+    MCTS = MonteCarloTreeSearch(ANN=ann)
     for i in tqdm(range(games)):
         env.reset()
         MCTS.init_tree()
@@ -54,14 +57,14 @@ def generate_cases(games, simulations, env):
             cases[0].append(env.flat_state)
             cases[1].append(D)
             env.move(action)
-            game_over = env.is_game_over()
-            if game_over:
-                env.draw(winning_path=game_over)
+            winning_path = env.is_game_over()
+            if winning_path:
+                #env.draw(path=winning_path)
                 break
-            env.draw(animation_delay=0.1)
             #M = math.floor(M*0.9)
-    write_db("cases/size_{}_inputs.txt".format(env.size), cases[0])
-    write_db("cases/size_{}_targets.txt".format(env.size), cases[1])
+        MCTS.eps *= 0.99
+    write_db("cases_with_ann_policy/size_{}_inputs.txt".format(env.size), cases[0])
+    write_db("cases_with_ann_policy/size_{}_targets.txt".format(env.size), cases[1])
 
 
 def train_ann(inputs, targets, ANN):
@@ -106,12 +109,12 @@ def load_db(filename):
 
 if __name__ == '__main__':
     # Game parameters
-    board_size = 6
+    board_size = 5
     env = HexGame(board_size)
 
     # MCTS/RL parameters
-    episodes = 1
-    simulations = 100
+    episodes = 100
+    simulations = 500
 
     #training_batch_size = 100
     ann_save_interval = 10
@@ -127,14 +130,13 @@ if __name__ == '__main__':
     optimizer = optimizers[3]
     epochs = 100
     ann = ANN(io_dim, H_dims, alpha, optimizer, activation, epochs)
+    inputs = load_db("cases/size_{}_inputs.txt".format(board_size))
+    targets = load_db("cases/size_{}_targets.txt".format(board_size))
+    pred_dict = train_ann(inputs, targets, ann)
+    print("Accuracy: {:3f}\nLoss: {:3f}".format(ann.accuracy([inputs,targets]),ann.get_loss([inputs,targets])))
 
-    generate_cases(episodes, simulations, HexGame(board_size))
+    #generate_cases(episodes, simulations, HexGame(board_size), ann)
 
-    #inputs = load_db("cases/size_{}_inputs.txt".format(board_size))
-    #targets = load_db("cases/size_{}_targets.txt".format(board_size))
-    #pred_dict = train_ann(inputs, targets, ann)
-    #print("Accuracy: {:3f}\nLoss: {:3f}".format(ann.accuracy([inputs,targets]),ann.get_loss([inputs,targets])))
-
-    #def play(dict=pred_dict, env=env, ANN=ann):
-    #    play_game(dict, env, ann, 0.1, 0)
-    #play()
+    def play(dict=pred_dict, env=env, ANN=ann):
+        play_game(dict, env, ann, 0.1, 0)
+    play()

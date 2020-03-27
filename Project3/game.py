@@ -105,9 +105,11 @@ class HexGame:
                     neighbor_count += 1
             if neighbor_count > 3:
                 continue
-            elif path[i] in (self.edges[3-self.player][0] + self.edges[3-self.player][1]):
-                redundant.append(path[i])
-                continue
+            edge_cells = []
+            for cell in self.edges[3-self.player][0]:
+                if cell in path:
+                    edge_cells.append(cell)
+            redundant += edge_cells[:-1]
             temp_state = self.sim_copy()
             temp_state.state[path[i]] = 0
             if temp_state.is_game_over():
@@ -164,7 +166,7 @@ class HexGame:
                     edges.append(((r,c),(i,j)))
         return edges
 
-    def draw(self, winning_path=False, animation_delay = 0):
+    def draw(self, path=False, animation_delay = 0):
         graph = nx.Graph()
         graph.add_nodes_from([cell for cell in self.state])
         graph.add_edges_from(self.__cell_edges())
@@ -175,8 +177,8 @@ class HexGame:
         nx.draw(graph, pos=positions, nodelist=empty, node_color='white', edgecolors='black', node_size=1300-100*(self.size), ax=fig.axes[0])
         nx.draw(graph, pos=positions, nodelist=reds, node_color='red', edgecolors='black', node_size=1300-100*(self.size), ax=fig.axes[0])
         nx.draw(graph, pos=positions, nodelist=blacks, node_color='black', edgecolors='black', node_size=1300-100*(self.size), ax=fig.axes[0])
-        if winning_path:
-            nx.draw(graph, pos=positions, nodelist=self.get_minimal_path(winning_path), node_color='blue', node_size=1300-150*(self.size), ax=fig.axes[0])
+        if path:
+            nx.draw(graph, pos=positions, nodelist=self.get_minimal_path(path), node_color='blue', node_size=1300-200*(self.size), ax=fig.axes[0])
             fig.axes[0].set_title("Player {} won".format(3-self.player))
 
         if animation_delay: # run animation automatically if delay > 0
