@@ -15,7 +15,7 @@ class ANN:
         layers.append(torch.nn.Linear(H_dims[-1],io_dim))
         layers.append(torch.nn.Softmax())
         self.model = torch.nn.Sequential(*layers)
-        self.loss_fn = torch.nn.BCELoss(reduction="mean")
+        self.loss_fn = torch.nn.BCELoss(reduction="sum")
         self.optimizer = self.__choose_optimizer(list(self.model.parameters()), optimizer)
 
     def fit(self, cases, debug=False):
@@ -27,11 +27,11 @@ class ANN:
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
-            if debug: pdb.set_trace()
+        if debug: return float(loss.data.numpy())
 
-    def make_dict(self, cases):
-        input = torch.tensor(cases[0]).float()
-        target = torch.tensor(cases[1]).float()
+    def make_dict(self, inputs, targets):
+        input = torch.tensor(inputs).float()
+        target = torch.tensor(targets).float()
         with torch.no_grad():
             pred = self.model(input)
         dict = {}
@@ -41,9 +41,9 @@ class ANN:
         for j in range(len(target.data.numpy())):
             input, tar, pred = tuple(inputs[j]), targets[j], preds[j]
             if dict.get(input) == None:
-                dict[input] = [(tar, pred)]
+                dict[tuple(input)] = [(tar, pred)]
             else:
-                dict[input].append((tar, pred))
+                dict[tuple(input)].append((tar, pred))
         return dict
 
 

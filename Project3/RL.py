@@ -6,6 +6,7 @@ from tqdm import tqdm
 import math
 import numpy as np
 from matplotlib import pyplot as plt
+import copy
 np.set_printoptions(linewidth=160) # print formatting
 
 def RL_algorithm(games, simulations, env, ANN, eps_decay, epochs):
@@ -27,7 +28,8 @@ def RL_algorithm(games, simulations, env, ANN, eps_decay, epochs):
         ANN.epochs += math.floor(np.exp(i*3/(games)))
         #if (i+1) % save_interval == 0:
         #    ANN.model.save_weights(model_path.format(level=i+1))
-
+    train_ann(cases[0], cases[1], ANN)
+    """
     ANN.epochs = 1
     accuracies = []
     epochs = []
@@ -41,26 +43,21 @@ def RL_algorithm(games, simulations, env, ANN, eps_decay, epochs):
         acc = ANN.accuracy(val_data)
         accuracies.append(acc)
         epochs.append(epoch)
-
     print("terminated after epoch number", epoch)
     plt.plot(epochs, accuracies)
     plt.show()
     return ANN.make_dict(cases)
+    """
 
 
 def play_game(dict, env, ANN, delay=-1,verbose=True):
     env.reset()
-    inputs = []
-    moves = []
-    preds = []
     j = 0
     while not env.is_game_over():
-        inputs.append(env.flat_state)
+        input = env.flat_state
         probs, action = ANN.get_move(env)
         if verbose:
-            print()
-            input = tuple(env.flat_state)
-            print(input)
+            print(); print(input)
             if dict.get(input) != None:
                 targets = []
                 for tar, _ in dict[input]:
@@ -70,20 +67,13 @@ def play_game(dict, env, ANN, delay=-1,verbose=True):
             else:
                 print("No such case for input state")
             print(np.around(probs.numpy()*100, decimals = 1))
-            if delay > -1:
-                env.draw()
-        else:
-            if delay > -1:
-                env.draw(delay)
-        preds.append(np.around(probs.numpy()*100, decimals = 1))
-        moves.append(action)
+        if delay > -1:
+            env.draw(delay)
         env.move(action)
         j += 1
     winning_player =  3 - env.flat_state[0]
     print("player", winning_player, "won after", j, "moves.")
-    if delay > -1:
-        env.draw()
-
+    if delay > -1: env.draw()
 
 def say():
     import os
@@ -104,23 +94,34 @@ def generate_cases(games, simulations, env):
     return cases
 
 def train_ann(inputs, targets, ANN):
-    ANN.epochs = 1
+    ANN.epochs = 1000
     accuracies = []
+    losses = []
     epochs = []
-    split = math.floor(len(inputs)/10)
-    val_data = [inputs[0:split], targets[0:split]] #10% of data is validation data
+    split = math.floor(len(inputs)*0.01)
+    test_data = [inputs[0:split], targets[0:split]] #1 percent of data is test
     train_data = list(zip(inputs[split:len(inputs)],targets[split:len(targets)]))
+    fit_data = []
+    k = 5
+    split = math.floor(len(train_data)/k)
+    # try to do k-fold cross validation
+    for i in range(k-1):
+        fit_data.append(list(train_data[i*split:(i+1)*split]))
     print("fitting")
-    for epoch in tqdm(range(1000)):
-        random.shuffle(train_data)
-        ANN.fit(list(zip(*train_data)))
-        acc = ANN.accuracy(val_data)
+    for i in range(k-1):#tqdm(range(k-1)):
+        fit_data
+        fit = train_data[i*split:(i+1)*split]
+        random.shuffle(fit)
+        losses.append(ANN.fit(list(zip(*fit)), debug = True))
+        acc = ANN.accuracy(test_data)
         accuracies.append(acc)
-        epochs.append(epoch)
-
-    print("terminated after epoch number", epoch)
-    plt.plot(epochs, accuracies)
+        epochs.append(ANN.epochs * i)
+    print("terminated after epoch number", i)
+    fig, (ax1, ax2) = plt.subplots(2)
+    ax1.plot(epochs, accuracies)
+    ax2.plot(epochs, losses)
     plt.show()
+    return ANN.make_dict(inputs, targets)
 
 def write_db(filename, object):
     np.savetxt(filename, object)
@@ -130,7 +131,7 @@ def load_db(filename):
 
 if __name__ == '__main__':
     # Game parameters
-    board_size = 6
+    board_size = 4
     env = HexGame(board_size)
 
     # MCTS/RL parameters
@@ -144,9 +145,9 @@ if __name__ == '__main__':
     # ANN parameters
     activation_functions = ["linear", "sigmoid", "tanh", "relu"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
-    alpha = 0.005 # learning rate
-    H_dims = [board_size*board_size]
-    io_dim = board_size * board_size # input and output layer sizes (always equal)
+    alpha = 0.001 # learning rate
+    H_dims = [2*board_size**2,board_size*board_size]
+    io_dim = board_size * board_size # input and output layer sizes
     activation = activation_functions[3]
     optimizer = optimizers[3]
     epochs = 1
@@ -160,10 +161,12 @@ if __name__ == '__main__':
 
     inputs = load_db("size_four_inputs.txt")
     targets = load_db("size_four_targets.txt")
-    train_ann(inputs,targets,ann)
+    pred_dict = train_ann(inputs,targets,ann)
+
     def play(dict = pred_dict, env = env, ANN = ann):
-        play_game(dict, env,ann,-1,0)
+        play_game(dict, env, ann,0.1,0)
     play()
+
     """
     for i in range(1):
         print(i)
