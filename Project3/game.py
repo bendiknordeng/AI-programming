@@ -100,6 +100,7 @@ class HexGame:
         Input: action to be executed
         Returns: new state - use np.copy(self.state)
         """
+        assert self.state[(action[0],action[1])] == 0, "Invalid move, cell not empty"
         self.state[(action[0],action[1])] = self.player
         self.player = 3 - self.player
 

@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 import pdb
+from tqdm import tqdm
 
 class ANN:
     def __init__(self, io_dim, H_dims, learning_rate, optimizer, activation_fn, epochs):
@@ -13,21 +14,27 @@ class ANN:
             layers.append(torch.nn.Linear(H_dims[i], H_dims[i+1]))
             layers.append(activation_fn) if activation_fn != None else None
         layers.append(torch.nn.Linear(H_dims[-1],io_dim))
-        layers.append(torch.nn.Softmax())
+        layers.append(torch.nn.Softmax(dim=-1))
         self.model = torch.nn.Sequential(*layers)
-        self.loss_fn = torch.nn.BCELoss(reduction="sum")
+        self.loss_fn = torch.nn.BCELoss(reduction="mean")
         self.optimizer = self.__choose_optimizer(list(self.model.parameters()), optimizer)
 
     def fit(self, cases, debug=False):
         input = torch.tensor(cases[0]).float()
         target = torch.tensor(cases[1]).float()
-        for i in range(self.epochs):
+        for i in tqdm(range(self.epochs)):
             pred = self.model(input)
             loss = self.loss_fn(pred, target)
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
         if debug: return float(loss.data.numpy())
+
+    def get_loss(self, cases):
+        input = torch.tensor(cases[0]).float()
+        target = torch.tensor(cases[1]).float()
+        pred = self.model(input)
+        return self.loss_fn(pred, target).data.numpy()
 
     def make_dict(self, inputs, targets):
         input = torch.tensor(inputs).float()
@@ -48,10 +55,8 @@ class ANN:
 
 
     def accuracy(self, cases, debug = False):
-        input = torch.tensor(cases[0]).float()
+        pred = self.forward(cases[0])
         target = torch.tensor(cases[1]).float()
-        with torch.no_grad():
-            pred = self.model(input)
         pred_indices = torch.argmax(pred, 1)
         target_indices = torch.argmax(target, 1)
         eq_sum = torch.sum(torch.eq(pred_indices, target_indices))
