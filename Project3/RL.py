@@ -62,34 +62,18 @@ def generate_cases(games, simulations, env, ann):
                 #env.draw(path=winning_path)
                 break
             #M = math.floor(M*0.9)
-        MCTS.eps *= 0.99
-    write_db("cases_with_ann_policy/size_{}_inputs.txt".format(env.size), cases[0])
-    write_db("cases_with_ann_policy/size_{}_targets.txt".format(env.size), cases[1])
+        #MCTS.eps *= 0.99
+    write_db("cases/size_{}_inputs.txt".format(env.size), cases[0])
+    write_db("cases/size_{}_targets.txt".format(env.size), cases[1])
 
 
 def train_ann(inputs, targets, ANN):
     # Shuffle cases before training
     train_data = list(zip(inputs,targets))
     random.shuffle(train_data)
-    inputs, targets = zip(*train_data)
-
-    split = math.floor(len(inputs) * 0.01) # 1 percent of data is test
-    test_data = [inputs[0:split], targets[0:split]]
-    train_data = list(zip(inputs[split:len(inputs)],targets[split:len(targets)]))
-    k = 5
-    split = math.floor(len(train_data)/k)
-    accuracies = [ANN.accuracy(test_data)]
-    losses = [ANN.get_loss(test_data)]
-    epochs = [0]
-    # try to do k-fold cross validation
+    input, target = zip(*train_data)
     print("Fitting...")
-    for i in range(1,k+1):#tqdm(range(k-1)):
-        print("Fold:", i)
-        fit_data = train_data[(i-1)*split:i*split]
-        losses.append(ANN.fit(list(zip(*fit_data)), debug = True))
-        acc = ANN.accuracy(test_data)
-        accuracies.append(acc)
-        epochs.append(ANN.epochs * i)
+    epochs, losses, accuracies = ANN.fit(input, target, debug = True)
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
     ax.plot(epochs, accuracies, color='tab:blue', label="Accuracy")
@@ -109,7 +93,7 @@ def load_db(filename):
 
 if __name__ == '__main__':
     # Game parameters
-    board_size = 5
+    board_size = 6
     env = HexGame(board_size)
 
     # MCTS/RL parameters
@@ -123,7 +107,7 @@ if __name__ == '__main__':
     # ANN parameters
     activation_functions = ["linear", "sigmoid", "tanh", "relu"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
-    alpha = 0.01  # learning rate
+    alpha = 0.001  # learning rate
     H_dims = [math.floor(2*(1+board_size**2)/3)+board_size**2] * 3
     io_dim = board_size * board_size  # input and output layer sizes
     activation = activation_functions[3]
@@ -135,8 +119,8 @@ if __name__ == '__main__':
     pred_dict = train_ann(inputs, targets, ann)
     print("Accuracy: {:3f}\nLoss: {:3f}".format(ann.accuracy([inputs,targets]),ann.get_loss([inputs,targets])))
 
-    #generate_cases(episodes, simulations, HexGame(board_size), ann)
-
     def play(dict=pred_dict, env=env, ANN=ann):
         play_game(dict, env, ann, 0.1, 0)
     play()
+
+    #generate_cases(episodes, simulations, HexGame(board_size), ann)

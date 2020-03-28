@@ -16,19 +16,29 @@ class ANN:
         layers.append(torch.nn.Linear(H_dims[-1],io_dim))
         layers.append(torch.nn.Softmax(dim=-1))
         self.model = torch.nn.Sequential(*layers)
-        self.loss_fn = torch.nn.BCELoss(reduction="mean")
+        self.loss_fn = torch.nn.MSELoss(reduction="mean")
         self.optimizer = self.__choose_optimizer(list(self.model.parameters()), optimizer)
 
-    def fit(self, cases, debug=False):
-        input = torch.tensor(cases[0]).float()
-        target = torch.tensor(cases[1]).float()
+    def fit(self, input, target, debug=False):
+        split = int(np.floor(len(input) * 0.01)) # 1 percent of data is test
+        test_data = [input[0:split], target[0:split]]
+        train_data = [input[split::],target[split::]]
+
+        input = torch.tensor(train_data[0]).float()
+        target = torch.tensor(train_data[1]).float()
+
+        epochs, losses, accuracies = [],[],[]
         for i in tqdm(range(self.epochs)):
             pred = self.model(input)
             loss = self.loss_fn(pred, target)
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
-        if debug: return float(loss.data.numpy())
+            if debug and i%10 == 0:
+                losses.append(loss.data.numpy())
+                accuracies.append(self.accuracy(test_data))
+                epochs.append(i)
+        return epochs, losses, accuracies
 
     def get_loss(self, cases):
         input = torch.tensor(cases[0]).float()

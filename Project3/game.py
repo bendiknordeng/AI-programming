@@ -115,7 +115,10 @@ class HexGame:
             if temp_state.is_game_over():
                 redundant.append(path[i])
         for cell in redundant:
-            path.remove(cell)
+            try:
+                path.remove(cell)
+            except:
+                import pdb; pdb.set_trace()
         return path
 
     def move(self, action):
