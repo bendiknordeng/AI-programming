@@ -97,25 +97,18 @@ class HexGame:
         return False
 
     def get_minimal_path(self, path):
-        redundant = []
-        for i in range(1,len(path)-1):
-            neighbor_count = 0
-            for n in self.neighbors[path[i]]:
-                if n in path:
-                    neighbor_count += 1
-            if neighbor_count > 3:
-                continue
-            edge_cells = []
-            for cell in self.edges[3-self.player][0]:
-                if cell in path:
-                    edge_cells.append(cell)
-            redundant += edge_cells[:-1]
+        i = len(path)-1
+        while True:
+            if path[i] in self.edges[3-self.player][0]:
+                if i != 0:
+                    path = path[-1:i-1:-1]
+                break
             temp_state = self.sim_copy()
             temp_state.state[path[i]] = 0
             if temp_state.is_game_over():
-                redundant.append(path[i])
-        for cell in redundant:
-            path.remove(cell)
+                self.state[path[i]] = 0
+                path.remove(path[i])
+            i-=1
         return path
 
     def move(self, action):
@@ -195,9 +188,9 @@ class HexGame:
         return "Player {} put a piece on {}".format(self.player, action)
 
 if __name__ == "__main__":
-    game = HexGame(6)
-    reds = [(1,2), (0, 3), (1, 0), (1, 3), (1, 4), (2, 2), (2, 3), (3, 3), (3, 5), (4, 1), (4, 2), (4, 3), (5, 1)]
-    blacks = [(0, 0), (0, 2), (0, 4), (2, 0), (2, 1), (3, 1), (3, 2), (3, 4), (4, 5), (5, 0), (5, 2)]
+    game = HexGame(4)
+    reds = [(0, 2), (1, 1), (1, 2), (2, 1),(3,1)]
+    blacks = []
     for cell in reds:
         game.state[cell] = 1
     for cell in blacks:

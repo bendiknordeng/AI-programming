@@ -22,7 +22,7 @@ class ANN:
     def fit(self, cases, debug=False):
         input = torch.tensor(cases[0]).float()
         target = torch.tensor(cases[1]).float()
-        for i in tqdm(range(self.epochs)):
+        for i in range(self.epochs):
             pred = self.model(input)
             loss = self.loss_fn(pred, target)
             self.optimizer.zero_grad()
@@ -67,6 +67,14 @@ class ANN:
     def forward(self, input):
         with torch.no_grad():
             return self.model(torch.tensor(input).float())
+
+    def save(self, size, level):
+        torch.save(self.model, "models/{}_ANN_level_{}".format(size,level))
+        print("Model has been saved to models/{}_ANN_level_{}".format(size,level))
+
+    def load(self, size, level):
+        self.model = torch.load("models/{}_ANN_level_{}".format(size,level))
+        print("Loaded model from models/{}_ANN_level_{}".format(size,level))
 
     def get_move(self, env):
         legal = env.get_legal_actions()
