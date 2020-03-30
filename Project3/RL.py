@@ -9,8 +9,10 @@ from matplotlib import pyplot as plt
 import copy
 np.set_printoptions(linewidth=160)  # print formatting
 
-def RL(G, M, env, ANN, batch_size, save_interval):
+def RL(G, M, env, ANN, save_interval):
     ANN.save(size=env.size, level=0)
+    losses = []
+    episodes = []
     cases = [[],[]]
     MCTS = MonteCarloTreeSearch(ANN)
     for i in tqdm(range(G)):
@@ -21,12 +23,24 @@ def RL(G, M, env, ANN, batch_size, save_interval):
             cases[0].append(env.flat_state)
             cases[1].append(D)
             env.move(action)
-        ANN.fit(cases)
+        training_cases = list(zip(cases[0],cases[1]))
+        random.shuffle(training_cases)
+        inputs, targets = zip(*training_cases)
+        split = math.floor(len(inputs)/2)
+        losses.append(ANN.fit([inputs[:split],targets[:split]], debug = True))
+        episodes.append(i)
         if (i+1) % save_interval == 0:
             ANN.save(size=env.size, level=i+1)
+            ANN.epochs += 5
         MCTS.eps *= 0.99
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    ax.plot(episodes, losses, color='tab:orange', label="Loss")
+    plt.legend()
+    plt.show()
+    return ANN.make_dict(cases[0], cases[1])
 
-def play_game(env, ANN, delay=-1, verbose=False):
+def play_game(dict, env, ANN, delay=-1, verbose=False):
     env.reset()
     j = 0
     while True:
@@ -35,20 +49,19 @@ def play_game(env, ANN, delay=-1, verbose=False):
         #    ANN.load(env.size, 0)
         #else:
         #    ANN.load(env.size, 0)
-
-        _, action = ANN.get_move(env)
-        #if verbose:
-        #    print()
-        #    print(input)
-        #    if dict.get(input) != None:
-        #        targets = []
-        #        for tar, _ in dict[input]:
-        #            targets.append(tar)
-        #        mean_target = np.around(np.mean(targets, axis=0), decimals=1)
-        #        print(mean_target)
-        #    else:
-        #        print("No such case for input state")
-        #    print(np.around(probs.numpy() * 100, decimals=1))
+        probs, action = ANN.get_move(env)
+        if verbose:
+            print()
+            print(input)
+            if dict.get(input) != None:
+                targets = []
+                for tar, _ in dict[input]:
+                    targets.append(tar)
+                mean_target = np.around(np.mean(targets, axis=0), decimals=1)
+                print(mean_target)
+            else:
+                print("No such case for input state")
+            print(np.around(probs.numpy() * 100, decimals=1))
         if delay > -1:
             env.draw(animation_delay=delay)
         env.move(action)
@@ -58,6 +71,7 @@ def play_game(env, ANN, delay=-1, verbose=False):
             break
     winning_player = 3 - env.player
     print("player", winning_player, "won after", j, "moves.")
+    print("result from env", env.result())
     if delay > -1:
         env.draw(path=winning_path)
 
@@ -129,14 +143,13 @@ def load_db(filename):
 
 if __name__ == '__main__':
     # Game parameters
-    board_size = 4
+    board_size = 5
     env = HexGame(board_size)
 
     # MCTS/RL parameters
-    episodes = 100
+    episodes = 200
     simulations = 500
-    save_interval = 20
-    batch_size = 100
+    save_interval = 50
 
     #training_batch_size = 100
     ann_save_interval = 10
@@ -145,21 +158,21 @@ if __name__ == '__main__':
     # ANN parameters
     activation_functions = ["linear", "sigmoid", "tanh", "relu"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
-    alpha = 0.001  # learning rate
+    alpha = 0.01  # learning rate
     H_dims = [math.floor(2*(1+board_size**2)/3)+board_size**2] * 3
     io_dim = board_size * board_size  # input and output layer sizes
     activation = activation_functions[3]
-    optimizer = optimizers[0]
-    epochs = 10
+    optimizer = optimizers[3]
+    epochs = 1
     ann = ANN(io_dim, H_dims, alpha, optimizer, activation, epochs)
-    inputs = load_db("cases/size_{}_inputs.txt".format(board_size))
-    targets = load_db("cases/size_{}_targets.txt".format(board_size))
-    pred_dict = train_ann(inputs, targets, ann)
-    print("Accuracy: {:3f}\nLoss: {:3f}".format(ann.accuracy([inputs,targets]),ann.get_loss([inputs,targets])))
+    #inputs = load_db("cases/size_{}_inputs.txt".format(board_size))
+    #targets = load_db("cases/size_{}_targets.txt".format(board_size))
+    #pred_dict = train_ann(inputs, targets, ann)
+    #print("Accuracy: {:3f}\nLoss: {:3f}".format(ann.accuracy([inputs,targets]),ann.get_loss([inputs,targets])))
     #generate_cases(episodes, simulations, HexGame(board_size), ann)
 
-    #RL(episodes, simulations, env, ann, batch_size, save_interval)
+    dict = RL(episodes, simulations, env, ann, save_interval)
 
-    def play(env=env, ANN=ann):
-        play_game(env, ann, 0.1)
+    def play(dict = dict, env=env, ANN=ann):
+        play_game(dict, env, ann, 0, verbose = False)
     play()
