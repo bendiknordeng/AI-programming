@@ -12,7 +12,14 @@ class HexGame:
 
     def __init__(self, size, state=None, player=1):
         self.size = size
-        self.state = state if state else self.generate_initial_state()
+        if isinstance(state, tuple): #to make hexgame from state passed from oht-server
+            state_dict = {}
+            for r in range(self.size):
+                for c in range(self.size):
+                    state_dict[(r,c)] = state[r*self.size + c] # empty cell
+            self.state = state_dict
+        else:
+            self.state = state if state else self.generate_initial_state()
         if len(self.neighbors) == 0:
             self.__generate_neighbors()
         self.player = player
