@@ -1,4 +1,4 @@
-
+import pprint
 import socket, ssl, pprint, getpass
 import random
 import math
@@ -10,10 +10,7 @@ class BasicClientActorAbs(ABC):
     def __init__(self, IP_address = None,verbose=True):
         self.verbose = verbose
         if IP_address == None:
-            hostname = socket.gethostname() # Sander has written
-            IP_address = socket.gethostbyname(hostname) # Sander has written
-            self.IP_address = IP_address # Sander has written
-            #self.IP_address = '129.241.113.109' #was written from before
+            self.IP_address = '129.241.113.109'
         else:
             self.IP_address = IP_address
 
@@ -21,9 +18,11 @@ class BasicClientActorAbs(ABC):
 
         # We require a certificate from the server. We used a self-signed certificate
         # so here ca_certs must be the server certificate itself.
-        self.ssl_sock = ssl.wrap_socket(self.s,
-                                   ca_certs="server.crt",
-                                   cert_reqs=ssl.CERT_REQUIRED)
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        context.load_verify_locations("server.crt")
+        context.verify_mode = ssl.CERT_REQUIRED
+        context.check_hostname = False # We have no hostname for the server
+        self.ssl_sock = context.wrap_socket(self.s)
 
         self.series_id = -1
 
@@ -55,6 +54,9 @@ class BasicClientActorAbs(ABC):
         # to work. Do this either by being at the campus or by using a VPN.
         self.ssl_sock.connect((self.IP_address, 33000))
 
+
+        # Print certificate
+        pprint.pprint(self.ssl_sock.getpeercert())
 
         # Print the cipher used for encrypted connection
         print(self.ssl_sock.cipher())
@@ -293,3 +295,7 @@ class BasicClientActorAbs(ABC):
                 col = index % size
                 empty_locs.append((row, col))
         return random.choice(empty_locs)
+
+
+
+

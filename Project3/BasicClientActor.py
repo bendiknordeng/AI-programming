@@ -1,12 +1,8 @@
 import math
-import socket
-
 from BasicClientActorAbs import BasicClientActorAbs
 from ANN import ANN
 from game import HexGame
 import numpy as np
-
-
 
 class BasicClientActor(BasicClientActorAbs):
 
@@ -30,7 +26,7 @@ class BasicClientActor(BasicClientActorAbs):
         board_state = state[1:]
         board_size = int(np.sqrt(len(board_state)))
         env = HexGame(board_size, board_state, player)
-        return self.ann.get_move(env)
+        return self.ann.get_move(env)[1]
 
     def handle_series_start(self, unique_id, series_id, player_map, num_games, game_params):
         """
@@ -137,6 +133,5 @@ class BasicClientActor(BasicClientActorAbs):
 
 
 if __name__ == '__main__':
-
-    bsa = BasicClientActor(IP_address = '10.50.236.20',verbose=True)
+    bsa = BasicClientActor(verbose=True)
     bsa.connect_to_server()
