@@ -143,7 +143,7 @@ def load_db(filename):
 
 if __name__ == '__main__':
     # Game parameters
-    board_size = 5
+    board_size = 6
     env = HexGame(board_size)
 
     # MCTS/RL parameters
@@ -158,7 +158,7 @@ if __name__ == '__main__':
     # ANN parameters
     activation_functions = ["linear", "sigmoid", "tanh", "relu"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
-    alpha = 0.01  # learning rate
+    alpha = 0.005  # learning rate
     H_dims = [math.floor(2*(1+board_size**2)/3)+board_size**2] * 3
     io_dim = board_size * board_size  # input and output layer sizes
     activation = activation_functions[3]
@@ -167,12 +167,12 @@ if __name__ == '__main__':
     ann = ANN(io_dim, H_dims, alpha, optimizer, activation, epochs)
     #inputs = load_db("cases/size_{}_inputs.txt".format(board_size))
     #targets = load_db("cases/size_{}_targets.txt".format(board_size))
-    #pred_dict = train_ann(inputs, targets, ann)
+    #dict = train_ann(inputs, targets, ann)
     #print("Accuracy: {:3f}\nLoss: {:3f}".format(ann.accuracy([inputs,targets]),ann.get_loss([inputs,targets])))
     #generate_cases(episodes, simulations, HexGame(board_size), ann)
 
     dict = RL(episodes, simulations, env, ann, save_interval)
 
     def play(dict = dict, env=env, ANN=ann):
-        play_game(dict, env, ann, 0, verbose = False)
+        play_game(dict, env, ann, -1, verbose = True)
     play()

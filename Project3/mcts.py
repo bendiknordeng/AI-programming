@@ -4,7 +4,7 @@ class MonteCarloTreeSearch:
     def __init__(self, ANN=None, c=1.4):
         self.tree = Tree()
         self.ANN = ANN
-        self.eps = 1
+        self.eps = 0
         self.c = c  # exploration constant
 
     def init_tree(self):
