@@ -7,12 +7,14 @@ import math
 import numpy as np
 from matplotlib import pyplot as plt
 import copy
+import time
 np.set_printoptions(linewidth=160)  # print formatting
 
 def RL(G, M, env, ANN, save_interval):
     ANN.save(size=env.size, level=0)
     losses = []
-    episodes = []
+    accuracies = []
+    episodes = np.arange(G)
     cases = [[],[]]
     MCTS = MonteCarloTreeSearch(ANN)
     for i in tqdm(range(G)):
@@ -28,7 +30,7 @@ def RL(G, M, env, ANN, save_interval):
         inputs, targets = zip(*training_cases)
         split = math.floor(len(inputs)/2)
         losses.append(ANN.fit([inputs[:split],targets[:split]], debug = True))
-        episodes.append(i)
+        accuracies.append(ANN.accuracy([inputs[split:],targets[split:]]))
         if (i+1) % save_interval == 0:
             ANN.save(size=env.size, level=i+1)
             ANN.epochs += 5
@@ -36,6 +38,7 @@ def RL(G, M, env, ANN, save_interval):
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
     ax.plot(episodes, losses, color='tab:orange', label="Loss")
+    ax.plot(episodes, accuracies, color='tab:blue', label="Accuracy")
     plt.legend()
     plt.show()
     return ANN.make_dict(cases[0], cases[1])
@@ -71,44 +74,12 @@ def play_game(dict, env, ANN, delay=-1, verbose=False):
             break
     winning_player = 3 - env.player
     print("player", winning_player, "won after", j, "moves.")
-    print("result from env", env.result())
     if delay > -1:
         env.draw(path=winning_path)
 
-def train_ann(inputs, targets, ANN):
-    # Shuffle cases before training
-    train_data = list(zip(inputs,targets))
-    random.shuffle(train_data)
-    inputs, targets = zip(*train_data)
-
-    split = math.floor(len(inputs) * 0.01) # 1 percent of data is test
-    test_data = [inputs[0:split], targets[0:split]]
-    train_data = list(zip(inputs[split:len(inputs)],targets[split:len(targets)]))
-    k = 5
-    split = math.floor(len(train_data)/k)
-    accuracies = [ANN.accuracy(test_data)]
-    losses = [ANN.get_loss(test_data)]
-    epochs = [0]
-    # try to do k-fold cross validation
-    print("Fitting...")
-    for i in range(1,k+1):#tqdm(range(k-1)):
-        print("Fold:", i)
-        fit_data = train_data[(i-1)*split:i*split]
-        losses.append(ANN.fit(list(zip(*fit_data)), debug = True))
-        acc = ANN.accuracy(test_data)
-        accuracies.append(acc)
-        epochs.append(ANN.epochs * i)
-    fig = plt.figure()
-    ax = fig.add_subplot(1, 1, 1)
-    ax.plot(epochs, accuracies, color='tab:blue', label="Accuracy")
-    ax.plot(epochs, losses, color='tab:orange', label="Loss")
-    plt.legend()
-    plt.show()
-    return ANN.make_dict(inputs, targets)
-
 def say():
     import os
-    os.system('say "gamle ørn, jeg er ferdig  "')
+    os.system('say "gamle ørn, jeg er ferdig"')
 
 
 def generate_cases(games, simulations, env, ann):
@@ -159,7 +130,7 @@ if __name__ == '__main__':
     activation_functions = ["linear", "sigmoid", "tanh", "relu"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
     alpha = 0.005  # learning rate
-    H_dims = [math.floor(2*(1+board_size**2)/3)+board_size**2] * 3
+    H_dims = [math.floor(2*(2+2*board_size**2)/3)+board_size**2]*3
     io_dim = board_size * board_size  # input and output layer sizes
     activation = activation_functions[3]
     optimizer = optimizers[3]
@@ -174,5 +145,5 @@ if __name__ == '__main__':
     dict = RL(episodes, simulations, env, ann, save_interval)
 
     def play(dict = dict, env=env, ANN=ann):
-        play_game(dict, env, ann, -1, verbose = True)
+        play_game(dict, env, ann, 0.2, verbose = True)
     play()

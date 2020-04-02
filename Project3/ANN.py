@@ -8,7 +8,7 @@ class ANN:
         self.alpha = learning_rate
         self.epochs = epochs
         activation_fn = self.__choose_activation_fn(activation_fn)
-        layers = [torch.nn.Linear(io_dim+1,H_dims[0])]
+        layers = [torch.nn.Linear(io_dim*2+2,H_dims[0])]
         layers.append(activation_fn) if activation_fn != None else None
         for i in range(len(H_dims)-1):
             layers.append(torch.nn.Linear(H_dims[i], H_dims[i+1]))
@@ -81,7 +81,7 @@ class ANN:
         probs = self.forward(env.flat_state).data
         factor = [1 if move in legal else 0 for move in env.all_moves]
         index = np.argmax([0 if not factor[i] else probs[i] for i in range(env.size**2)])
-        return probs,env.all_moves[index]
+        return probs, env.all_moves[index], index
 
     def __choose_optimizer(self, params, optimizer):
         return {

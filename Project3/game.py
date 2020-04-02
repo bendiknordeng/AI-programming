@@ -3,6 +3,7 @@ from mcts import MonteCarloTreeSearch
 from tree import Node
 import networkx as nx
 import matplotlib.pyplot as plt
+import matplotlib
 from collections import defaultdict
 
 class HexGame:
@@ -38,7 +39,9 @@ class HexGame:
 
     @property
     def flat_state(self):
-        flat_state = [self.player] + list(self.state.values())
+        flat_state = [self.player == 1, self.player == 2]
+        for cell in self.state.values():
+            flat_state += [cell == 1, cell == 2]
         return np.asarray(flat_state, dtype = np.float64)
 
     def generate_initial_state(self):
@@ -108,7 +111,7 @@ class HexGame:
         while True:
             if path[i] in self.edges[3-self.player][0]:
                 if i != 0:
-                    path = path[-1:i-1:-1]
+                    path = path[-1:i-1:-1] + [path[i]]
                 break
             temp_state = self.sim_copy()
             temp_state.state[path[i]] = 0
@@ -168,7 +171,7 @@ class HexGame:
 
     def draw(self, path=False, animation_delay = 0):
         graph = nx.Graph()
-        graph.add_nodes_from([cell for cell in self.state])
+        graph.add_nodes_from(self.state)
         graph.add_edges_from(self.__cell_edges())
         fig = plt.figure(figsize = (9,7))
         plt.axes()
@@ -180,7 +183,12 @@ class HexGame:
         if path:
             nx.draw(graph, pos=positions, nodelist=self.get_minimal_path(path), node_color='blue', node_size=1300-200*(self.size), ax=fig.axes[0])
             fig.axes[0].set_title("Player {} won".format(3-self.player))
-
+        labels = {}
+        i = 0
+        for cell in self.state:
+            labels[cell] = i
+            i+=1
+        nx.draw_networkx_labels(graph, pos=positions, labels=labels)
         if animation_delay: # run animation automatically if delay > 0
             plt.show(block = False)
             plt.pause(animation_delay)
@@ -195,14 +203,14 @@ class HexGame:
         return "Player {} put a piece on {}".format(self.player, action)
 
 if __name__ == "__main__":
-    game = HexGame(4)
-    reds = [(0, 2), (1, 1), (1, 2), (2, 1),(3,1)]
-    blacks = []
-    for cell in reds:
-        game.state[cell] = 1
-    for cell in blacks:
-        game.state[cell] = 2
-
+    game = HexGame(5)
+    #reds = [(0, 2), (1, 1), (1, 2), (2, 1), (3, 1)]
+    #blacks = []
+    #for cell in reds:
+    #    game.state[cell] = 1
+    #for cell in blacks:
+    #    game.state[cell] = 2
+    game.draw()
     game.player = 2
     path = game.is_game_over()
     game.draw(path)
