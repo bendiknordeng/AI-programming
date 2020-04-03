@@ -8,6 +8,12 @@ class ANN:
         self.alpha = learning_rate
         self.epochs = epochs
         activation_fn = self.__choose_activation_fn(activation_fn)
+        layers = self.gen_layers(io_dim, H_dims, activation_fn)
+        self.model = torch.nn.Sequential(*layers)
+        self.loss_fn = torch.nn.BCELoss(reduction="mean")
+        self.optimizer = self.__choose_optimizer(list(self.model.parameters()), optimizer)
+
+    def gen_layers(self, io_dim, H_dims, activation_fn):
         layers = [torch.nn.Linear(io_dim*2+2,H_dims[0])]
         layers.append(activation_fn) if activation_fn != None else None
         for i in range(len(H_dims)-1):
@@ -15,9 +21,7 @@ class ANN:
             layers.append(activation_fn) if activation_fn != None else None
         layers.append(torch.nn.Linear(H_dims[-1],io_dim))
         layers.append(torch.nn.Softmax(dim=-1))
-        self.model = torch.nn.Sequential(*layers)
-        self.loss_fn = torch.nn.BCELoss(reduction="mean")
-        self.optimizer = self.__choose_optimizer(list(self.model.parameters()), optimizer)
+        return layers
 
     def fit(self, cases, debug=False):
         input = torch.tensor(cases[0]).float()
@@ -33,7 +37,7 @@ class ANN:
     def get_loss(self, cases):
         input = torch.tensor(cases[0]).float()
         target = torch.tensor(cases[1]).float()
-        pred = self.model(input)
+        pred = self.forward(input)
         return self.loss_fn(pred, target).data.numpy()
 
     def make_dict(self, inputs, targets):
@@ -66,7 +70,7 @@ class ANN:
 
     def forward(self, input):
         with torch.no_grad():
-            return self.model(torch.tensor(input).float())
+            return self.model.eval()(torch.tensor(input).float().unsqueeze(0)).squeeze(0)
 
     def save(self, size, level):
         torch.save(self.model, "models/{}_ANN_level_{}".format(size,level))
@@ -78,7 +82,19 @@ class ANN:
 
     def get_move(self, env):
         legal = env.get_legal_actions()
-        probs = self.forward(env.flat_state).data
+        state = env.flat_state
+        # if self.model[0].in_features != len(state):
+        #     new_state = []
+        #     for i in range(37):
+        #         j = 2*i
+        #         if state[j] == 1:
+        #             new_state += [1]
+        #         elif state[j+1] == 1:
+        #             new_state += [2]
+        #         else:
+        #             new_state += [0]
+        #     state = new_state
+        probs = self.forward(state).data
         factor = [1 if move in legal else 0 for move in env.all_moves]
         index = np.argmax([0 if not factor[i] else probs[i] for i in range(env.size**2)])
         return probs, env.all_moves[index], index

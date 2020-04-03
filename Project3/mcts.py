@@ -1,7 +1,7 @@
 from tree import Tree
 
 class MonteCarloTreeSearch:
-    def __init__(self, ANN=None, c=1.4):
+    def __init__(self, ANN=None, c=1.4, eps=1):
         self.tree = Tree()
         self.ANN = ANN
         self.eps = 1
@@ -15,7 +15,7 @@ class MonteCarloTreeSearch:
             simulation_env = env.sim_copy()
             self.simulate(simulation_env)
         D = self.tree.get_distribution(env)
-        return self.tree.tree_policy(env, 0), D  # find greedy best action
+        return D  # return visit distribution
 
     def simulate(self, env):
         traversed_nodes = self.sim_tree(env)
@@ -39,3 +39,22 @@ class MonteCarloTreeSearch:
             action = self.tree.rollout_policy(env, self.ANN, self.eps)
             env.move(action)
         return env.result()
+
+if __name__ == '__main__':
+    from game import HexGame
+    import numpy as np
+    import pprint
+    env = HexGame(4)
+    reds = [(0,2),(1,2),(2,1)]
+    for c in reds:
+        env.state[c] = 1
+    blacks = [(1,1),(2,2),(3,0)]
+    for c in blacks:
+        env.state[c] = 2
+    sim = 500
+
+    MCTS = MonteCarloTreeSearch()
+    D = MCTS.search(env, sim)
+    val = dict(zip(np.arange(env.size**2),D))
+    pprint.pp({k: v for k, v in sorted(val.items(), key=lambda item: item[1])})
+    env.draw()

@@ -46,7 +46,7 @@ class Tree:
 class Node:
     def __init__(self, player, legal_actions):
         self.player = player
-        self.visits = 1
+        self.visits = 0
         self.actions = {a: [0,0] for a in legal_actions}  # key: action, value: [visits, q_value]
         self.prev_action = None
 
@@ -62,7 +62,7 @@ class Node:
     def get_action_value(self, action, c):
         n, q = self.actions[action]
         c *= 1 if self.player == 1 else -1
-        return q + c * np.sqrt(np.log(self.visits) / (n + 1))
+        return q + c * np.sqrt(np.log(self.visits if self.visits > 0 else 1) / (n + 1))
 
     def __repr__(self):
         return "Player: {}, Visits: {}, Actions: {}, Previous action: {}".format(self.player, self.visits, self.actions, self.prev_action)

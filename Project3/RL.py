@@ -10,7 +10,7 @@ import copy
 import time
 np.set_printoptions(linewidth=160)  # print formatting
 
-def RL(G, M, env, ANN, save_interval):
+def RL(G, M, env, ANN, save_interval, use_dist):
     ANN.save(size=env.size, level=0)
     losses = []
     accuracies = []
@@ -21,10 +21,16 @@ def RL(G, M, env, ANN, save_interval):
         env.reset()
         MCTS.init_tree()
         while not env.is_game_over():
-            action, D = MCTS.search(env, M)
+            D = MCTS.search(env, M)
             cases[0].append(env.flat_state)
             cases[1].append(D)
-            env.move(action)
+            if use_dist:
+                indices = np.arange(env.size**2)
+                index = np.random.choice(indices, p=D)
+                env.move(env.all_moves[index])
+            else:
+                index = np.argmax(D)
+                env.move(env.all_moves[index])
         training_cases = list(zip(cases[0],cases[1]))
         random.shuffle(training_cases)
         inputs, targets = zip(*training_cases)
@@ -41,18 +47,47 @@ def RL(G, M, env, ANN, save_interval):
     ax.plot(episodes, accuracies, color='tab:blue', label="Accuracy")
     plt.legend()
     plt.show()
+    write_db("cases/size_{}_inputs_ANN.txt".format(env.size), cases[0])
+    write_db("cases/size_{}_targets_ANN.txt".format(env.size), cases[1])
     return ANN.make_dict(cases[0], cases[1])
+
+def train_ann(inputs, targets, ANN):
+    # Shuffle cases before training
+    train_data = list(zip(inputs,targets))
+    random.shuffle(train_data)
+    inputs, targets = zip(*train_data)
+
+    split = math.floor(len(inputs) * 0.01) # 1 percent of data is test
+    test_data = [inputs[:split], targets[:split]]
+    train_data = list(zip(inputs[split:],targets[split:]))
+    k = 5
+    split = math.floor(len(train_data)/k)
+    accuracies = [ANN.accuracy(test_data)]
+    losses = [ANN.get_loss(test_data)]
+    epochs = [0]
+    # try to do k-fold cross validation
+    print("Fitting...")
+    for i in range(1,k+1):#tqdm(range(k-1)):
+        print("Fold:", i)
+        fit_data = train_data[(i-1)*split:i*split]
+        losses.append(ANN.fit(list(zip(*fit_data)), debug = True))
+        acc = ANN.accuracy(test_data)
+        accuracies.append(acc)
+        epochs.append(ANN.epochs * i)
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    ax.plot(epochs, accuracies, color='tab:blue', label="Accuracy")
+    ax.plot(epochs, losses, color='tab:orange', label="Loss")
+    plt.legend()
+    plt.show()
+    return ANN.make_dict(inputs, targets)
 
 def play_game(dict, env, ANN, delay=-1, verbose=False):
     env.reset()
     j = 0
     while True:
         input = tuple(env.flat_state)
-        #if env.player == 1:
-        #    ANN.load(env.size, 0)
-        #else:
-        #    ANN.load(env.size, 0)
-        probs, action = ANN.get_move(env)
+        probs, action, _ = ANN.get_move(env)
         if verbose:
             print()
             print(input)
@@ -81,7 +116,6 @@ def say():
     import os
     os.system('say "gamle ørn, jeg er ferdig"')
 
-
 def generate_cases(games, simulations, env, ann):
     cases = [[], []]
     MCTS = MonteCarloTreeSearch(ANN=ann)
@@ -89,19 +123,31 @@ def generate_cases(games, simulations, env, ann):
         env.reset()
         MCTS.init_tree()
         M = simulations
-        while True:
-            action, D = MCTS.search(env, M)
+        while not env.is_game_over():
+            D = MCTS.search(env, M)
             cases[0].append(env.flat_state)
             cases[1].append(D)
-            env.move(action)
-            winning_path = env.is_game_over()
-            if winning_path:
-                #env.draw(path=winning_path)
-                break
-            #M = math.floor(M*0.9)
-        MCTS.eps *= 0.99
-    write_db("cases_with_ann_policy/size_{}_inputs.txt".format(env.size), cases[0])
-    write_db("cases_with_ann_policy/size_{}_targets.txt".format(env.size), cases[1])
+            indices = np.arange(env.size**2)
+            i = np.random.choice(indices, p=D)
+            env.move(env.all_moves[i])
+        #MCTS.eps *= 0.99
+    write_db("cases/size_{}_inputs.txt".format(env.size), cases[0])
+    write_db("cases/size_{}_targets.txt".format(env.size), cases[1])
+
+def plot_model_accuracies(ann, size, cases):
+    losses = []
+    accuracies = []
+    episodes = [0, 50, 100, 150, 200, 250, 300, 350, 400]
+    for e in episodes:
+        ann.load(size, e)
+        losses.append(ann.get_loss(cases))
+        accuracies.append(ann.accuracy(cases))
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    ax.plot(episodes, accuracies, color='tab:blue', label="Accuracy")
+    ax.plot(episodes, losses, color='tab:orange', label="Loss")
+    plt.legend()
+    plt.show()
 
 
 def write_db(filename, object):
@@ -118,13 +164,13 @@ if __name__ == '__main__':
     env = HexGame(board_size)
 
     # MCTS/RL parameters
-    episodes = 200
-    simulations = 500
+    episodes = 400
+    simulations = 1000
     save_interval = 50
 
     #training_batch_size = 100
-    ann_save_interval = 10
     eps_decay = 1
+    use_dist = True
 
     # ANN parameters
     activation_functions = ["linear", "sigmoid", "tanh", "relu"]
@@ -134,16 +180,18 @@ if __name__ == '__main__':
     io_dim = board_size * board_size  # input and output layer sizes
     activation = activation_functions[3]
     optimizer = optimizers[3]
-    epochs = 1
+    epochs = 5
     ann = ANN(io_dim, H_dims, alpha, optimizer, activation, epochs)
-    #inputs = load_db("cases/size_{}_inputs.txt".format(board_size))
-    #targets = load_db("cases/size_{}_targets.txt".format(board_size))
+    #inputs = load_db("cases/size_{}_inputs_ANN.txt".format(board_size))
+    #targets = load_db("cases/size_{}_targets_ANN.txt".format(board_size))
     #dict = train_ann(inputs, targets, ann)
     #print("Accuracy: {:3f}\nLoss: {:3f}".format(ann.accuracy([inputs,targets]),ann.get_loss([inputs,targets])))
+    #ann.fit([inputs,targets])
     #generate_cases(episodes, simulations, HexGame(board_size), ann)
 
-    dict = RL(episodes, simulations, env, ann, save_interval)
+    dict = RL(episodes, simulations, env, ann, save_interval, use_dist)
+    #plot_model_accuracies(ann, board_size, [inputs, targets])
 
-    def play(dict = dict, env=env, ANN=ann):
-        play_game(dict, env, ann, 0.2, verbose = True)
-    play()
+    #def play(dict = dict, env=env, ANN=ann):
+    #    play_game(dict, env, ann, 0.2, verbose = True)
+    #play()

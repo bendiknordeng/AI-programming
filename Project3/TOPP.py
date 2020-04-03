@@ -22,18 +22,18 @@ class TOPP:
                 winner_stats = self.play_game(self.players1[p1], self.players2[p2])
                 print("Player lvl", p1, "- player lvl", p2,": player", winner_stats )
 
-        for p1 in self.players2:
-            print()
-            for p2 in self.players1:
-                winner_stats = self.play_game(self.players2[p1], self.players1[p2])
-                print("Player lvl", p1, "- player lvl", p2,": player", winner_stats )
+        #for p1 in self.players2:
+        #    print()
+        #    for p2 in self.players1:
+        #        winner_stats = self.play_game(self.players2[p1], self.players1[p2])
+        #        print("Player lvl", p1, "- player lvl", p2,": player", winner_stats )
 
     def play_game(self, ann1, ann2, display = False):
         self.env.reset()
         j = 0
         while not self.env.is_game_over():
             j += 1
-            _, action = ann1.get_move(self.env) if self.env.player == 1 else ann2.get_move(self.env)
+            _, action, _ = ann1.get_move(self.env) if self.env.player == 1 else ann2.get_move(self.env)
             self.env.move(action)
             if display: self.env.draw(0.2)
         p1_won = True if self.env.result() == 1 else False
@@ -41,17 +41,6 @@ class TOPP:
             return "1 won, " + str(j) + " moves."
         else:
             return "2 won, " + str(j) + " moves."
-
-class Agent:
-    def __init__(self, ANN, training_level):
-        self.ANN = ANN
-        self.training_level = training_level
-
-    def move(self, game):
-        return game.move(self.ANN.get_move(game))
-
-    def __repr__(self):
-        return "ANN_level_{}".format(self.training_level)
 
 
 if __name__ == '__main__':
@@ -68,7 +57,7 @@ if __name__ == '__main__':
     epochs = 10
 
 
-    models = [0, 0, 50, 50, 100, 100, 150, 150, 200, 200]
+    models = [0, 0, 50, 50, 100, 100, 150, 150, 200, 200, 250, 250, 300, 300, 350, 350, 400, 400]
     players1 = {}
     players2 = {}
 
