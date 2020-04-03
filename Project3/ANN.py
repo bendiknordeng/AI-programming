@@ -70,7 +70,7 @@ class ANN:
 
     def forward(self, input):
         with torch.no_grad():
-            return self.model.eval()(torch.tensor(input).float().unsqueeze(0)).squeeze(0)
+            return self.model(torch.tensor(input).float())
 
     def save(self, size, level):
         torch.save(self.model, "models/{}_ANN_level_{}".format(size,level))
