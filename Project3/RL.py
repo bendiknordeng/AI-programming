@@ -11,18 +11,18 @@ from tqdm import tqdm
 np.set_printoptions(linewidth=160)  # print formatting
 
 
-def RL(G, M, env, ANN, MCTS, save_interval, pre_loaded, start=0):
+def RL(G, M, env, ANN, MCTS, save_interval):
     losses = []
     accuracies = []
-    episodes = np.arange(start,start+G)
-    cases = pre_loaded if pre_loaded else [[],[]]
-    for i in tqdm(range(start,start+G)):
+    episodes = np.arange(G)
+    cases = [[],[]]
+    for i in tqdm(range(G)):
         env.reset()
         MCTS.init_tree()
         while not env.is_game_over():
             D = MCTS.search(env, M)
-            np.append(cases[0], env.flat_state)
-            np.append(cases[1], D)
+            cases[0].append(env.flat_state)
+            cases[1].append(D)
             index = np.argmax(D)
             env.move(env.all_moves[index])
         training_cases = list(zip(cases[0], cases[1]))
@@ -127,12 +127,9 @@ if __name__ == '__main__':
     env = HexGame(board_size)
 
     # MCTS/RL parameters
-    episodes = 50
-    simulations = 1000
+    episodes = 500
+    simulations = 500
     save_interval = 50
-
-    #eps_decay = 0.99
-    use_dist = True
 
     # ANN parameters
     activation_functions = ["linear", "sigmoid", "tanh", "relu"]
@@ -144,20 +141,17 @@ if __name__ == '__main__':
     optimizer = optimizers[3]
     epochs = 5
     ann = ANN(io_dim, H_dims, alpha, optimizer, activation, epochs)
-    mcts = MonteCarloTreeSearch(ann, c=.8, eps=0, stoch_policy=True)
+    mcts = MonteCarloTreeSearch(ann, c=1., eps=1, stoch_policy=True)
 
     # Generate training cases
     #generate_cases(episodes, simulations, HexGame(board_size), ann, mcts)
 
     # Plot model accuracies and losses
-    inputs = load_db("cases/size_{}_inputs_ANN.txt".format(board_size))
-    targets = load_db("cases/size_{}_targets_ANN.txt".format(board_size))
-    levels = np.arange(0, 301, 50)
-    plot_model_accuracies(ann, board_size, [inputs, targets], levels)
+    #inputs = load_db("cases/size_{}_inputs_ANN.txt".format(board_size))
+    #targets = load_db("cases/size_{}_targets_ANN.txt".format(board_size))
+    #levels = np.arange(0, 301, 50)
+    #plot_model_accuracies(ann, board_size, [inputs, targets], levels)
 
     # Run RL algorithm and play game with final model
-    #start = 400
-    #ann.load(board_size, start)
-    #cases = [inputs, targets]
-    #dict = RL(episodes, simulations, env, ann, mcts, save_interval, cases, start)
-    #play_game(dict, env, ann, delay=0.2, verbose=False)
+    dict = RL(episodes, simulations, env, ann, mcts, save_interval)
+    play_game(dict, env, ann, delay=0.2, verbose=False)
