@@ -29,6 +29,7 @@ class ANN:
         for i in range(self.epochs):
             pred = self.model(input)
             loss = self.loss_fn(pred, target)
+            #loss += torch.nn.functional.kl_div(pred, target, reduction="batchmean")
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
@@ -83,17 +84,6 @@ class ANN:
     def get_move(self, env):
         legal = env.get_legal_actions()
         state = env.flat_state
-        # if self.model[0].in_features != len(state):
-        #     new_state = []
-        #     for i in range(37):
-        #         j = 2*i
-        #         if state[j] == 1:
-        #             new_state += [1]
-        #         elif state[j+1] == 1:
-        #             new_state += [2]
-        #         else:
-        #             new_state += [0]
-        #     state = new_state
         probs = self.forward(state).data
         factor = [1 if move in legal else 0 for move in env.all_moves]
         index = np.argmax([0 if not factor[i] else probs[i] for i in range(env.size**2)])

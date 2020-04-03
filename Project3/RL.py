@@ -12,6 +12,7 @@ np.set_printoptions(linewidth=160)  # print formatting
 
 
 def RL(G, M, env, ANN, MCTS, save_interval):
+    ann.save(env.size, 0)
     losses = []
     accuracies = []
     episodes = np.arange(G)
@@ -123,11 +124,11 @@ def load_db(filename):
 
 if __name__ == '__main__':
     # Game parameters
-    board_size = 5
+    board_size = 4
     env = HexGame(board_size)
 
     # MCTS/RL parameters
-    episodes = 500
+    episodes = 10
     simulations = 500
     save_interval = 50
 
