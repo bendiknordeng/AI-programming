@@ -25,6 +25,7 @@ def play(mcts, sim, ann, env, top_moves):
             move = best_mcts_move
         else:
             move = int(i)
+        print("Chose move {}".format(move))
         env.move(env.all_moves[move])
         winning_path = env.is_game_over()
         if winning_path:
@@ -34,7 +35,7 @@ def play(mcts, sim, ann, env, top_moves):
 
 
 if __name__ == '__main__':
-    board_size = 4
+    board_size = 5
     level = 200
 
     activation_functions = ["linear", "sigmoid", "tanh", "relu"]
@@ -50,7 +51,7 @@ if __name__ == '__main__':
     ann.load(board_size, level)
 
     sim = 1000
-    mcts = MonteCarloTreeSearch(ann, c=1, eps=1)
+    mcts = MonteCarloTreeSearch(ann, c=1.4, eps=1)
     env = HexGame(board_size)
     top_moves = 5
 

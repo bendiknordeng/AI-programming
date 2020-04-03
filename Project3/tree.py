@@ -22,14 +22,27 @@ class Tree:
             D[i] = node.actions[moves[i]][0]/node.visits if moves[i] in node.actions else 0
         return np.asarray(D, dtype = np.float64)
 
-    def rollout_policy(self, env, ANN=0, eps=1):
+    def rollout_policy(self, env, ANN=0, eps=1, stoch=True):
         legal = env.get_legal_actions()
         if random.random() < eps:
             return random.choice(legal)  # choose random action
         else:
-            probs = ANN.forward(env.flat_state).data
+            probs = ANN.forward(env.flat_state).data.numpy()
             factor = [1 if move in legal else 0 for move in env.all_moves]
-            index = np.argmax([0 if not factor[i] else probs[i] for i in range(env.size**2)])
+            if stoch:
+                sum = 0
+                new_probs = np.zeros(env.size ** 2)
+                for i in range(env.size ** 2):
+                    if factor[i]:
+                        sum += probs[i]
+                        new_probs[i] = probs[i]
+                    else:
+                        new_probs[i] = 0
+                new_probs /= sum
+                indices = np.arange(env.size ** 2)
+                index = np.random.choice(indices, p=new_probs)
+            else:
+                index = np.argmax([0 if not factor[i] else probs[i] for i in range(env.size ** 2)])
             return env.all_moves[index]
 
     def tree_policy(self, env, c):

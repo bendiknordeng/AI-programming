@@ -1,9 +1,9 @@
-from game import HexGame
-from RL import RL
-from ANN import ANN
-from collections import defaultdict
-import random
 import math
+
+import numpy as np
+from ANN import ANN
+from game import HexGame
+
 
 class TOPP:
     def __init__(self, players1, players2, board_size):
@@ -20,13 +20,7 @@ class TOPP:
             print()
             for p2 in self.players2:
                 winner_stats = self.play_game(self.players1[p1], self.players2[p2])
-                print("Player lvl", p1, "- player lvl", p2,": player", winner_stats )
-
-        #for p1 in self.players2:
-        #    print()
-        #    for p2 in self.players1:
-        #        winner_stats = self.play_game(self.players2[p1], self.players1[p2])
-        #        print("Player lvl", p1, "- player lvl", p2,": player", winner_stats )
+                print("Player lvl", p1, "- player lvl", p2,": player", winner_stats)
 
     def play_game(self, ann1, ann2, display = False):
         self.env.reset()
@@ -56,8 +50,12 @@ if __name__ == '__main__':
     optimizer = optimizers[3]
     epochs = 10
 
+    bottom_level = 0
+    top_level = 200
+    interval = 50
 
-    models = [0, 0, 50, 50, 100, 100, 150, 150, 200, 200, 250, 250, 300, 300, 350, 350, 400, 400]
+    l = np.arange(bottom_level, top_level+1, interval)
+    models = np.sort(np.concatenate([l,l]))
     players1 = {}
     players2 = {}
 

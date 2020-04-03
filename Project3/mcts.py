@@ -1,11 +1,12 @@
 from tree import Tree
 
 class MonteCarloTreeSearch:
-    def __init__(self, ANN=None, c=1.4, eps=1):
+    def __init__(self, ANN=None, c=1.4, eps=1, stoch_policy=True):
         self.tree = Tree()
         self.ANN = ANN
-        self.eps = 1
         self.c = c  # exploration constant
+        self.eps = eps
+        self.stoch_policy = stoch_policy
 
     def init_tree(self):
         self.tree.state_to_node.clear()
@@ -36,7 +37,7 @@ class MonteCarloTreeSearch:
 
     def rollout(self, env):
         while not env.is_game_over():
-            action = self.tree.rollout_policy(env, self.ANN, self.eps)
+            action = self.tree.rollout_policy(env, self.ANN, self.eps, self.stoch_policy)
             env.move(action)
         return env.result()
 
