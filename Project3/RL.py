@@ -102,6 +102,7 @@ class RL:
             np.savetxt(file, inputs)
         with open(filename+'_targets.txt', 'a') as file:
             np.savetxt(file, targets)
+        print("Buffer have been written to \n{}\n{}".format(filename+'_inputs.txt', filename+'_targets.txt'))
 
     def load_db(self, filename):
         import time
@@ -114,8 +115,8 @@ class RL:
 
 if __name__ == '__main__':
     # MCTS/RL parameters
-    board_size = 5
-    G = 500
+    board_size = 3
+    G = 10
     M = 500
     save_interval = 50
     buffer_size = 500
@@ -137,11 +138,11 @@ if __name__ == '__main__':
     RL = RL(G, M, env, ANN, MCTS, save_interval, buffer_size, batch_size)
 
     # Run RL algorithm and plot results
-    #RL.run()
+    RL.run()
 
     # Generate training cases
-    #RL.generate_cases()
+    RL.generate_cases()
 
     # Plot model accuracies and losses
-    levels = np.arange(0, 201, 50)
-    RL.plot_level_accuracies(levels)
+    #levels = np.arange(0, 201, 50)
+    #RL.plot_level_accuracies(levels)
