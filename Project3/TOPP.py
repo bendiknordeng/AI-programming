@@ -59,7 +59,7 @@ if __name__ == '__main__':
     epochs = 10
 
     bottom_level = 0
-    top_level = 200
+    top_level = 400
     interval = 50
 
     l = np.arange(bottom_level, top_level+1, interval)
@@ -76,4 +76,4 @@ if __name__ == '__main__':
         ann.load(board_size, models[i+1])
         players2[models[i+1]] = ann
     tournament = TOPP(players1, players2, board_size)
-    tournament.run_tournament(display=False)
+    tournament.run_tournament(display=True)

@@ -34,6 +34,8 @@ def RL(G, M, env, ANN, MCTS, save_interval):
         accuracies.append(ANN.accuracy([inputs[split:], targets[split:]]))
         if (i + 1) % save_interval == 0:
             ANN.save(size=env.size, level=i+1)
+            write_db("cases/size_{}_inputs_ANN.txt".format(env.size), cases[0])
+            write_db("cases/size_{}_targets_ANN.txt".format(env.size), cases[1])
             ANN.epochs += 5
         MCTS.eps *= 0.99
     fig = plt.figure()
@@ -42,8 +44,6 @@ def RL(G, M, env, ANN, MCTS, save_interval):
     ax.plot(episodes, accuracies, color='tab:blue', label="Accuracy")
     plt.legend()
     plt.show()
-    write_db("cases/size_{}_inputs_ANN.txt".format(env.size), cases[0])
-    write_db("cases/size_{}_targets_ANN.txt".format(env.size), cases[1])
     return ANN.make_dict(cases[0], cases[1])
 
 
