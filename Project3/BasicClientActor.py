@@ -10,7 +10,7 @@ class BasicClientActor(BasicClientActorAbs):
         self.series_id = -1
         BasicClientActorAbs.__init__(self, IP_address, verbose=verbose)
         self.ann = ANN(1,[1],0, "Adam", "relu", 1)
-        self.ann.load(6,200)
+        self.ann.load(6,400)
 
     def handle_get_action(self, state):
         """
@@ -26,7 +26,8 @@ class BasicClientActor(BasicClientActorAbs):
         board_state = state[1:]
         board_size = int(np.sqrt(len(board_state)))
         env = HexGame(board_size, board_state, player)
-        return self.ann.get_move(env)[1]
+        probs, stoch_index, greedy_index = self.ann.get_move(env)
+        return env.all_moves(greedy_index)
 
     def handle_series_start(self, unique_id, series_id, player_map, num_games, game_params):
         """

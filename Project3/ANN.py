@@ -77,8 +77,8 @@ class ANN:
         print("Model has been saved to models/{}_ANN_level_{}".format(size,level))
 
     def load(self, size, level):
-        self.model = torch.load("models_stoch/{}_ANN_level_{}".format(size,level))
-        print("Loaded model from models_stoch/{}_ANN_level_{}".format(size,level))
+        self.model = torch.load("models/{}_ANN_level_{}".format(size,level))
+        print("Loaded model from models/{}_ANN_level_{}".format(size,level))
 
     def __choose_optimizer(self, params, optimizer):
         return {
