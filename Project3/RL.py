@@ -124,7 +124,7 @@ def load_db(filename):
 
 if __name__ == '__main__':
     # Game parameters
-    board_size = 4
+    board_size = 5
     env = HexGame(board_size)
 
     # MCTS/RL parameters
@@ -148,11 +148,11 @@ if __name__ == '__main__':
     #generate_cases(episodes, simulations, HexGame(board_size), ann, mcts)
 
     # Plot model accuracies and losses
-    #inputs = load_db("cases/size_{}_inputs_ANN.txt".format(board_size))
-    #targets = load_db("cases/size_{}_targets_ANN.txt".format(board_size))
-    #levels = np.arange(0, 301, 50)
-    #plot_model_accuracies(ann, board_size, [inputs, targets], levels)
+    inputs = load_db("cases/size_{}_inputs_Stoch.txt".format(board_size))
+    targets = load_db("cases/size_{}_targets_Stoch.txt".format(board_size))
+    levels = np.arange(0, 401, 50)
+    plot_model_accuracies(ann, board_size, [inputs, targets], levels)
 
     # Run RL algorithm and play game with final model
-    dict = RL(episodes, simulations, env, ann, mcts, save_interval)
-    play_game(dict, env, ann, delay=0.2, verbose=False)
+    #dict = RL(episodes, simulations, env, ann, mcts, save_interval)
+    #play_game(dict, env, ann, delay=0.2, verbose=False)

@@ -10,7 +10,7 @@ def play(mcts, sim, ann, env, top_moves):
         D = mcts.search(env, sim)
         best_mcts_move = np.argmax(D)
         probs, model_move, index = ann.get_move(env)
-        val = dict(zip(np.arange(env.size**2),probs.data.numpy()))
+        val = dict(zip(np.arange(env.size**2), probs))
         sorted_moves = {k: v for k, v in sorted(val.items(), key=lambda item: item[1])}
         print("Top {} ANN moves:".format(top_moves))
         for move in list(sorted_moves.keys())[-1:-top_moves-1:-1]:
@@ -36,7 +36,7 @@ def play(mcts, sim, ann, env, top_moves):
 
 if __name__ == '__main__':
     board_size = 5
-    level = 200
+    level = 400
 
     activation_functions = ["linear", "sigmoid", "tanh", "relu"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
@@ -50,7 +50,7 @@ if __name__ == '__main__':
     ann = ANN(io_dim, H_dims, alpha, optimizer, activation, epochs)
     ann.load(board_size, level)
 
-    sim = 1000
+    sim = 2000
     mcts = MonteCarloTreeSearch(ann, c=1.4, eps=1)
     env = HexGame(board_size)
     top_moves = 5

@@ -1,4 +1,5 @@
 import math
+import random
 
 import numpy as np
 from ANN import ANN
@@ -6,24 +7,26 @@ from game import HexGame
 
 
 class TOPP:
-    def __init__(self, players1, players2, board_size):
+    def __init__(self, players1, players2, board_size, num_games):
         self.players1 = players1
         self.players2 = players2
         self.board_size = board_size
         self.env = HexGame(board_size)
         self.table = {p: 0 for p in self.players1}
+        self.num_games = num_games
 
     def run_tournament(self, display):
         print("Tournament on a board size", self.board_size )
-        for p1 in self.players1:
-            print()
-            for p2 in self.players2:
-                if p1 != p2:
-                    print("{} - {}:".format(p1,p2), end=" ")
-                    p1_won, moves = self.play_game(self.players1[p1], self.players2[p2], display)
-                    winner = p1 if p1_won else p2
-                    self.table[winner] += 1
-                    print("{} won after {} moves.".format(winner, moves))
+        for _ in range(self.num_games):
+            for p1 in self.players1:
+                print()
+                for p2 in self.players2:
+                    if p1 != p2:
+                        print("{} - {}:".format(p1,p2), end=" ")
+                        p1_won, moves = self.play_game(self.players1[p1], self.players2[p2], display)
+                        winner = p1 if p1_won else p2
+                        self.table[winner] += 1
+                        print("{} won after {} moves.".format(winner, moves))
         print("\nFinal results:")
         sorted_table = {player: result for player, result in sorted(self.table.items(), key=lambda item: item[1], reverse=True)}
         place = 1
@@ -36,8 +39,8 @@ class TOPP:
         moves = 0
         while not self.env.is_game_over():
             moves += 1
-            _, action, _ = ann1.get_move(self.env) if self.env.player == 1 else ann2.get_move(self.env)
-            self.env.move(action)
+            _, stoch_index, greedy_index = ann1.get_move(self.env) if self.env.player == 1 else ann2.get_move(self.env)
+            self.env.move(self.env.all_moves[stoch_index if random.random() > 0.5 else greedy_index])
             if display: self.env.draw(animation_delay=0.2)
         p1_won = True if self.env.result() == 1 else False
         if display:
@@ -47,19 +50,20 @@ class TOPP:
 
 
 if __name__ == '__main__':
-    board_size = 4
+    board_size = 6
 
     activation_functions = ["linear", "sigmoid", "tanh", "relu"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
-    alpha = 0.005  # learning rate
+    alpha = 0.001  # learning rate
     H_dims = [math.floor(2*(1+board_size**2)/3)+board_size**2] * 3
     io_dim = board_size * board_size  # input and output layer sizes
     activation = activation_functions[3]
     optimizer = optimizers[3]
     epochs = 10
 
-    bottom_level = 0
-    top_level = 400
+    num_games = 100
+    bottom_level = 400
+    top_level = 450
     interval = 50
 
     l = np.arange(bottom_level, top_level+1, interval)
@@ -75,5 +79,5 @@ if __name__ == '__main__':
         ann = ANN(io_dim, H_dims, alpha, optimizer, activation, epochs)
         ann.load(board_size, models[i+1])
         players2[models[i+1]] = ann
-    tournament = TOPP(players1, players2, board_size)
-    tournament.run_tournament(display=True)
+    tournament = TOPP(players1, players2, board_size, num_games)
+    tournament.run_tournament(display=False)
