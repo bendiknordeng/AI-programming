@@ -8,151 +8,140 @@ from matplotlib import pyplot as plt
 from mcts import MonteCarloTreeSearch
 from tqdm import tqdm
 
-np.set_printoptions(linewidth=160)  # print formatting
+np.set_printoptions(linewidth=500)  # print formatting
 
+class RL:
+    def __init__(self, G, M, env, ANN, MCTS, save_interval, buffer_size, batch_size):
+        self.G = G
+        self.M = M
+        self.env = env
+        self.ANN = ANN
+        self.MCTS = MCTS
+        self.save_interval = save_interval
+        self.buffer_size = buffer_size
+        self.batch_size = batch_size
+        self.losses = []
+        self.accuracies = []
+        self.buffer = []
 
-def RL(G, M, env, ANN, MCTS, save_interval):
-    ann.save(env.size, 0)
-    losses = []
-    accuracies = []
-    episodes = np.arange(G)
-    cases = [[],[]]
-    for i in tqdm(range(G)):
-        env.reset()
-        MCTS.init_tree()
-        while not env.is_game_over():
-            D = MCTS.search(env, M)
-            cases[0].append(env.flat_state)
-            cases[1].append(D)
-            index = np.argmax(D)
-            env.move(env.all_moves[index])
-        training_cases = list(zip(cases[0], cases[1]))
-        random.shuffle(training_cases)
-        inputs, targets = zip(*training_cases)
-        split = math.floor(len(inputs) / 2)
-        losses.append(ANN.fit([inputs[:split], targets[:split]], debug=True))
-        accuracies.append(ANN.accuracy([inputs[split:], targets[split:]]))
-        if (i + 1) % save_interval == 0:
-            ANN.save(size=env.size, level=i+1)
-            write_db("cases/size_{}_inputs_ANN.txt".format(env.size), cases[0])
-            write_db("cases/size_{}_targets_ANN.txt".format(env.size), cases[1])
-            ANN.epochs += 5
-        MCTS.eps *= 0.99
-    fig = plt.figure()
-    ax = fig.add_subplot(1, 1, 1)
-    ax.plot(episodes, losses, color='tab:orange', label="Loss")
-    ax.plot(episodes, accuracies, color='tab:blue', label="Accuracy")
-    plt.legend()
-    plt.show()
-    return ANN.make_dict(cases[0], cases[1])
+    def run(self):
+        self.ANN.save(env.size, 0)
+        for i in tqdm(range(G)):
+            self.env.reset()
+            self.MCTS.init_tree()
+            while not self.env.is_game_over():
+                D = self.MCTS.search(self.env, self.M)
+                self.add_case(D)
+                env.move(env.all_moves[np.argmax(D)])
+            self.train_ann()
+            if (i + 1) % self.save_interval == 0:
+                self.save_model()
+                self.ANN.epochs += 5
+            self.MCTS.eps *= 0.99
+        self.plot()
 
+    def add_case(self, D):
+        self.buffer.append((env.flat_state, D))
+        if len(self.buffer) > 500:
+            self.buffer.pop(0)
 
-def play_game(dict, env, ANN, delay=0., verbose=False):
-    env.reset()
-    j = 0
-    while True:
-        input = tuple(env.flat_state)
-        probs, action, _ = ANN.get_move(env)
-        if verbose:
-            print()
-            print(input)
-            if dict.get(input) != None:
-                targets = []
-                for tar, _ in dict[input]:
-                    targets.append(tar)
-                mean_target = np.around(np.mean(targets, axis=0), decimals=1)
-                print(mean_target)
-            else:
-                print("No such case for input state")
-            print(np.around(probs.numpy() * 100, decimals=1))
-        if delay:
-            env.draw(animation_delay=delay)
-        env.move(action)
-        j += 1
-        winning_path = env.is_game_over()
-        if winning_path:
-            break
-    winning_player = 3 - env.player
-    print("player", winning_player, "won after", j, "moves.")
-    if delay:
-        env.draw(path=winning_path)
+    def train_ann(self):
+        training_cases = random.sample(self.buffer, min(len(self.buffer),self.batch_size))
+        input, target = list(zip(*training_cases))
+        self.losses.append(self.ANN.fit(input, target, debug=True))
+        self.accuracies.append(self.ANN.accuracy(input, target))
 
+    def save_model(self):
+        self.ANN.save(size=env.size, level=i+1)
+        self.write_db("cases/size_{}".format(self.env.size), self.buffer)
 
-def generate_cases(games, simulations, env, ann, MCTS):
-    cases = [[], []]
-    print("Generating training cases")
-    for i in tqdm(range(games)):
-        env.reset()
-        MCTS.init_tree()
-        M = simulations
-        while not env.is_game_over():
-            D = MCTS.search(env, M)
-            cases[0].append(env.flat_state)
-            cases[1].append(D)
-            indices = np.arange(env.size ** 2)
-            i = np.random.choice(indices, p=D)
-            env.move(env.all_moves[i])
-        # MCTS.eps *= 0.99
-    write_db("cases/size_{}_inputs.txt".format(env.size), cases[0])
-    write_db("cases/size_{}_targets.txt".format(env.size), cases[1])
+    def plot(self):
+        self.episodes = np.arange(self.G)
+        fig = plt.figure()
+        ax = fig.add_subplot(1, 1, 1)
+        ax.plot(self.episodes, self.losses, color='tab:orange', label="Loss")
+        ax.plot(self.episodes, self.accuracies, color='tab:blue', label="Accuracy")
+        plt.legend()
+        plt.show()
 
+    def generate_cases(self):
+        cases = []
+        self.MCTS.eps = 1
+        print("Generating training cases")
+        for i in tqdm(range(self.G)):
+            self.env.reset()
+            self.MCTS.init_tree()
+            while not self.env.is_game_over():
+                D = self.MCTS.search(self.env, self.M)
+                cases.append((self.env.flat_state, D))
+                self.env.move(self.env.all_moves[np.argmax(D)])
+            MCTS.eps *= 0.99
+        self.write_db("cases/size_{}".format(self.env.size), cases)
 
-def plot_model_accuracies(ann, size, cases, levels):
-    losses = []
-    accuracies = []
-    for l in levels:
-        ann.load(size, l)
-        losses.append(ann.get_loss(cases))
-        accuracies.append(ann.accuracy(cases))
-    fig = plt.figure()
-    ax = fig.add_subplot(1, 1, 1)
-    plt.xlabel("episodes")
-    fig.axes[0].set_title("Size {}".format(size))
-    ax.plot(levels, accuracies, color='tab:blue', label="Accuracy")
-    ax.plot(levels, losses, color='tab:orange', label="Loss")
-    plt.legend()
-    plt.show()
+    def plot_level_accuracies(self, levels):
+        cases = self.load_db("cases/size_{}".format(self.env.size))
+        losses = []
+        accuracies = []
+        for l in levels:
+            self.ANN.load(self.env.size, l)
+            input, target = list(zip(*cases))
+            losses.append(self.ANN.get_loss(input, target))
+            accuracies.append(self.ANN.accuracy(input, target))
+        fig = plt.figure()
+        ax = fig.add_subplot(1, 1, 1)
+        plt.xlabel("episodes")
+        fig.axes[0].set_title("Size {}".format(self.env.size))
+        ax.plot(levels, accuracies, color='tab:blue', label="Accuracy")
+        ax.plot(levels, losses, color='tab:orange', label="Loss")
+        plt.legend()
+        plt.show()
 
+    def write_db(self, filename, cases):
+        inputs, targets = list(zip(*cases))
+        with open(filename+'_inputs.txt', 'a') as file:
+            np.savetxt(file, inputs)
+        with open(filename+'_targets.txt', 'a') as file:
+            np.savetxt(file, targets)
 
-def write_db(filename, object):
-    np.savetxt(filename, object)
-
-
-def load_db(filename):
-    return np.loadtxt(filename)
+    def load_db(self, filename):
+        import time
+        start = time.time()
+        inputs = np.loadtxt(filename+'_inputs.txt')
+        targets = np.loadtxt(filename+'_targets.txt')
+        cases = list(zip(inputs, targets))
+        return cases
 
 
 if __name__ == '__main__':
-    # Game parameters
-    board_size = 5
-    env = HexGame(board_size)
-
     # MCTS/RL parameters
-    episodes = 10
-    simulations = 500
+    board_size = 5
+    G = 500
+    M = 500
     save_interval = 50
+    buffer_size = 500
+    batch_size = 150
 
     # ANN parameters
     activation_functions = ["linear", "sigmoid", "tanh", "relu"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
-    alpha = 0.005  # learning rate
+    alpha = 0.001  # learning rate
     H_dims = [math.floor(2 * (2 + 2 * board_size ** 2) / 3) + board_size ** 2] * 3
     io_dim = board_size * board_size  # input and output layer sizes
     activation = activation_functions[3]
     optimizer = optimizers[3]
     epochs = 5
-    ann = ANN(io_dim, H_dims, alpha, optimizer, activation, epochs)
-    mcts = MonteCarloTreeSearch(ann, c=1., eps=1, stoch_policy=True)
+
+    ANN = ANN(io_dim, H_dims, alpha, optimizer, activation, epochs)
+    MCTS = MonteCarloTreeSearch(ANN, c=1., eps=1, stoch_policy=True)
+    env = HexGame(board_size)
+    RL = RL(G, M, env, ANN, MCTS, save_interval, buffer_size, batch_size)
+
+    # Run RL algorithm and plot results
+    #RL.run()
 
     # Generate training cases
-    #generate_cases(episodes, simulations, HexGame(board_size), ann, mcts)
+    #RL.generate_cases()
 
     # Plot model accuracies and losses
-    inputs = load_db("cases/size_{}_inputs_Stoch.txt".format(board_size))
-    targets = load_db("cases/size_{}_targets_Stoch.txt".format(board_size))
-    levels = np.arange(0, 401, 50)
-    plot_model_accuracies(ann, board_size, [inputs, targets], levels)
-
-    # Run RL algorithm and play game with final model
-    #dict = RL(episodes, simulations, env, ann, mcts, save_interval)
-    #play_game(dict, env, ann, delay=0.2, verbose=False)
+    levels = np.arange(0, 201, 50)
+    RL.plot_level_accuracies(levels)
