@@ -23,9 +23,9 @@ class ANN:
         layers.append(torch.nn.Softmax(dim=-1))
         return layers
 
-    def fit(self, cases, debug=False):
-        input = torch.tensor(cases[0]).float()
-        target = torch.tensor(cases[1]).float()
+    def fit(self, input, target, debug=False):
+        input = torch.tensor(input).float()
+        target = torch.tensor(target).float()
         for i in range(self.epochs):
             pred = self.model(input)
             loss = self.loss_fn(pred, target)
@@ -34,33 +34,15 @@ class ANN:
             self.optimizer.step()
         if debug: return float(loss.data.numpy())
 
-    def get_loss(self, cases):
-        input = torch.tensor(cases[0]).float()
-        target = torch.tensor(cases[1]).float()
+    def get_loss(self, input, target):
+        target = torch.tensor(target).float()
         pred = self.forward(input)
-        return self.loss_fn(pred, target).data.numpy()
+        loss = self.loss_fn(pred, target).data.numpy()
+        return loss
 
-    def make_dict(self, inputs, targets):
-        input = torch.tensor(inputs).float()
-        target = torch.tensor(targets).float()
-        with torch.no_grad():
-            pred = self.model(input)
-        dict = {}
-        inputs = input.data.numpy()
-        targets = np.around(target.data.numpy()*100, decimals = 1)
-        preds = np.around(pred.data.numpy()*100, decimals = 1)
-        for j in range(len(target.data.numpy())):
-            input, tar, pred = tuple(inputs[j]), targets[j], preds[j]
-            if dict.get(input) == None:
-                dict[tuple(input)] = [(tar, pred)]
-            else:
-                dict[tuple(input)].append((tar, pred))
-        return dict
-
-
-    def accuracy(self, cases, debug = False):
-        pred = self.forward(cases[0])
-        target = torch.tensor(cases[1]).float()
+    def accuracy(self, input, target, debug = False):
+        target = torch.tensor(target).float()
+        pred = self.forward(input)
         pred_indices = torch.argmax(pred, 1)
         target_indices = torch.argmax(target, 1)
         eq_sum = torch.sum(torch.eq(pred_indices, target_indices))
@@ -71,14 +53,6 @@ class ANN:
     def forward(self, input):
         with torch.no_grad():
             return self.model(torch.tensor(input).float())
-
-    def save(self, size, level):
-        torch.save(self.model, "models/{}_ANN_level_{}".format(size,level))
-        print("Model has been saved to models/{}_ANN_level_{}".format(size,level))
-
-    def load(self, size, level):
-        self.model = torch.load("models/{}_ANN_level_{}".format(size,level))
-        print("Loaded model from models/{}_ANN_level_{}".format(size,level))
 
     def get_move(self, env):
         legal = env.get_legal_actions()
@@ -97,6 +71,14 @@ class ANN:
         stoch_index = np.random.choice(indices, p=new_probs)
         greedy_index = np.argmax(new_probs)
         return new_probs, stoch_index, greedy_index
+
+    def save(self, size, level):
+        torch.save(self.model, "models/{}_ANN_level_{}".format(size,level))
+        print("Model has been saved to models/{}_ANN_level_{}".format(size,level))
+
+    def load(self, size, level):
+        self.model = torch.load("models_stoch/{}_ANN_level_{}".format(size,level))
+        print("Loaded model from models_stoch/{}_ANN_level_{}".format(size,level))
 
     def __choose_optimizer(self, params, optimizer):
         return {
