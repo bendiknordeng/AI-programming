@@ -23,6 +23,7 @@ class RL:
         self.losses = []
         self.accuracies = []
         self.buffer = []
+        self.all_cases = []
 
     def run(self):
         self.ANN.save(env.size, 0)
@@ -35,25 +36,30 @@ class RL:
                 env.move(env.all_moves[np.argmax(D)])
             self.train_ann()
             if (i + 1) % self.save_interval == 0:
-                self.save_model()
+                self.save_model(level=i+1)
                 self.ANN.epochs += 5
             self.MCTS.eps *= 0.99
+        self.write_db("cases_old_vs_new/size_{}".format(self.env.size), self.buffer)
         self.plot()
 
     def add_case(self, D):
+        self.all_cases.append((env.flat_state, D))
         self.buffer.append((env.flat_state, D))
         if len(self.buffer) > 500:
             self.buffer.pop(0)
 
     def train_ann(self):
         training_cases = random.sample(self.buffer, min(len(self.buffer),self.batch_size))
-        input, target = list(zip(*training_cases))
-        self.losses.append(self.ANN.fit(input, target, debug=True))
-        self.accuracies.append(self.ANN.accuracy(input, target))
+        x_train, y_train = list(zip(*training_cases))
+        self.ANN.fit(x_train, y_train, debug=True)
+        x_test, y_test = list(zip(*self.all_cases))
+        loss = self.ANN.get_loss(x_test, y_test)
+        accuracy = self.ANN.accuracy(x_test, y_test)
+        self.losses.append(loss)
+        self.accuracies.append(accuracy)
 
-    def save_model(self):
-        self.ANN.save(size=env.size, level=i+1)
-        self.write_db("cases/size_{}".format(self.env.size), self.buffer)
+    def save_model(self, level):
+        self.ANN.save(size=env.size, level=level)
 
     def plot(self):
         self.episodes = np.arange(self.G)
@@ -79,7 +85,7 @@ class RL:
         self.write_db("cases/size_{}".format(self.env.size), cases)
 
     def plot_level_accuracies(self, levels):
-        cases = self.load_db("cases/size_{}".format(self.env.size))
+        cases = self.load_db("cases_old_vs_new/size_{}".format(self.env.size))
         losses = []
         accuracies = []
         for l in levels:
@@ -98,35 +104,33 @@ class RL:
 
     def write_db(self, filename, cases):
         inputs, targets = list(zip(*cases))
-        with open(filename+'_inputs.txt', 'a') as file:
-            np.savetxt(file, inputs)
-        with open(filename+'_targets.txt', 'a') as file:
-            np.savetxt(file, targets)
-        print("Buffer have been written to \n{}\n{}".format(filename+'_inputs.txt', filename+'_targets.txt'))
+        np.savetxt(filename+'_inputs_new_state.txt', inputs)
+        np.savetxt(filename+'_targets_new_state.txt', targets)
+        print("Buffer have been written to \n{}\n{}".format(filename+'_inputs_new_state.txt', filename+'_targets_new_state.txt'))
 
     def load_db(self, filename):
         import time
         start = time.time()
-        inputs = np.loadtxt(filename+'_inputs.txt')
-        targets = np.loadtxt(filename+'_targets.txt')
+        inputs = np.loadtxt(filename+'_inputs_new_state.txt')
+        targets = np.loadtxt(filename+'_targets_new_state.txt')
         cases = list(zip(inputs, targets))
         return cases
 
 
 if __name__ == '__main__':
     # MCTS/RL parameters
-    board_size = 3
-    G = 10
-    M = 500
+    board_size = 5
+    G = 250
+    M = 2000
     save_interval = 50
-    buffer_size = 500
-    batch_size = 150
+    buffer_size = 1000
+    batch_size = 500
 
     # ANN parameters
     activation_functions = ["linear", "sigmoid", "tanh", "relu"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
-    alpha = 0.001  # learning rate
-    H_dims = [math.floor(2 * (2 + 2 * board_size ** 2) / 3) + board_size ** 2] * 3
+    alpha = 0.005  # learning rate
+    H_dims = [math.floor(2 * (2 + 2 * board_size ** 2) / 3) + board_size ** 2] * 4
     io_dim = board_size * board_size  # input and output layer sizes
     activation = activation_functions[3]
     optimizer = optimizers[3]
@@ -138,11 +142,11 @@ if __name__ == '__main__':
     RL = RL(G, M, env, ANN, MCTS, save_interval, buffer_size, batch_size)
 
     # Run RL algorithm and plot results
-    RL.run()
+    #RL.run()
 
     # Generate training cases
-    RL.generate_cases()
+    #RL.generate_cases()
 
     # Plot model accuracies and losses
-    #levels = np.arange(0, 201, 50)
-    #RL.plot_level_accuracies(levels)
+    levels = np.arange(0, 251, 50)
+    RL.plot_level_accuracies(levels)

@@ -23,7 +23,7 @@ class ANN:
         layers.append(torch.nn.Softmax(dim=-1))
         return layers
 
-    def fit(self, input, target, debug=False):
+    def fit(self, input, target):
         input = torch.tensor(input).float()
         target = torch.tensor(target).float()
         for i in range(self.epochs):
@@ -32,7 +32,6 @@ class ANN:
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
-        if debug: return float(loss.data.numpy())
 
     def get_loss(self, input, target):
         target = torch.tensor(target).float()
@@ -73,12 +72,12 @@ class ANN:
         return new_probs, stoch_index, greedy_index
 
     def save(self, size, level):
-        torch.save(self.model, "models/{}_ANN_level_{}".format(size,level))
-        print("Model has been saved to models/{}_ANN_level_{}".format(size,level))
+        torch.save(self.model, "models_old_vs_new/{}_ANN_level_{}".format(size,level))
+        print("Model has been saved to models_old_vs_new/{}_ANN_level_{}".format(size,level))
 
     def load(self, size, level):
-        self.model = torch.load("models/{}_ANN_level_{}".format(size,level))
-        print("Loaded model from models/{}_ANN_level_{}".format(size,level))
+        self.model = torch.load("models_old_vs_new/{}_ANN_level_{}".format(size,level))
+        print("Loaded model from models_demo_old_vs_new/{}_ANN_level_{}".format(size,level))
 
     def __choose_optimizer(self, params, optimizer):
         return {

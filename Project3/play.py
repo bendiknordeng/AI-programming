@@ -10,12 +10,18 @@ def play(mcts, sim, ann, env, top_moves):
         D = mcts.search(env, sim)
         best_mcts_move = np.argmax(D)
         probs, model_move, index = ann.get_move(env)
-        val = dict(zip(np.arange(env.size**2), probs))
+
+        mcts_moves = {i: p for i, p in enumerate(D)}
+        sorted_mcts = {k: v for k, v in sorted(mcts_moves.items(), key=lambda item: item[1])}
+        val = {i: p for i, p in enumerate(probs)}
         sorted_moves = {k: v for k, v in sorted(val.items(), key=lambda item: item[1])}
-        print("Top {} ANN moves:".format(top_moves))
-        for move in list(sorted_moves.keys())[-1:-top_moves-1:-1]:
-            print("{:>2}: {:>5.2f}%".format(move, sorted_moves[move]*100))
-        print("MCTS would have chosen: {}, ({:.2f}% confidence)".format(best_mcts_move, D[best_mcts_move]*100))
+        print("Top {} ANN moves: \t Top MCTS moves:".format(top_moves, top_moves))
+        for i in range(1,6):
+            model_move = list(sorted_moves.keys())[-i]
+            mcts_move = list(sorted_mcts.keys())[-i]
+            print("{:>2}: {:>5.2f}% \t {:>10}: {:>5.2f}%".format(model_move, sorted_moves[model_move] * 100,
+                                                             mcts_move, sorted_mcts[mcts_move] * 100))
+        print("\nMCTS would have chosen: {}, ({:.2f}% confidence)".format(best_mcts_move, D[best_mcts_move]*100))
         print("The model would have chosen: {}, ({:.2f}% confidence)".format(index, probs[index]*100))
         env.draw()
         i = input("Choose move (press enter for model move): ")
@@ -36,7 +42,7 @@ def play(mcts, sim, ann, env, top_moves):
 
 if __name__ == '__main__':
     board_size = 5
-    level = 400
+    level = 250
 
     activation_functions = ["linear", "sigmoid", "tanh", "relu"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
@@ -50,7 +56,7 @@ if __name__ == '__main__':
     ann = ANN(io_dim, H_dims, alpha, optimizer, activation, epochs)
     ann.load(board_size, level)
 
-    sim = 2000
+    sim = 3000
     mcts = MonteCarloTreeSearch(ann, c=1.4, eps=1)
     env = HexGame(board_size)
     top_moves = 5

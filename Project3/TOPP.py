@@ -50,7 +50,7 @@ class TOPP:
 
 
 if __name__ == '__main__':
-    board_size = 6
+    board_size = 5
 
     activation_functions = ["linear", "sigmoid", "tanh", "relu"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
@@ -62,8 +62,8 @@ if __name__ == '__main__':
     epochs = 10
 
     num_games = 100
-    bottom_level = 400
-    top_level = 450
+    bottom_level = 0
+    top_level = 250
     interval = 50
 
     l = np.arange(bottom_level, top_level+1, interval)
