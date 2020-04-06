@@ -1,0 +1,121 @@
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import numpy as np
+
+class CNN(nn.Module):
+    def __init__(self, size, alpha=0.01, epochs=10, activation='relu', optimizer='Adam', device='cpu'):
+        super(CNN, self).__init__()
+        self.size = size
+        self.device = device
+        self.alpha = alpha
+        self.epochs = epochs
+        self.activation_fn = self.__choose_activation_fn(activation)
+
+        self.conv = nn.Sequential(
+            nn.Conv2d(1,6,2),
+            self.activation_fn,
+            nn.Conv2d(6,12,2),
+            self.activation_fn)
+
+        self.fc = nn.Sequential(
+            nn.Linear(12*(size-2)**2+1,120),
+            self.activation_fn,
+            nn.Linear(120,84),
+            self.activation_fn,
+            nn.Linear(84,self.size**2))
+
+        params = list(self.parameters())[1:] # ommit first relu from activation_fn
+        self.optimizer = self.choose_optimizer(params, optimizer)
+        self.policy_loss = nn.BCELoss()
+
+        if torch.cuda.is_available(): # optimize runtime with gpu
+            self.device = 'cuda'
+            self.net.cuda()
+            print('Using device:', device)
+            print(torch.cuda.get_device_name(0))
+            print('Memory Usage:')
+            print('Allocated:', round(torch.cuda.memory_allocated(0)/1024**3,1), 'GB')
+            print('Cached:', round(torch.cuda.memory_cached(0)/1024**3,1), 'GB')
+
+    def forward(self, x, training=False):
+        self.train(training)
+        x1, x2 = self.transform_input(x)
+
+        x2 = self.conv(x2)
+        x2 = x2.reshape(-1,12*(self.size-2)**2)
+
+        x = torch.cat((x1,x2), dim=1)
+        x = self.fc(x)
+        x = F.softmax(x, dim=1)
+        return x
+
+    def get_loss(self, x, y):
+        pred_y = self.forward(x).squeeze()
+        y = torch.FloatTensor(y).to(self.device)
+        return self.policy_loss(pred_y,y)
+
+    def fit(self, x, y):
+        y = torch.FloatTensor(y).to(self.device)
+        for i in range(self.epochs):
+            pred_y = self.forward(x, training=True)
+            policy_loss = self.policy_loss(pred_y, y)
+            self.optimizer.zero_grad()
+            policy_loss.backward()
+            self.optimizer.step()
+        return policy_loss.item()
+
+    def transform_input(self, x):
+        x = torch.FloatTensor(x).to(self.device)
+        x1 = x.t()[0].reshape(-1,1) # player data
+        x2 = x.t()[1:].t().reshape(-1,self.size**2) # board data
+        x2 = x2.reshape(-1, 1, self.size, self.size)
+        return x1, x2
+
+    def get_move(self, env):
+        legal = env.get_legal_actions()
+        factor = [1 if move in legal else 0 for move in env.all_moves]
+        probs = self.forward(env.flat_state).data.numpy()[0]
+        sum = 0
+        new_probs = np.zeros(env.size ** 2)
+        for i in range(env.size ** 2):
+            if factor[i]:
+                sum += probs[i]
+                new_probs[i] = probs[i]
+            else:
+                new_probs[i] = 0
+        new_probs /= sum
+        indices = np.arange(env.size ** 2)
+        stoch_index = np.random.choice(indices, p=new_probs)
+        greedy_index = np.argmax(new_probs)
+        return new_probs, stoch_index, greedy_index
+
+    def choose_optimizer(self, params, optimizer):
+        return {
+            "Adagrad": torch.optim.Adagrad(params, lr=self.alpha),
+            "SGD": torch.optim.SGD(params, lr=self.alpha),
+            "RMSProp": torch.optim.RMSprop(params, lr=self.alpha),
+            "Adam": torch.optim.Adam(params, lr=self.alpha)
+        }[optimizer]
+
+    def __choose_activation_fn(self, activation_fn):
+        return {
+            "relu": torch.nn.ReLU(),
+            "tanh": torch.nn.Tanh(),
+            "sigmoid": torch.nn.Sigmoid(),
+        }[activation_fn]
+
+if __name__ == '__main__':
+    from game import HexGame
+    from mcts import MonteCarloTreeSearch
+    size = 6
+    mcts = MonteCarloTreeSearch()
+    env = HexGame(size)
+
+    input = env.flat_state
+    target = mcts.search(env, 10)
+
+    cnn = CNN(size)
+
+    cnn.fit(input, target)
+    import pdb; pdb.set_trace()
