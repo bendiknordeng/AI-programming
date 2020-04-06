@@ -127,12 +127,12 @@ if __name__ == '__main__':
     batch_size = 1000
 
     # ANN parameters
-    activation_functions = ["linear", "sigmoid", "tanh", "relu"]
+    activation_functions = ["sigmoid", "tanh", "relu"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
     alpha = 0.001  # learning rate
     H_dims = [128, 128, 64, 64]
     io_dim = board_size ** 2  # input and output layer sizes
-    activation = activation_functions[3]
+    activation = activation_functions[2]
     optimizer = optimizers[3]
     epochs = 10
 

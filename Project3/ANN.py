@@ -5,8 +5,10 @@ import numpy as np
 import pdb
 from tqdm import tqdm
 
-class ANN:
-    def __init__(self, io_dim, H_dims, learning_rate, optimizer, activation_fn, epochs):
+class ANN(nn.Module):
+    def __init__(self, io_dim, H_dims, learning_rate, optimizer, activation_fn, epochs, device='cpu'):
+        super(ANN, self).__init__()
+        self.device = device
         self.alpha = learning_rate
         self.epochs = epochs
         activation_fn = self.__choose_activation_fn(activation_fn)
@@ -14,6 +16,9 @@ class ANN:
         self.model = torch.nn.Sequential(*layers)
         self.loss_fn = torch.nn.BCELoss(reduction="mean")
         self.optimizer = self.__choose_optimizer(list(self.model.parameters()), optimizer)
+
+        if self.device == 'cuda':
+            self.net.cuda()
 
     def gen_layers(self, io_dim, H_dims, activation_fn):
         layers = [torch.nn.Linear(2*(io_dim+1),H_dims[0])]
@@ -28,7 +33,7 @@ class ANN:
         return layers
 
     def transform(self, data):
-        return torch.tensor(data).float()
+        return torch.FloatTensor(data).to(self.device)
 
     def fit(self, input, target):
         x = self.transform(input)
