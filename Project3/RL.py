@@ -37,9 +37,9 @@ class RL:
             self.train_ann()
             if (i + 1) % self.save_interval == 0:
                 self.save_model(level=i+1)
-                self.ANN.epochs += 5
+                self.ANN.epochs += 10
             self.MCTS.eps *= 0.99
-        self.write_db("cases_old_vs_new/size_{}".format(self.env.size), self.buffer)
+        self.write_db("cases/size_{}".format(self.env.size), self.buffer)
         self.plot()
 
     def add_case(self, D):
@@ -51,7 +51,7 @@ class RL:
     def train_ann(self):
         training_cases = random.sample(self.buffer, min(len(self.buffer),self.batch_size))
         x_train, y_train = list(zip(*training_cases))
-        self.ANN.fit(x_train, y_train, debug=True)
+        self.ANN.fit(x_train, y_train)
         x_test, y_test = list(zip(*self.all_cases))
         loss = self.ANN.get_loss(x_test, y_test)
         accuracy = self.ANN.accuracy(x_test, y_test)
@@ -85,7 +85,7 @@ class RL:
         self.write_db("cases/size_{}".format(self.env.size), cases)
 
     def plot_level_accuracies(self, levels):
-        cases = self.load_db("cases_old_vs_new/size_{}".format(self.env.size))
+        cases = self.load_db("cases/size_{}".format(self.env.size))
         losses = []
         accuracies = []
         for l in levels:
@@ -104,15 +104,15 @@ class RL:
 
     def write_db(self, filename, cases):
         inputs, targets = list(zip(*cases))
-        np.savetxt(filename+'_inputs_new_state.txt', inputs)
-        np.savetxt(filename+'_targets_new_state.txt', targets)
-        print("Buffer have been written to \n{}\n{}".format(filename+'_inputs_new_state.txt', filename+'_targets_new_state.txt'))
+        np.savetxt(filename+'_inputs.txt', inputs)
+        np.savetxt(filename+'_targets.txt', targets)
+        print("Buffer have been written to \n{}\n{}".format(filename+'_inputs.txt', filename+'_targets.txt'))
 
     def load_db(self, filename):
         import time
         start = time.time()
-        inputs = np.loadtxt(filename+'_inputs_new_state.txt')
-        targets = np.loadtxt(filename+'_targets_new_state.txt')
+        inputs = np.loadtxt(filename+'_inputs.txt')
+        targets = np.loadtxt(filename+'_targets.txt')
         cases = list(zip(inputs, targets))
         return cases
 
@@ -121,20 +121,20 @@ if __name__ == '__main__':
     # MCTS/RL parameters
     board_size = 5
     G = 250
-    M = 2000
+    M = 1000
     save_interval = 50
-    buffer_size = 1000
-    batch_size = 500
+    buffer_size = 2000
+    batch_size = 1000
 
     # ANN parameters
     activation_functions = ["linear", "sigmoid", "tanh", "relu"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
-    alpha = 0.005  # learning rate
-    H_dims = [math.floor(2 * (2 + 2 * board_size ** 2) / 3) + board_size ** 2] * 4
-    io_dim = board_size * board_size  # input and output layer sizes
+    alpha = 0.001  # learning rate
+    H_dims = [128, 128, 64, 64]
+    io_dim = board_size ** 2  # input and output layer sizes
     activation = activation_functions[3]
     optimizer = optimizers[3]
-    epochs = 5
+    epochs = 10
 
     ANN = ANN(io_dim, H_dims, alpha, optimizer, activation, epochs)
     MCTS = MonteCarloTreeSearch(ANN, c=1., eps=1, stoch_policy=True)
@@ -142,11 +142,11 @@ if __name__ == '__main__':
     RL = RL(G, M, env, ANN, MCTS, save_interval, buffer_size, batch_size)
 
     # Run RL algorithm and plot results
-    #RL.run()
+    RL.run()
 
     # Generate training cases
     #RL.generate_cases()
 
     # Plot model accuracies and losses
-    levels = np.arange(0, 251, 50)
-    RL.plot_level_accuracies(levels)
+    #levels = np.arange(0, 251, 50)
+    #RL.plot_level_accuracies(levels)

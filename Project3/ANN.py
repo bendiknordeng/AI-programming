@@ -1,4 +1,6 @@
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 import numpy as np
 import pdb
 from tqdm import tqdm
@@ -14,49 +16,57 @@ class ANN:
         self.optimizer = self.__choose_optimizer(list(self.model.parameters()), optimizer)
 
     def gen_layers(self, io_dim, H_dims, activation_fn):
-        layers = [torch.nn.Linear(io_dim*2+2,H_dims[0])]
+        layers = [torch.nn.Linear(2*(io_dim+1),H_dims[0])]
+        layers.append(torch.nn.Dropout(0.5))
         layers.append(activation_fn) if activation_fn != None else None
         for i in range(len(H_dims)-1):
             layers.append(torch.nn.Linear(H_dims[i], H_dims[i+1]))
+            layers.append(torch.nn.Dropout(0.5))
             layers.append(activation_fn) if activation_fn != None else None
         layers.append(torch.nn.Linear(H_dims[-1],io_dim))
         layers.append(torch.nn.Softmax(dim=-1))
         return layers
 
+    def transform(self, data):
+        return torch.tensor(data).float()
+
     def fit(self, input, target):
-        input = torch.tensor(input).float()
-        target = torch.tensor(target).float()
+        x = self.transform(input)
+        y = self.transform(target)
         for i in range(self.epochs):
-            pred = self.model(input)
-            loss = self.loss_fn(pred, target)
+            pred_y = self.model(x)
+            loss = self.loss_fn(pred_y, y)
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
 
     def get_loss(self, input, target):
-        target = torch.tensor(target).float()
-        pred = self.forward(input)
-        loss = self.loss_fn(pred, target).data.numpy()
+        x = self.transform(input)
+        y = self.transform(target)
+        pred_y = self.forward(x)
+        loss = self.loss_fn(pred_y, y).data.numpy()
         return loss
 
     def accuracy(self, input, target, debug = False):
-        target = torch.tensor(target).float()
-        pred = self.forward(input)
-        pred_indices = torch.argmax(pred, 1)
-        target_indices = torch.argmax(target, 1)
+        x = self.transform(input)
+        y = self.transform(target)
+        pred_y = self.forward(x)
+        pred_indices = torch.argmax(pred_y, 1)
+        target_indices = torch.argmax(y, 1)
         eq_sum = torch.sum(torch.eq(pred_indices, target_indices))
-        acc = float((eq_sum/float(len(pred_indices))).data.numpy())
+        accuracy = float((eq_sum/float(len(pred_indices))).data.numpy())
         if debug: pdb.set_trace()
-        return acc
+        return accuracy
 
-    def forward(self, input):
+    def forward(self, x):
         with torch.no_grad():
-            return self.model(torch.tensor(input).float())
+            return self.model(x)
 
     def get_move(self, env):
         legal = env.get_legal_actions()
         factor = [1 if move in legal else 0 for move in env.all_moves]
-        probs = self.forward(env.flat_state).data.numpy()
+        input = self.transform(env.flat_state)
+        probs = self.forward(input).data.numpy()
         sum = 0
         new_probs = np.zeros(env.size ** 2)
         for i in range(env.size ** 2):
@@ -72,12 +82,12 @@ class ANN:
         return new_probs, stoch_index, greedy_index
 
     def save(self, size, level):
-        torch.save(self.model, "models_old_vs_new/{}_ANN_level_{}".format(size,level))
-        print("Model has been saved to models_old_vs_new/{}_ANN_level_{}".format(size,level))
+        torch.save(self.model, "models/{}_ANN_level_{}".format(size,level))
+        print("\nModel has been saved to models/{}_ANN_level_{}".format(size,level))
 
     def load(self, size, level):
-        self.model = torch.load("models_old_vs_new/{}_ANN_level_{}".format(size,level))
-        print("Loaded model from models_demo_old_vs_new/{}_ANN_level_{}".format(size,level))
+        self.model = torch.load("models/{}_ANN_level_{}".format(size,level))
+        print("Loaded model from models/{}_ANN_level_{}".format(size,level))
 
     def __choose_optimizer(self, params, optimizer):
         return {

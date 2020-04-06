@@ -56,7 +56,7 @@ if __name__ == '__main__':
     ann = ANN(io_dim, H_dims, alpha, optimizer, activation, epochs)
     ann.load(board_size, level)
 
-    sim = 3000
+    sim = 2000
     mcts = MonteCarloTreeSearch(ann, c=1.4, eps=1)
     env = HexGame(board_size)
     top_moves = 5
