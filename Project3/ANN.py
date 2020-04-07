@@ -47,7 +47,7 @@ class ANN(nn.Module):
         pred_y = self.forward(x)
         loss = self.loss_fn(pred_y, y)
         acc = pred_y.argmax(dim=1).eq(y.argmax(dim=1)).sum().numpy()/len(y)
-        return loss.item, acc
+        return loss.item(), acc
 
     def forward(self, x):
         with torch.no_grad():
