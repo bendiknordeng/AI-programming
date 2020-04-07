@@ -4,39 +4,29 @@ import torch.nn.functional as F
 import numpy as np
 
 class CNN(nn.Module):
-    def __init__(self, size, alpha=0.01, epochs=10, activation='relu', optimizer='Adam', device='cpu'):
+    def __init__(self, size, alpha=0.01, epochs=10, activation='relu', optimizer='Adam'):
         super(CNN, self).__init__()
         self.size = size
-        self.device = device
         self.alpha = alpha
         self.epochs = epochs
-        self.activation_fn = self.__choose_activation_fn(activation)
 
         self.conv = nn.Sequential(
             nn.Conv2d(1,6,2),
-            self.activation_fn,
+            self.__choose_activation_fn(activation),
             nn.Conv2d(6,12,2),
-            self.activation_fn)
+            self.__choose_activation_fn(activation)
+            )
 
         self.fc = nn.Sequential(
-            nn.Linear(12*(size-2)**2+1,120),
-            self.activation_fn,
+            nn.Linear(12*(self.size-2)**2+1,120),
+            self.__choose_activation_fn(activation),
             nn.Linear(120,84),
-            self.activation_fn,
+            self.__choose_activation_fn(activation),
             nn.Linear(84,self.size**2))
 
         params = list(self.parameters())[1:] # ommit first relu from activation_fn
         self.optimizer = self.choose_optimizer(params, optimizer)
         self.policy_loss = nn.BCELoss()
-
-        if torch.cuda.is_available(): # optimize runtime with gpu
-            self.device = 'cuda'
-            self.net.cuda()
-            print('Using device:', device)
-            print(torch.cuda.get_device_name(0))
-            print('Memory Usage:')
-            print('Allocated:', round(torch.cuda.memory_allocated(0)/1024**3,1), 'GB')
-            print('Cached:', round(torch.cuda.memory_cached(0)/1024**3,1), 'GB')
 
     def forward(self, x, training=False):
         self.train(training)
@@ -52,21 +42,22 @@ class CNN(nn.Module):
 
     def get_loss(self, x, y):
         pred_y = self.forward(x).squeeze()
-        y = torch.FloatTensor(y).to(self.device)
+        y = torch.FloatTensor(y)
         return self.policy_loss(pred_y,y)
 
     def fit(self, x, y):
-        y = torch.FloatTensor(y).to(self.device)
+        y = torch.FloatTensor(y)
         for i in range(self.epochs):
             pred_y = self.forward(x, training=True)
             policy_loss = self.policy_loss(pred_y, y)
             self.optimizer.zero_grad()
             policy_loss.backward()
             self.optimizer.step()
-        return policy_loss.item()
+        acc = pred_y.argmax(dim=1).eq(y.argmax(dim=1)).sum().numpy()/len(y)
+        return policy_loss.item(), acc
 
     def transform_input(self, x):
-        x = torch.FloatTensor(x).to(self.device)
+        x = torch.FloatTensor(x)
         x1 = x.t()[0].reshape(-1,1) # player data
         x2 = x.t()[1:].t().reshape(-1,self.size**2) # board data
         x2 = x2.reshape(-1, 1, self.size, self.size)
@@ -90,6 +81,14 @@ class CNN(nn.Module):
         greedy_index = np.argmax(new_probs)
         return new_probs, stoch_index, greedy_index
 
+    def save(self, size, level):
+        torch.save(self.state_dict(), "models/{}_ANN_level_{}".format(size,level))
+        print("\nModel has been saved to models/{}_ANN_level_{}".format(size,level))
+
+    def load(self, size, level):
+        self.load_state_dict(torch.load("models/{}_ANN_level_{}".format(size,level)))
+        print("Loaded model from models/{}_ANN_level_{}".format(size,level))
+
     def choose_optimizer(self, params, optimizer):
         return {
             "Adagrad": torch.optim.Adagrad(params, lr=self.alpha),
@@ -104,18 +103,3 @@ class CNN(nn.Module):
             "tanh": torch.nn.Tanh(),
             "sigmoid": torch.nn.Sigmoid(),
         }[activation_fn]
-
-if __name__ == '__main__':
-    from game import HexGame
-    from mcts import MonteCarloTreeSearch
-    size = 6
-    mcts = MonteCarloTreeSearch()
-    env = HexGame(size)
-
-    input = env.flat_state
-    target = mcts.search(env, 10)
-
-    cnn = CNN(size)
-
-    cnn.fit(input, target)
-    import pdb; pdb.set_trace()

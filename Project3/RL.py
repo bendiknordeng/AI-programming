@@ -27,7 +27,7 @@ class RL:
         self.all_cases = []
 
     def run(self):
-        #self.ANN.save(env.size, 0)
+        self.ANN.save(env.size, 0)
         for i in tqdm(range(G)):
             self.env.reset()
             self.MCTS.init_tree()
@@ -38,7 +38,7 @@ class RL:
             #self.train_ann()
             self.train_cnn()
             if (i + 1) % self.save_interval == 0:
-                #self.save_model(level=i+1)
+                self.save_model(level=i+1)
                 self.ANN.epochs += 10
             self.MCTS.eps *= 0.99
         self.write_db("cases/size_{}".format(self.env.size), self.buffer)
@@ -63,8 +63,9 @@ class RL:
     def train_cnn(self):
         training_cases = random.sample(self.buffer, min(len(self.buffer),self.batch_size))
         x_train, y_train = list(zip(*training_cases))
-        loss = self.ANN.fit(x_train, y_train)
+        loss, acc = self.ANN.fit(x_train, y_train)
         self.losses.append(loss)
+        self.accuracies.append(acc)
 
     def save_model(self, level):
         self.ANN.save(size=env.size, level=level)
@@ -74,7 +75,7 @@ class RL:
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
         ax.plot(self.episodes, self.losses, color='tab:orange', label="Loss")
-        #ax.plot(self.episodes, self.accuracies, color='tab:blue', label="Accuracy")
+        ax.plot(self.episodes, self.accuracies, color='tab:blue', label="Accuracy")
         plt.legend()
         plt.show()
 
@@ -137,11 +138,11 @@ class RL:
 if __name__ == '__main__':
     # MCTS/RL parameters
     board_size = 5
-    G = 50
+    G = 10
     M = 500
     save_interval = 50
-    buffer_size = 500
-    batch_size = 150
+    buffer_size = 1000
+    batch_size = 500
 
     # ANN parameters
     activation_functions = ["sigmoid", "tanh", "relu"]
@@ -150,13 +151,18 @@ if __name__ == '__main__':
     H_dims = [128, 128, 64, 64]
     activation = activation_functions[2]
     optimizer = optimizers[3]
-    epochs = 10
+    epochs = 1250
 
     #ANN = ANN(io_dim, H_dims, alpha, optimizer, activation, epochs)
-    ANN = CNN(board_size, alpha, epochs, activation, optimizer, device='cpu')
+    ANN = CNN(board_size, alpha, epochs, activation, optimizer)
     MCTS = MonteCarloTreeSearch(ANN, c=1., eps=1, stoch_policy=True)
     env = HexGame(board_size)
     RL = RL(G, M, env, ANN, MCTS, save_interval, buffer_size, batch_size)
+    #cases = RL.load_db('cases/size_5')
+    #x_train, y_train = list(zip(*cases))
+    #loss, acc = ANN.fit(x_train, y_train)
+    #print("Loss: {}\nAcc: {}".format(loss,acc))
+    #ANN.save(5,200)
 
     # Run RL algorithm and plot results
     RL.run()
