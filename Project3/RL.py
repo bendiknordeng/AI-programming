@@ -38,11 +38,12 @@ class RL:
                 D = self.MCTS.search(self.env, self.M)
                 self.add_case(D)
                 env.move(env.all_moves[np.argmax(D)])
-            training_cases = random.sample(self.buffer, min(len(self.buffer),self.batch_size))
+            batch_size = math.floor(len(self.all_cases)/2)
+            training_cases = random.sample(self.all_cases, batch_size)
             x_train, y_train = list(zip(*training_cases))
             x_test, y_test = list(zip(*self.all_cases))
             self.train_ann(x_train, y_train, x_test, y_test)
-            self.MCTS.eps *= 0.99
+            self.MCTS.eps *= 0.995
         self.ANN.save(size=env.size, level=i+1)
         self.write_db("cases/size_{}".format(self.env.size), self.buffer)
         self.plot()
@@ -142,12 +143,12 @@ class RL:
 
 if __name__ == '__main__':
     # MCTS/RL parameters
-    board_size = 4
-    G = 30
+    board_size = 5
+    G = 500
     M = 500
     save_interval = 50
-    buffer_size = 1000
-    batch_size = 500
+    buffer_size = 2000
+    batch_size = 1000
 
     # ANN parameters
     activation_functions = ["sigmoid", "tanh", "relu"]
