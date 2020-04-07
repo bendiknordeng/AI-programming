@@ -9,14 +9,12 @@ class CNN(nn.Module):
         self.size = size
         self.alpha = alpha
         self.epochs = epochs
-
         self.conv = nn.Sequential(
             nn.Conv2d(1,6,2),
             self.__choose_activation_fn(activation),
             nn.Conv2d(6,12,2),
             self.__choose_activation_fn(activation)
             )
-
         self.fc = nn.Sequential(
             nn.Linear(12*(self.size-2)**2+1,120),
             self.__choose_activation_fn(activation),
@@ -31,19 +29,12 @@ class CNN(nn.Module):
     def forward(self, x, training=False):
         self.train(training)
         x1, x2 = self.transform_input(x)
-
         x2 = self.conv(x2)
         x2 = x2.reshape(-1,12*(self.size-2)**2)
-
         x = torch.cat((x1,x2), dim=1)
         x = self.fc(x)
         x = F.softmax(x, dim=1)
         return x
-
-    def get_loss(self, x, y):
-        pred_y = self.forward(x).squeeze()
-        y = torch.FloatTensor(y)
-        return self.policy_loss(pred_y,y)
 
     def fit(self, x, y):
         y = torch.FloatTensor(y)
@@ -53,8 +44,14 @@ class CNN(nn.Module):
             self.optimizer.zero_grad()
             policy_loss.backward()
             self.optimizer.step()
+
+    def get_status(self, input, target):
+        x = self.transform(input)
+        y = self.transform(target)
+        pred_y = self.forward(x)
+        loss = self.loss_fn(pred_y, y)
         acc = pred_y.argmax(dim=1).eq(y.argmax(dim=1)).sum().numpy()/len(y)
-        return policy_loss.item(), acc
+        return loss.item, acc
 
     def transform_input(self, x):
         x = torch.FloatTensor(x)
@@ -62,6 +59,16 @@ class CNN(nn.Module):
         x2 = x.t()[1:].t().reshape(-1,self.size**2) # board data
         x2 = x2.reshape(-1, 1, self.size, self.size)
         return x1, x2
+
+    def get_greedy(self, env):
+        probs = self.forward(env.flat_state).data.numpy()[0]
+        while True:
+            i = np.argmax(probs)
+            move = env.all_moves[i]
+            if env.is_legal(move):
+                return move
+            else:
+                probs[i] = 0
 
     def get_move(self, env):
         legal = env.get_legal_actions()
@@ -82,14 +89,14 @@ class CNN(nn.Module):
         return new_probs, stoch_index, greedy_index
 
     def save(self, size, level):
-        torch.save(self.state_dict(), "models/{}_ANN_level_{}".format(size,level))
-        print("\nModel has been saved to models/{}_ANN_level_{}".format(size,level))
+        torch.save(self.state_dict(), "models/{}_CNN_level_{}".format(size,level))
+        print("Model has been saved to models/{}_CNN_level_{}".format(size,level))
 
     def load(self, size, level):
-        self.load_state_dict(torch.load("models/{}_ANN_level_{}".format(size,level)))
-        print("Loaded model from models/{}_ANN_level_{}".format(size,level))
+        self.load_state_dict(torch.load("models/{}_CNN_level_{}".format(size,level)))
+        print("Loaded model from models/{}_CNN_level_{}".format(size,level))
 
-    def choose_optimizer(self, params, optimizer):
+    def __choose_optimizer(self, params, optimizer):
         return {
             "Adagrad": torch.optim.Adagrad(params, lr=self.alpha),
             "SGD": torch.optim.SGD(params, lr=self.alpha),
