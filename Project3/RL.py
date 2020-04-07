@@ -51,12 +51,9 @@ class RL:
     def train_ann(self):
         training_cases = random.sample(self.buffer, min(len(self.buffer),self.batch_size))
         x_train, y_train = list(zip(*training_cases))
-        self.ANN.fit(x_train, y_train)
-        x_test, y_test = list(zip(*self.all_cases))
-        loss = self.ANN.get_loss(x_test, y_test)
-        accuracy = self.ANN.accuracy(x_test, y_test)
+        loss, acc = self.ANN.fit(x_train, y_train)
         self.losses.append(loss)
-        self.accuracies.append(accuracy)
+        self.accuracies.append(acc)
 
     def save_model(self, level):
         self.ANN.save(size=env.size, level=level)
@@ -102,6 +99,17 @@ class RL:
         plt.legend()
         plt.show()
 
+    def play_game(self):
+        self.env.reset()
+        while True:
+            _, _, index = self.ANN.get_move(self.env)
+            self.env.move(self.env.all_moves[index])
+            self.env.draw(animation_delay = 0.2)
+            winning_path = self.env.is_game_over()
+            if winning_path:
+                break
+        self.env.draw(path=winning_path)
+
     def write_db(self, filename, cases):
         inputs, targets = list(zip(*cases))
         np.savetxt(filename+'_inputs.txt', inputs)
@@ -109,8 +117,6 @@ class RL:
         print("Buffer have been written to \n{}\n{}".format(filename+'_inputs.txt', filename+'_targets.txt'))
 
     def load_db(self, filename):
-        import time
-        start = time.time()
         inputs = np.loadtxt(filename+'_inputs.txt')
         targets = np.loadtxt(filename+'_targets.txt')
         cases = list(zip(inputs, targets))
@@ -119,9 +125,9 @@ class RL:
 
 if __name__ == '__main__':
     # MCTS/RL parameters
-    board_size = 5
-    G = 250
-    M = 1000
+    board_size = 4
+    G = 30
+    M = 500
     save_interval = 50
     buffer_size = 2000
     batch_size = 1000
@@ -129,7 +135,7 @@ if __name__ == '__main__':
     # ANN parameters
     activation_functions = ["sigmoid", "tanh", "relu"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
-    alpha = 0.001  # learning rate
+    alpha = 0.005  # learning rate
     H_dims = [128, 128, 64, 64]
     io_dim = board_size ** 2  # input and output layer sizes
     activation = activation_functions[2]
@@ -143,6 +149,7 @@ if __name__ == '__main__':
 
     # Run RL algorithm and plot results
     RL.run()
+    RL.play_game()
 
     # Generate training cases
     #RL.generate_cases()

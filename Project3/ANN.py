@@ -6,9 +6,8 @@ import pdb
 from tqdm import tqdm
 
 class ANN(nn.Module):
-    def __init__(self, io_dim, H_dims, learning_rate, optimizer, activation_fn, epochs, device='cpu'):
+    def __init__(self, io_dim, H_dims, learning_rate, optimizer, activation_fn, epochs):
         super(ANN, self).__init__()
-        self.device = device
         self.alpha = learning_rate
         self.epochs = epochs
         activation_fn = self.__choose_activation_fn(activation_fn)
@@ -17,23 +16,18 @@ class ANN(nn.Module):
         self.loss_fn = torch.nn.BCELoss(reduction="mean")
         self.optimizer = self.__choose_optimizer(list(self.model.parameters()), optimizer)
 
-        if self.device == 'cuda':
-            self.net.cuda()
-
     def gen_layers(self, io_dim, H_dims, activation_fn):
-        layers = [torch.nn.Linear(2*(io_dim+1),H_dims[0])]
-        layers.append(torch.nn.Dropout(0.5))
+        layers = [torch.nn.Linear(io_dim+1,H_dims[0])]
         layers.append(activation_fn) if activation_fn != None else None
         for i in range(len(H_dims)-1):
             layers.append(torch.nn.Linear(H_dims[i], H_dims[i+1]))
-            layers.append(torch.nn.Dropout(0.5))
             layers.append(activation_fn) if activation_fn != None else None
         layers.append(torch.nn.Linear(H_dims[-1],io_dim))
         layers.append(torch.nn.Softmax(dim=-1))
         return layers
 
     def transform(self, data):
-        return torch.FloatTensor(data).to(self.device)
+        return torch.FloatTensor(data)
 
     def fit(self, input, target):
         x = self.transform(input)
@@ -44,24 +38,8 @@ class ANN(nn.Module):
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
-
-    def get_loss(self, input, target):
-        x = self.transform(input)
-        y = self.transform(target)
-        pred_y = self.forward(x)
-        loss = self.loss_fn(pred_y, y).data.numpy()
-        return loss
-
-    def accuracy(self, input, target, debug = False):
-        x = self.transform(input)
-        y = self.transform(target)
-        pred_y = self.forward(x)
-        pred_indices = torch.argmax(pred_y, 1)
-        target_indices = torch.argmax(y, 1)
-        eq_sum = torch.sum(torch.eq(pred_indices, target_indices))
-        accuracy = float((eq_sum/float(len(pred_indices))).data.numpy())
-        if debug: pdb.set_trace()
-        return accuracy
+        acc = pred_y.argmax(dim=1).eq(y.argmax(dim=1)).sum().numpy()/len(y)
+        return loss.item(), acc 
 
     def forward(self, x):
         with torch.no_grad():
@@ -87,11 +65,11 @@ class ANN(nn.Module):
         return new_probs, stoch_index, greedy_index
 
     def save(self, size, level):
-        torch.save(self.model, "models/{}_ANN_level_{}".format(size,level))
+        torch.save(self.state_dict(), "models/{}_ANN_level_{}".format(size,level))
         print("\nModel has been saved to models/{}_ANN_level_{}".format(size,level))
 
     def load(self, size, level):
-        self.model = torch.load("models/{}_ANN_level_{}".format(size,level))
+        self.load_state_dict(torch.load("models/{}_ANN_level_{}".format(size,level)))
         print("Loaded model from models/{}_ANN_level_{}".format(size,level))
 
     def __choose_optimizer(self, params, optimizer):
