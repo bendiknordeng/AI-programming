@@ -18,15 +18,12 @@ class RL:
         self.M = M
         self.env = env
         self.ANN = ANN
-        self.CNN = CNN
         self.MCTS = MCTS
         self.save_interval = save_interval
         self.buffer_size = buffer_size
         self.batch_size = batch_size
-        self.losses_ANN = []
-        self.accuracies_ANN = []
-        self.losses_CNN = []
-        self.accuracies_CNN = []
+        self.losses = []
+        self.accuracies = []
         self.buffer = []
         self.all_cases = []
 
@@ -34,9 +31,7 @@ class RL:
         for i in tqdm(range(G)):
             if i % self.save_interval == 0:
                 self.ANN.save(size=env.size, level=i)
-                self.CNN.save(size=env.size, level=i)
                 ANN.epochs += 10
-                CNN.epochs += 10
             self.env.reset()
             self.MCTS.init_tree()
             while not self.env.is_game_over():
@@ -47,10 +42,8 @@ class RL:
             x_train, y_train = list(zip(*training_cases))
             x_test, y_test = list(zip(*self.all_cases))
             self.train_ann(x_train, y_train, x_test, y_test)
-            self.train_cnn(x_train, y_train, x_test, y_test)
             self.MCTS.eps *= 0.99
         self.ANN.save(size=env.size, level=i+1)
-        self.CNN.save(size=env.size, level=i+1)
         self.write_db("cases/size_{}".format(self.env.size), self.buffer)
         self.plot()
 
@@ -80,23 +73,15 @@ class RL:
     def train_ann(self, x_train, y_train, x_test, y_test):
         self.ANN.fit(x_train, y_train)
         loss, acc = self.ANN.get_status(x_test, y_test)
-        self.losses_ANN.append(loss)
-        self.accuracies_ANN.append(acc)
-
-    def train_cnn(self, x_train, y_train, x_test, y_test):
-        self.CNN.fit(x_train, y_train)
-        loss, acc = self.CNN.get_status(x_test, y_test)
-        self.losses_CNN.append(loss)
-        self.accuracies_CNN.append(acc)
+        self.losses.append(loss)
+        self.accuracies.append(acc)
 
     def plot(self):
         self.episodes = np.arange(self.G)
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
-        ax.plot(self.episodes, self.losses_ANN, color='tab:orange', label="Loss ANN")
-        ax.plot(self.episodes, self.accuracies_ANN, color='tab:blue', label="Accuracy ANN")
-        ax.plot(self.episodes, self.losses_CNN, color='tab:green', label="Loss CNN")
-        ax.plot(self.episodes, self.accuracies_CNN, color='tab:red', label="Accuracy CNN")
+        ax.plot(self.episodes, self.losses, color='tab:orange', label="Loss")
+        ax.plot(self.episodes, self.accuracies, color='tab:blue', label="Accuracy")
         plt.legend()
         plt.show()
 
@@ -141,15 +126,6 @@ class RL:
             if winning_path:
                 break
         self.env.draw(path=winning_path)
-        self.env.reset()
-        while True:
-            _, _, index = self.CNN.get_move(self.env)
-            self.env.move(self.env.all_moves[index])
-            self.env.draw(animation_delay = 0.2)
-            winning_path = self.env.is_game_over()
-            if winning_path:
-                break
-        self.env.draw(path=winning_path)
 
     def write_db(self, filename, cases):
         inputs, targets = list(zip(*cases))
@@ -166,8 +142,8 @@ class RL:
 
 if __name__ == '__main__':
     # MCTS/RL parameters
-    board_size = 5
-    G = 250
+    board_size = 4
+    G = 30
     M = 500
     save_interval = 50
     buffer_size = 1000
@@ -180,7 +156,7 @@ if __name__ == '__main__':
     H_dims = [120, 84]
     activation = activation_functions[2]
     optimizer = optimizers[3]
-    epochs = 10
+    epochs = 0
 
     ANN = ANN(board_size**2, H_dims, alpha, optimizer, activation, epochs)
     CNN = CNN(board_size, alpha, epochs, activation, optimizer)
@@ -188,10 +164,6 @@ if __name__ == '__main__':
     MCTS = MonteCarloTreeSearch(CNN, c=1., eps=1, stoch_policy=True)
     env = HexGame(board_size)
     RL = RL(G, M, env, ANN, MCTS, save_interval, buffer_size, batch_size)
-    #cases = RL.load_db('cases/size_5')
-    #x_train, y_train = list(zip(*cases))
-    #loss, acc = ANN.fit(x_train, y_train)
-    #print("Loss: {}\nAcc: {}".format(loss,acc))
 
     # Run RL algorithm and plot results
     RL.run()

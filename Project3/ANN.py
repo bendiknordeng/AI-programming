@@ -78,6 +78,7 @@ class ANN(nn.Module):
 
     def load(self, size, level):
         self.load_state_dict(torch.load("models/{}_ANN_level_{}".format(size,level)))
+        #self.model = torch.load("old/models/{}_ANN_level_{}".format(size, level))
         print("Loaded model from models/{}_ANN_level_{}".format(size,level))
 
     def __choose_optimizer(self, params, optimizer):

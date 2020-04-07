@@ -13,18 +13,17 @@ class CNN(nn.Module):
             nn.Conv2d(1,6,2),
             self.__choose_activation_fn(activation),
             nn.Conv2d(6,12,2),
-            self.__choose_activation_fn(activation)
-            )
-        self.fc = nn.Sequential(
+            self.__choose_activation_fn(activation))
+        self.linear = nn.Sequential(
             nn.Linear(12*(self.size-2)**2+1,120),
             self.__choose_activation_fn(activation),
             nn.Linear(120,84),
             self.__choose_activation_fn(activation),
             nn.Linear(84,self.size**2))
 
-        params = list(self.parameters())[1:] # ommit first relu from activation_fn
-        self.optimizer = self.choose_optimizer(params, optimizer)
-        self.policy_loss = nn.BCELoss()
+        params = list(self.parameters())
+        self.optimizer = self.__choose_optimizer(params, optimizer)
+        self.loss_fn = nn.BCELoss()
 
     def forward(self, x, training=False):
         self.train(training)
@@ -32,7 +31,7 @@ class CNN(nn.Module):
         x2 = self.conv(x2)
         x2 = x2.reshape(-1,12*(self.size-2)**2)
         x = torch.cat((x1,x2), dim=1)
-        x = self.fc(x)
+        x = self.linear(x)
         x = F.softmax(x, dim=1)
         return x
 
@@ -40,18 +39,17 @@ class CNN(nn.Module):
         y = torch.FloatTensor(y)
         for i in range(self.epochs):
             pred_y = self.forward(x, training=True)
-            policy_loss = self.policy_loss(pred_y, y)
+            loss = self.loss_fn(pred_y, y)
             self.optimizer.zero_grad()
-            policy_loss.backward()
+            loss.backward()
             self.optimizer.step()
 
     def get_status(self, input, target):
-        x = self.transform(input)
-        y = self.transform(target)
-        pred_y = self.forward(x)
+        y = torch.FloatTensor(target)
+        pred_y = self.forward(input)
         loss = self.loss_fn(pred_y, y)
         acc = pred_y.argmax(dim=1).eq(y.argmax(dim=1)).sum().numpy()/len(y)
-        return loss.item, acc
+        return loss.item(), acc
 
     def transform_input(self, x):
         x = torch.FloatTensor(x)
