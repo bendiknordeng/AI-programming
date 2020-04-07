@@ -137,12 +137,12 @@ class RL:
 
 if __name__ == '__main__':
     # MCTS/RL parameters
-    board_size = 5
-    G = 10
+    board_size = 4
+    G = 30
     M = 500
     save_interval = 50
-    buffer_size = 1000
-    batch_size = 500
+    buffer_size = 2000
+    batch_size = 1000
 
     # ANN parameters
     activation_functions = ["sigmoid", "tanh", "relu"]
@@ -151,7 +151,7 @@ if __name__ == '__main__':
     H_dims = [128, 128, 64, 64]
     activation = activation_functions[2]
     optimizer = optimizers[3]
-    epochs = 1250
+    epochs = 10
 
     #ANN = ANN(io_dim, H_dims, alpha, optimizer, activation, epochs)
     ANN = CNN(board_size, alpha, epochs, activation, optimizer)
