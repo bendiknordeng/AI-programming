@@ -32,6 +32,8 @@ class RL:
             if i % self.save_interval == 0:
                 self.ANN.save(size=env.size, level=i)
                 ANN.epochs += 10
+                if i > 1:
+                    self.plot(episode=i, save=True)
             self.env.reset()
             self.MCTS.init_tree()
             while not self.env.is_game_over():
@@ -46,7 +48,7 @@ class RL:
             self.MCTS.eps *= 0.995
         self.ANN.save(size=env.size, level=i+1)
         self.write_db("cases/size_{}".format(self.env.size), self.buffer)
-        self.plot()
+        self.plot(episode=G)
 
     def add_case(self, D):
         self.all_cases.append((env.flat_state, D))
@@ -77,14 +79,20 @@ class RL:
         self.losses.append(loss)
         self.accuracies.append(acc)
 
-    def plot(self):
-        self.episodes = np.arange(self.G)
+    def plot(self, episode, save=False):
+        self.episodes = np.arange(episode)
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
         ax.plot(self.episodes, self.losses, color='tab:orange', label="Loss")
         ax.plot(self.episodes, self.accuracies, color='tab:blue', label="Accuracy")
         plt.legend()
-        plt.show()
+        if save:
+            plt.savefig("plots/size-{}-episode-{}".format(self.env.size, episode))
+            plt.show(block=False)
+            plt.pause(0.1)
+            plt.close()
+        else:
+            plt.show()
 
     def generate_cases(self):
         cases = []
@@ -143,10 +151,10 @@ class RL:
 
 if __name__ == '__main__':
     # MCTS/RL parameters
-    board_size = 5
-    G = 500
+    board_size = 4
+    G = 10
     M = 500
-    save_interval = 50
+    save_interval = 5
     buffer_size = 2000
     batch_size = 1000
 
