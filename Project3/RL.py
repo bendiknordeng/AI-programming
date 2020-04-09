@@ -184,7 +184,7 @@ if __name__ == '__main__':
     # ANN parameters
     activation_functions = ["Sigmoid", "Tanh", "ReLU"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
-    alpha = 0.005  # learning rate
+    alpha = 0.001  # learning rate
     H_dims = [120, 84]
     activation = activation_functions[0]
     optimizer = optimizers[3]
