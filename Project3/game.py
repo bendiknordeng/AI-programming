@@ -9,6 +9,7 @@ class HexGame:
     neighbors = defaultdict(list)
     edges = defaultdict(list)
     all_moves = []
+    bridge_neighbors = defaultdict(list)
 
     def __init__(self, size, state=None, player=1):
         self.size = size
@@ -22,6 +23,7 @@ class HexGame:
             self.state = state if state else self.generate_initial_state()
         if len(self.neighbors) == 0:
             self.__generate_neighbors()
+            self.__generate_bridge_neighbors()
         self.player = player
 
     def get_state(self):
@@ -77,11 +79,30 @@ class HexGame:
                         self.neighbors[(r,c)] = [(r-1,c),(r,c-1),(r+1,c-1),(r+1,c)]
                     else:
                         self.neighbors[(r,c)] = [(r,c-1),(r-1,c),(r-1,c+1),(r,c+1),(r+1,c),(r+1,c-1)]
-
         self.edges[1].append([(0,c) for c in range(self.size)])
         self.edges[1].append([(self.size-1,c) for c in range(self.size)])
         self.edges[2].append([(r,0) for r in range(self.size)])
         self.edges[2].append([(r,self.size-1) for r in range(self.size)])
+
+    # construct 2-step neighbor matrix to find bridge endpoint neighbors
+    def __generate_bridge_neighbors(self):
+        n_mat = np.zeros(self.size**4).reshape(self.size**2,self.size**2)
+        for f in range(self.size**2):
+            for t in range(self.size**2):
+                if f != t:
+                    c_from = (f//self.size, f%self.size)
+                    c_to = (t//self.size, t%self.size)
+                    if c_to in self.neighbors[c_from]:
+                        n_mat[f][t] = 1
+        two_step_mat = np.matmul(n_mat, n_mat)
+        np.fill_diagonal(two_step_mat,0)
+        for f in range(self.size**2):
+            for t in range(self.size**2):
+                if f != t:
+                    c_from = (f//self.size, f%self.size)
+                    c_to = (t//self.size, t%self.size)
+                    if two_step_mat[f][t] == 2 and c_to not in self.neighbors[c_from]:
+                        self.bridge_neighbors[c_from].append(c_to)
 
     def result(self):
         if self.is_game_over():
@@ -203,14 +224,11 @@ class HexGame:
         return "Player {} put a piece on {}".format(self.player, action)
 
 if __name__ == "__main__":
-    game = HexGame(5)
-    #reds = [(0, 2), (1, 1), (1, 2), (2, 1), (3, 1)]
-    #blacks = []
-    #for cell in reds:
-    #    game.state[cell] = 1
-    #for cell in blacks:
-    #    game.state[cell] = 2
+    game = HexGame(4)
+    reds = [(1, 2)]
+    blacks = []
+    for cell in reds:
+        game.state[cell] = 1
+    for cell in blacks:
+        game.state[cell] = 2
     game.draw()
-    game.player = 2
-    path = game.is_game_over()
-    game.draw(path)
