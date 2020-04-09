@@ -11,9 +11,9 @@ class CNN(nn.Module):
         self.epochs = epochs
         self.conv = nn.Sequential(
             nn.Conv2d(1,6,2),
-            self.__choose_activation_fn(activation),
+            nn.ReLU(),
             nn.Conv2d(6,12,2),
-            self.__choose_activation_fn(activation))
+            nn.ReLU())
         self.linear = nn.Sequential(
             nn.Linear(12*(self.size-2)**2+1,120),
             self.__choose_activation_fn(activation),
@@ -32,8 +32,7 @@ class CNN(nn.Module):
         x2 = x2.reshape(-1,12*(self.size-2)**2)
         x = torch.cat((x1,x2), dim=1)
         x = self.linear(x)
-        x = F.softmax(x, dim=1)
-        return x
+        return F.softmax(x, dim=1)
 
     def fit(self, x, y):
         y = torch.FloatTensor(y)
@@ -43,6 +42,8 @@ class CNN(nn.Module):
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
+        acc = pred_y.argmax(dim=1).eq(y.argmax(dim=1)).sum().numpy()/len(y)
+        return loss.item(), acc
 
     def get_status(self, input, target):
         y = torch.FloatTensor(target)
@@ -57,16 +58,6 @@ class CNN(nn.Module):
         x2 = x.t()[1:].t().reshape(-1,self.size**2) # board data
         x2 = x2.reshape(-1, 1, self.size, self.size)
         return x1, x2
-
-    def get_greedy(self, env):
-        probs = self.forward(env.flat_state).data.numpy()[0]
-        while True:
-            i = np.argmax(probs)
-            move = env.all_moves[i]
-            if env.is_legal(move):
-                return move
-            else:
-                probs[i] = 0
 
     def get_move(self, env):
         legal = env.get_legal_actions()
@@ -98,13 +89,13 @@ class CNN(nn.Module):
         return {
             "Adagrad": torch.optim.Adagrad(params, lr=self.alpha),
             "SGD": torch.optim.SGD(params, lr=self.alpha),
-            "RMSProp": torch.optim.RMSprop(params, lr=self.alpha),
+            "RMSprop": torch.optim.RMSprop(params, lr=self.alpha),
             "Adam": torch.optim.Adam(params, lr=self.alpha)
         }[optimizer]
 
     def __choose_activation_fn(self, activation_fn):
         return {
-            "relu": torch.nn.ReLU(),
-            "tanh": torch.nn.Tanh(),
-            "sigmoid": torch.nn.Sigmoid(),
+            "ReLU": nn.ReLU(),
+            "Tanh": nn.Tanh(),
+            "Sigmoid": nn.Sigmoid(),
         }[activation_fn]

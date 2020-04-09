@@ -84,7 +84,7 @@ class HexGame:
         self.edges[2].append([(r,self.size-1) for r in range(self.size)])
 
     def result(self):
-        if self.is_game_over()[0]:
+        if self.is_game_over():
             return 1 if 3-self.player == 1 else -1
 
     def is_game_over(self):

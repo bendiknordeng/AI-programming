@@ -91,8 +91,7 @@ class ANN(nn.Module):
 
     def __choose_activation_fn(self, activation_fn):
         return {
-            "relu": torch.nn.ReLU(),
-            "tanh": torch.nn.Tanh(),
-            "sigmoid": torch.nn.Sigmoid(),
-            "linear": None
+            "ReLU": nn.ReLU(),
+            "Tanh": nn.Tanh(),
+            "Sigmoid": nn.Sigmoid(),
         }[activation_fn]
