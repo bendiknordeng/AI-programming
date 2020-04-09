@@ -1,0 +1,19 @@
+Input/targets run through CNN, 500 epochs, alpha = 0.005
+
+Sigmoid:
+  Adagrad - Loss: 0.159, Accuracy: 0.161
+  SGD - Loss: 0.169, Accuracy: 0.015
+  RMSprop - Loss: 0.139, Accuracy: 0.422
+  Adam - Loss: 0.128, Accuracy: 0.581
+
+Tanh:
+  Adagrad - Loss: 0.144, Accuracy: 0.375
+  SGD - Loss: 0.167, Accuracy: 0.060
+  RMSprop - Loss: 0.133, Accuracy: 0.505
+  Adam - 0.128, Accuracy: 0.557
+
+ReLU:
+  Adagrad - Loss: 0.148, Accuracy: 0.316
+  SGD - Loss: 0.168, Accuracy: 0.052
+  RMSprop - Loss: 0.134, Accuracy: 0.484
+  Adam - Loss: 0.133, Accuracy: 0.488

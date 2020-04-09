@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import numpy as np
 
 class CNN(nn.Module):
-    def __init__(self, size, alpha=0.01, epochs=10, activation='relu', optimizer='Adam'):
+    def __init__(self, size, alpha=0.01, epochs=10, activation='ReLU', optimizer='Adam'):
         super(CNN, self).__init__()
         self.size = size
         self.alpha = alpha
@@ -14,12 +14,13 @@ class CNN(nn.Module):
             nn.ReLU(),
             nn.Conv2d(6,12,2),
             nn.ReLU())
-        self.linear = nn.Sequential(
+        self.policy = nn.Sequential(
             nn.Linear(12*(self.size-2)**2+1,120),
             self.__choose_activation_fn(activation),
             nn.Linear(120,84),
             self.__choose_activation_fn(activation),
-            nn.Linear(84,self.size**2))
+            nn.Linear(84,self.size**2),
+            nn.Softmax(dim=1))
 
         params = list(self.parameters())
         self.optimizer = self.__choose_optimizer(params, optimizer)
@@ -31,8 +32,7 @@ class CNN(nn.Module):
         x2 = self.conv(x2)
         x2 = x2.reshape(-1,12*(self.size-2)**2)
         x = torch.cat((x1,x2), dim=1)
-        x = self.linear(x)
-        return F.softmax(x, dim=1)
+        return self.policy(x)
 
     def fit(self, x, y):
         y = torch.FloatTensor(y)

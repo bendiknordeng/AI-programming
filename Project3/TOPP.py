@@ -3,6 +3,7 @@ import random
 
 import numpy as np
 from ANN import ANN
+from CNN import CNN
 from game import HexGame
 
 
@@ -52,18 +53,18 @@ class TOPP:
 if __name__ == '__main__':
     board_size = 5
 
-    activation_functions = ["linear", "sigmoid", "tanh", "relu"]
+    activation_functions = ["Sigmoid", "Tanh", "ReLU"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
     alpha = 0.001  # learning rate
     H_dims = [math.floor(2*(1+board_size**2)/3)+board_size**2] * 3
     io_dim = board_size * board_size  # input and output layer sizes
-    activation = activation_functions[3]
+    activation = activation_functions[0]
     optimizer = optimizers[3]
     epochs = 10
 
     num_games = 100
     bottom_level = 0
-    top_level = 250
+    top_level = 200
     interval = 50
 
     l = np.arange(bottom_level, top_level+1, interval)
@@ -73,10 +74,10 @@ if __name__ == '__main__':
 
 
     for i in range(0,len(models),2):
-        ann = ANN(io_dim, H_dims, alpha, optimizer, activation, epochs)
+        ann = CNN(board_size)
         ann.load(board_size, models[i])
         players1[models[i]] = ann
-        ann = ANN(io_dim, H_dims, alpha, optimizer, activation, epochs)
+        ann = CNN(board_size)
         ann.load(board_size, models[i+1])
         players2[models[i+1]] = ann
     tournament = TOPP(players1, players2, board_size, num_games)
