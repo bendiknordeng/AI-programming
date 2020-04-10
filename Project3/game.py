@@ -44,7 +44,7 @@ class HexGame:
         #flat_state = [self.player == 1, self.player == 2]
         #for cell in self.state.values():
         #    flat_state += [cell == 1, cell == 2]
-        return np.asarray(flat_state, dtype = np.float64)
+        return np.array(flat_state)
 
     def generate_initial_state(self):
         state = {}
