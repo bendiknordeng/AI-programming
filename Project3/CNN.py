@@ -2,37 +2,33 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+from game import HexGame
 
 class CNN(nn.Module):
     def __init__(self, size, alpha=0.01, epochs=10, activation='ReLU', optimizer='Adam'):
         super(CNN, self).__init__()
+        self.env = HexGame(size)
         self.size = size
         self.alpha = alpha
         self.epochs = epochs
-        self.conv = nn.Sequential(
-            nn.Conv2d(1,6,2),
+        self.model = nn.Sequential(
+            nn.ZeroPad2d(2),
+            nn.Conv2d(8,32,3),
             nn.ReLU(),
-            nn.Conv2d(6,12,2),
-            nn.ReLU())
-        self.policy = nn.Sequential(
-            nn.Linear(12*(self.size-2)**2+1,120),
-            self.__choose_activation_fn(activation),
-            nn.Linear(120,84),
-            self.__choose_activation_fn(activation),
-            nn.Linear(84,self.size**2),
+            nn.Conv2d(32,32,2),
+            nn.ReLU(),
+            nn.Conv2d(32,1,2),
+            nn.ReLU(),
+            nn.Conv2d(1,1,1),
             nn.Softmax(dim=1))
-
         params = list(self.parameters())
         self.optimizer = self.__choose_optimizer(params, optimizer)
         self.loss_fn = nn.BCELoss()
 
     def forward(self, x, training=False):
         self.train(training)
-        x1, x2 = self.transform_input(x)
-        x2 = self.conv(x2)
-        x2 = x2.reshape(-1,12*(self.size-2)**2)
-        x = torch.cat((x1,x2), dim=1)
-        return self.policy(x)
+        x = self.transform_input(x)
+        return self.model(x)
 
     def fit(self, x, y):
         y = torch.FloatTensor(y)
@@ -53,11 +49,34 @@ class CNN(nn.Module):
         return loss.item(), acc
 
     def transform_input(self, x):
-        x = torch.FloatTensor(x)
-        x1 = x.t()[0].reshape(-1,1) # player data
-        x2 = x.t()[1:].t().reshape(-1,self.size**2) # board data
-        x2 = x2.reshape(-1, 1, self.size, self.size)
-        return x1, x2
+        '''
+        Transforms flat game state into 9 input planes (size, size):
+        - Empty/p1/p2       0/1/2   (empty/red/black)
+        - To play           3/4     (p1/p2 to play)
+        - P1 bridge         5       (red bridge endpoints)
+        - P2 bridge         6       (black bridge endpoints)
+        - To play bridge    7       (active if cell is a form bridge)
+        - To play bridge    8       (active if cell is a save bridge) # TODO
+        '''
+        player = x[0]
+        x = x[1:].reshape(self.size, self.size)
+        planes = np.zeros(8*self.size**2).reshape(8,self.size,self.size)
+        planes[player+2] += 1
+        for r in range(self.size):
+            for c in range(self.size):
+                piece = x[r][c]
+                planes[piece][r][c] = 1
+                if (r, c) in self.env.bridge_neighbors:
+                    for (rb, cb) in self.env.bridge_neighbors[(r,c)]:
+                        if piece == 0:
+                            if x[rb][cb] == player:
+                                planes[7][r][c] = 1
+                        else:
+                            if x[rb][cb] == piece:
+                                planes[piece+4][r][c] = 1
+        planes = torch.FloatTensor(planes)
+        import pdb; pdb.set_trace()
+        return planes
 
     def get_move(self, env):
         legal = env.get_legal_actions()
@@ -99,3 +118,15 @@ class CNN(nn.Module):
             "Tanh": nn.Tanh(),
             "Sigmoid": nn.Sigmoid(),
         }[activation_fn]
+
+if __name__ == '__main__':
+    from game import HexGame
+    env = HexGame(4)
+    reds = [(1, 2),(1,1),(2,2),(3,0)]
+    blacks = [(3,3),(0,0),(1,3),(0,2)]
+    for cell in reds:
+        env.state[cell] = 1
+    for cell in blacks:
+        env.state[cell] = 2
+    CNN = CNN(4)
+    CNN.transform_input(env.flat_state)
