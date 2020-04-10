@@ -6,15 +6,13 @@
     - white bridge 4 (white bridge endpoints)
     - to play 5/6 (red/black to play)
     - to play bridge 7 (active if cell is a save bridge)
-    - to play bridge 8 (active if cell is a form bridge)
+    - to play bridge 8 (active if cell is a form bridge) # TODO
 - Restructure convolutional net (AlphaGo). No pooling layers to preserve information
     - Input, shape (size * size * input planes)
     - (5 x 5, n_filters) Convolution with bias, followed by ReLU
     - d − 1 repetition of (3 × 3, n_filters) Convolution with bias, followed by ReLU
     - (1 × 1, 1) Convolution with position bias
     - Softmax
-DONE
-
 - The Hex board is symmetric under 180 degree rotation. Therefore,
   for each training example, add a rotated symmetric
   position randomly selected to train with probability 0.5.
@@ -23,5 +21,5 @@ DONE
     - Explore negative log likelihood loss and KL divergence (use batchmean)
 - Expand tree-policy with c_pb × ρ(s, a) / sqrt(N(s, a) + 1)
     - ρ(s, a) is model prediction from NN
-- A leaf node is expanded only when its visit count exceeds a
+- A leaf node is expanded only when its visit count exceeds an
   expansion threshold, which is set to 10 in MoHex 2.0.

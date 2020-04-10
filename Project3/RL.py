@@ -29,7 +29,6 @@ class RL:
         self.test_accuracies = []
         self.train_losses = []
         self.train_accuracies = []
-        self.buffer = []
         self.all_cases = []
 
     def run(self, live_plot=False):
@@ -50,11 +49,19 @@ class RL:
             self.MCTS.eps *= self.eps_decay
         self.ANN.save(size=env.size, level=i+1)
         self.plot(episode=i+1, save=True)
-        self.write_db("cases/size_{}".format(self.env.size), self.buffer)
+        self.write_db("cases/size_{}".format(self.env.size), self.all_cases)
 
     def add_case(self, D):
-        self.all_cases.append((env.flat_state, D))
-        self.buffer.append((env.flat_state, D))
+        state = self.env.flat_state
+        size = self.env.size
+        self.all_cases.append((state, D))
+        if random.random() > 0.5:
+            player = state[0]
+            state = state[1:].reshape(size, size)
+            rot_state = np.rot90(state,k=2,axes=(0,1))
+            probs = D.reshape(size, size)
+            rot_D = np.rot90(probs, k=2, axes=(0,1))
+            self.all_cases.append((np.asarray([player] + list(rot_state.reshape(size**2))), rot_D.reshape(size**2)))
 
     def get_win_rate(self, p1, p2): # get win-rate for p1 in games vs p2
         game = HexGame(self.env.size)
@@ -76,7 +83,6 @@ class RL:
     def train_ann(self):
         self.batch_size = math.ceil(len(self.all_cases)/2)
         training_cases = random.sample(self.all_cases, self.batch_size)
-        #training_cases = random.sample(self.buffer, min(self.batch_size, len(self.buffer)))
         x_train, y_train = list(zip(*training_cases))
         x_test, y_test = list(zip(*self.all_cases))
         train_loss, train_acc = self.ANN.fit(x_train, y_train)
@@ -177,7 +183,7 @@ class RL:
 if __name__ == '__main__':
     # MCTS/RL parameters
     board_size = 5
-    G = 200
+    G = 250
     M = 500
     save_interval = 50
 
@@ -188,7 +194,7 @@ if __name__ == '__main__':
     H_dims = [120, 84]
     activation = activation_functions[0]
     optimizer = optimizers[3]
-    epochs = 0
+    epochs = 40
 
     ANN = ANN(board_size**2, H_dims, alpha, optimizer, activation, epochs)
     CNN = CNN(board_size, alpha, epochs, activation, optimizer)
@@ -201,7 +207,7 @@ if __name__ == '__main__':
     #RL.model_fitness()
 
     # Run RL algorithm and plot results
-    RL.run(live_plot=False)
+    RL.run(live_plot=True)
     RL.play_game()
 
     # Generate training cases
