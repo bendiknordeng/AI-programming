@@ -41,7 +41,7 @@ class TOPP:
         while not self.env.is_game_over():
             moves += 1
             _, stoch_index, greedy_index = ann1.get_move(self.env) if self.env.player == 1 else ann2.get_move(self.env)
-            self.env.move(self.env.all_moves[stoch_index if random.random() > 0.5 else greedy_index])
+            self.env.move(self.env.all_moves[stoch_index if random.random() > 0 else greedy_index])
             if display: self.env.draw(animation_delay=0.2)
         p1_won = True if self.env.result() == 1 else False
         if display:
@@ -64,7 +64,7 @@ if __name__ == '__main__':
 
     num_games = 100
     bottom_level = 0
-    top_level = 200
+    top_level = 250
     interval = 50
 
     l = np.arange(bottom_level, top_level+1, interval)

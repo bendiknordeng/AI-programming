@@ -14,7 +14,7 @@ class CNN(nn.Module):
         self.epochs = epochs
         self.conv = nn.Sequential(
             nn.ZeroPad2d(2),
-            nn.Conv2d(8,32,3),
+            nn.Conv2d(9,32,3),
             nn.ReLU(),
             nn.Conv2d(32,32,2),
             nn.ReLU(),
@@ -58,26 +58,33 @@ class CNN(nn.Module):
         - P1 bridge         5       (red bridge endpoints)
         - P2 bridge         6       (black bridge endpoints)
         - To play bridge    7       (active if cell is a form bridge)
-        - To play bridge    8       (active if cell is a save bridge) # TODO
+        - To play bridge    8       (active if cell is a save bridge)
         '''
         out = []
         for x in input:
             player = x[0]
             x = x[1:].reshape(self.size, self.size)
-            planes = np.zeros(8*self.size**2).reshape(8,self.size,self.size)
-            planes[player+2] += 1
+            planes = np.zeros(9*self.size**2).reshape(9,self.size,self.size)
+            planes[player+2] += 1 # plane 3/4
             for r in range(self.size):
                 for c in range(self.size):
                     piece = x[r][c]
-                    planes[piece][r][c] = 1
+                    planes[piece][r][c] = 1 # plane 0-2
                     if (r, c) in self.env.bridge_neighbors:
                         for (rb, cb) in self.env.bridge_neighbors[(r,c)]:
                             if piece == 0:
                                 if x[rb][cb] == player:
-                                    planes[7][r][c] = 1
+                                    planes[7][r][c] = 1 # 7: form bridge
                             else:
                                 if x[rb][cb] == piece:
-                                    planes[piece+4][r][c] = 1
+                                    planes[piece+4][r][c] = 1 # 5/6: bridge endpoints
+                                    cn = list(set(self.env.neighbors[(r,c)]).intersection(set(self.env.neighbors[(rb,cb)]))) # common neighbors
+                                    r1, c1 = cn[0]
+                                    r2, c2 = cn[1]
+                                    if x[r1][c1] == 0 and x[r2][c2] == 3-player:
+                                        planes[8][r1][c1] = 1
+                                    elif x[r2][c2] == 0 and x[r1][c1] == 3-player:
+                                        planes[8][r2][c2] = 1
             out.append(planes)
         return torch.FloatTensor(out)
 
@@ -125,8 +132,8 @@ class CNN(nn.Module):
 if __name__ == '__main__':
     from game import HexGame
     env = HexGame(4)
-    reds = [(1, 2),(1,1),(2,2),(3,0)]
-    blacks = [(3,3),(0,0),(1,3),(0,2)]
+    reds = [(1, 2),(0,1),(2,2),(3,0)]
+    blacks = [(3,3),(0,0),(1,3),(0,2),(3,1)]
     for cell in reds:
         env.state[cell] = 1
     for cell in blacks:

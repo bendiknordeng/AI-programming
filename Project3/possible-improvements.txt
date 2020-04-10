@@ -5,8 +5,8 @@
     - black bridge 3 (black bridge endpoints)
     - white bridge 4 (white bridge endpoints)
     - to play 5/6 (red/black to play)
-    - to play bridge 7 (active if cell is a save bridge)
-    - to play bridge 8 (active if cell is a form bridge) # TODO
+    - to play bridge 7 (active if cell is a form bridge)
+    - to play bridge 8 (active if cell is a save bridge)
 - Restructure convolutional net (AlphaGo). No pooling layers to preserve information
     - Input, shape (size * size * input planes)
     - (5 x 5, n_filters) Convolution with bias, followed by ReLU
@@ -16,6 +16,9 @@
 - The Hex board is symmetric under 180 degree rotation. Therefore,
   for each training example, add a rotated symmetric
   position randomly selected to train with probability 0.5.
+
+DONE
+
 - L(θ; D) = − Sum: log p_θ(a|s)
             (s,a)∈D
     - Explore negative log likelihood loss and KL divergence (use batchmean)
