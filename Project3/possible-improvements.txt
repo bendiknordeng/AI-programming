@@ -13,6 +13,8 @@
     - d − 1 repetition of (3 × 3, n_filters) Convolution with bias, followed by ReLU
     - (1 × 1, 1) Convolution with position bias
     - Softmax
+DONE
+
 - The Hex board is symmetric under 180 degree rotation. Therefore,
   for each training example, add a rotated symmetric
   position randomly selected to train with probability 0.5.

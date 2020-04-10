@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+from tqdm import tqdm
 from game import HexGame
 
 class CNN(nn.Module):
@@ -11,17 +12,14 @@ class CNN(nn.Module):
         self.size = size
         self.alpha = alpha
         self.epochs = epochs
-        self.conv1 = nn.Sequential(
+        self.conv = nn.Sequential(
             nn.ZeroPad2d(2),
             nn.Conv2d(8,32,3),
-            nn.ReLU())
-        self.conv2 = nn.Sequential(
+            nn.ReLU(),
             nn.Conv2d(32,32,2),
-            nn.ReLU())
-        self.conv3 = nn.Sequential(
+            nn.ReLU(),
             nn.Conv2d(32,1,2),
-            nn.ReLU())
-        self.conv4 = nn.Sequential(
+            nn.ReLU(),
             nn.Conv2d(1,1,1))
         params = list(self.parameters())
         self.optimizer = self.__choose_optimizer(params, optimizer)
@@ -30,10 +28,7 @@ class CNN(nn.Module):
     def forward(self, x, training=False):
         self.train(training)
         x = self.transform_input(x)
-        x = self.conv1(x)
-        x = self.conv2(x)
-        x = self.conv3(x)
-        x = self.conv4(x)
+        x = self.conv(x)
         x = x.reshape(-1,self.size**2)
         return F.softmax(x, dim=1)
 

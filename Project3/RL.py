@@ -171,15 +171,15 @@ class RL:
     def load_db(self, filename):
         inputs = np.loadtxt(filename+'_inputs.txt')
         targets = np.loadtxt(filename+'_targets.txt')
-        return inputs, targets
+        return inputs.astype(int), targets
 
 
 if __name__ == '__main__':
     # MCTS/RL parameters
-    board_size = 4
-    G = 10
+    board_size = 5
+    G = 200
     M = 500
-    save_interval = 5
+    save_interval = 50
 
     # ANN parameters
     activation_functions = ["Sigmoid", "Tanh", "ReLU"]
