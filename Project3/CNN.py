@@ -11,16 +11,18 @@ class CNN(nn.Module):
         self.size = size
         self.alpha = alpha
         self.epochs = epochs
-        self.model = nn.Sequential(
+        self.conv1 = nn.Sequential(
             nn.ZeroPad2d(2),
             nn.Conv2d(8,32,3),
-            nn.ReLU(),
+            nn.ReLU())
+        self.conv2 = nn.Sequential(
             nn.Conv2d(32,32,2),
-            nn.ReLU(),
+            nn.ReLU())
+        self.conv3 = nn.Sequential(
             nn.Conv2d(32,1,2),
-            nn.ReLU(),
-            nn.Conv2d(1,1,1),
-            nn.Softmax(dim=1))
+            nn.ReLU())
+        self.conv4 = nn.Sequential(
+            nn.Conv2d(1,1,1))
         params = list(self.parameters())
         self.optimizer = self.__choose_optimizer(params, optimizer)
         self.loss_fn = nn.BCELoss()
@@ -28,7 +30,12 @@ class CNN(nn.Module):
     def forward(self, x, training=False):
         self.train(training)
         x = self.transform_input(x)
-        return self.model(x)
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        x = self.conv4(x)
+        x = x.reshape(-1,self.size**2)
+        return F.softmax(x, dim=1)
 
     def fit(self, x, y):
         y = torch.FloatTensor(y)
@@ -48,7 +55,7 @@ class CNN(nn.Module):
         acc = pred_y.argmax(dim=1).eq(y.argmax(dim=1)).sum().numpy()/len(y)
         return loss.item(), acc
 
-    def transform_input(self, x):
+    def transform_input(self, input):
         '''
         Transforms flat game state into 9 input planes (size, size):
         - Empty/p1/p2       0/1/2   (empty/red/black)
@@ -58,30 +65,31 @@ class CNN(nn.Module):
         - To play bridge    7       (active if cell is a form bridge)
         - To play bridge    8       (active if cell is a save bridge) # TODO
         '''
-        player = x[0]
-        x = x[1:].reshape(self.size, self.size)
-        planes = np.zeros(8*self.size**2).reshape(8,self.size,self.size)
-        planes[player+2] += 1
-        for r in range(self.size):
-            for c in range(self.size):
-                piece = x[r][c]
-                planes[piece][r][c] = 1
-                if (r, c) in self.env.bridge_neighbors:
-                    for (rb, cb) in self.env.bridge_neighbors[(r,c)]:
-                        if piece == 0:
-                            if x[rb][cb] == player:
-                                planes[7][r][c] = 1
-                        else:
-                            if x[rb][cb] == piece:
-                                planes[piece+4][r][c] = 1
-        planes = torch.FloatTensor(planes)
-        import pdb; pdb.set_trace()
-        return planes
+        out = []
+        for x in input:
+            player = x[0]
+            x = x[1:].reshape(self.size, self.size)
+            planes = np.zeros(8*self.size**2).reshape(8,self.size,self.size)
+            planes[player+2] += 1
+            for r in range(self.size):
+                for c in range(self.size):
+                    piece = x[r][c]
+                    planes[piece][r][c] = 1
+                    if (r, c) in self.env.bridge_neighbors:
+                        for (rb, cb) in self.env.bridge_neighbors[(r,c)]:
+                            if piece == 0:
+                                if x[rb][cb] == player:
+                                    planes[7][r][c] = 1
+                            else:
+                                if x[rb][cb] == piece:
+                                    planes[piece+4][r][c] = 1
+            out.append(planes)
+        return torch.FloatTensor(out)
 
     def get_move(self, env):
         legal = env.get_legal_actions()
         factor = [1 if move in legal else 0 for move in env.all_moves]
-        probs = self.forward(env.flat_state).data.numpy()[0]
+        probs = self.forward([env.flat_state]).data.numpy()[0]
         sum = 0
         new_probs = np.zeros(env.size ** 2)
         for i in range(env.size ** 2):
@@ -129,4 +137,5 @@ if __name__ == '__main__':
     for cell in blacks:
         env.state[cell] = 2
     CNN = CNN(4)
-    CNN.transform_input(env.flat_state)
+    CNN.forward(env.flat_state.reshape(1,-1))
+    import pdb; pdb.set_trace()

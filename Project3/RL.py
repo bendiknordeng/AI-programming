@@ -176,10 +176,10 @@ class RL:
 
 if __name__ == '__main__':
     # MCTS/RL parameters
-    board_size = 5
-    G = 250
-    M = 2000
-    save_interval = 50
+    board_size = 4
+    G = 10
+    M = 500
+    save_interval = 5
 
     # ANN parameters
     activation_functions = ["Sigmoid", "Tanh", "ReLU"]
@@ -188,7 +188,7 @@ if __name__ == '__main__':
     H_dims = [120, 84]
     activation = activation_functions[0]
     optimizer = optimizers[3]
-    epochs = 50
+    epochs = 0
 
     ANN = ANN(board_size**2, H_dims, alpha, optimizer, activation, epochs)
     CNN = CNN(board_size, alpha, epochs, activation, optimizer)
@@ -201,7 +201,7 @@ if __name__ == '__main__':
     #RL.model_fitness()
 
     # Run RL algorithm and plot results
-    RL.run(live_plot=True)
+    RL.run(live_plot=False)
     RL.play_game()
 
     # Generate training cases
