@@ -43,7 +43,7 @@ def play(mcts, sim, ann, env, top_moves):
 
 if __name__ == '__main__':
     board_size = 5
-    level = 200
+    level = 250
 
     activation_functions = ["linear", "sigmoid", "tanh", "relu"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]

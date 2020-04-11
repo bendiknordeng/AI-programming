@@ -62,9 +62,9 @@ if __name__ == '__main__':
     optimizer = optimizers[3]
     epochs = 10
 
-    num_games = 100
+    num_games = 50
     bottom_level = 0
-    top_level = 250
+    top_level = 300
     interval = 50
 
     l = np.arange(bottom_level, top_level+1, interval)

@@ -23,31 +23,31 @@ class CNN(nn.Module):
             nn.Conv2d(1,1,1))
         params = list(self.parameters())
         self.optimizer = self.__choose_optimizer(params, optimizer)
-        self.nll_loss = nn.NLLLoss(reduction='sum')
-        self.kl_div_loss = nn.KLDivLoss(reduction='batchmean')
-        self.bce_loss = nn.BCELoss()
+        self.loss_fn = nn.NLLLoss(reduction='sum')
 
-    def forward(self, x, training=False):
-        self.train(training)
+    def forward(self, x):
+        self.eval()
         x = self.transform_input(x)
         x = self.conv(x)
         x = x.reshape(-1,self.size**2)
         return F.softmax(x, dim=1)
 
+    def log_prob(self, x):
+        x = self.transform_input(x)
+        x = self.conv(x)
+        x = x.reshape(-1,self.size**2)
+        return F.log_softmax(x, dim=1)
+
     def fit(self, x, y):
         y = torch.FloatTensor(y)
         for i in range(self.epochs):
-            pred_y = self.forward(x, training=True)
-            log_prob = torch.log(pred_y)
-            kld_loss = self.kl_div_loss(log_prob, y)
-            nll_loss = self.nll_loss(log_prob, y.argmax(dim=1))
-            bce_loss = self.bce_loss(pred_y, y)
-            loss = nll_loss
+            pred_y = self.log_prob(x)
+            loss = self.loss_fn(pred_y, y.argmax(dim=1))
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
         acc = pred_y.argmax(dim=1).eq(y.argmax(dim=1)).sum().numpy()/len(y)
-        return bce_loss, kld_loss, nll_loss, acc
+        return loss.item(), acc
 
     def get_status(self, input, target):
         y = torch.FloatTensor(target)

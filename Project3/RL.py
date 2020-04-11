@@ -26,11 +26,7 @@ class RL:
         self.save_interval = save_interval
         self.batch_size = batch_size
         self.buffer_size = buffer_size
-        #self.test_losses = []
-        #self.test_accuracies = []
-        self.nll_losses = []
-        self.kld_losses = []
-        self.bce_losses = []
+        self.losses = []
         self.accuracies = []
         self.buffer = []
 
@@ -40,7 +36,6 @@ class RL:
                 self.plot(episode=i)
             if i % self.save_interval == 0:
                 self.ANN.save(size=env.size, level=i)
-                #self.ANN.epochs += 10
                 self.plot(episode=i, save=True)
             self.env.reset()
             self.MCTS.init_tree()
@@ -52,7 +47,6 @@ class RL:
             self.MCTS.eps *= self.eps_decay
         self.ANN.save(size=env.size, level=i+1)
         self.plot(episode=i+1, save=True)
-        #self.write_db("cases/size_{}".format(self.env.size), self.all_cases)
 
     def add_case(self, D):
         state = self.env.flat_state
@@ -68,35 +62,12 @@ class RL:
             self.buffer.append((np.asarray([player] + list(rot_state.reshape(size**2))), rot_D.reshape(size**2)))
             if len(self.buffer) > self.buffer_size: self.buffer.pop(0)
 
-    def get_win_rate(self, p1, p2): # get win-rate for p1 in games vs p2
-        game = HexGame(self.env.size)
-        wins = np.zeros(100)
-        for i in range(100):
-            p1_starts = bool(i%2)
-            game.reset()
-            move = p1.get_greedy(game) if p1_starts else p2.get_greedy(game)
-            game.move(move)
-            turn = not p1_starts
-            while not game.is_game_over():
-                move = p1.get_greedy(game) if turn else p2.get_greedy(game)
-                game.move(move)
-                turn = not turn
-            if (p1_starts and game.result() == 1) or (not p1_starts and game.result() == -1):
-                wins[i] = 1
-        return sum(wins)/100
-
     def train_ann(self):
         batch_size = min(self.batch_size,len(self.buffer))
         training_cases = random.sample(self.buffer, batch_size)
         x_train, y_train = list(zip(*training_cases))
-        #x_test, y_test = list(zip(*self.all_cases))
-        bce_loss, kld_loss, nll_loss, acc = self.ANN.fit(x_train, y_train)
-        #test_loss, test_acc = self.ANN.get_status(x_test, y_test)
-        #self.test_losses.append(test_loss)
-        #self.test_accuracies.append(test_acc)
-        self.bce_losses.append(bce_loss)
-        self.kld_losses.append(kld_loss)
-        self.nll_losses.append(nll_loss)
+        loss, acc = self.ANN.fit(x_train, y_train)
+        self.losses.append(loss)
         self.accuracies.append(acc)
 
     def plot(self, episode, save=False):
@@ -109,14 +80,13 @@ class RL:
         ax = fig.add_subplot(gs[0,0])
         ax.set_title("Accuracy")
         ax.plot(self.episodes, self.accuracies, color='tab:green', label="Batch")
-        #ax.plot(self.episodes, self.test_accuracies, color='tab:blue', label="All cases")
+        plt.grid()
         plt.legend()
         ax = fig.add_subplot(gs[0,1])
         ax.set_title("Loss")
-        #ax.plot(self.episodes, self.bce_losses, color='tab:red', label="Binary cross entropy")
-        #ax.plot(self.episodes, self.kld_losses, color='tab:blue', label="KL divergence")
-        ax.plot(self.episodes, self.nll_losses, color='tab:purple', label="Negative log likelihood")
+        ax.plot(self.episodes, self.losses, color='tab:red', label="Negative log likelihood")
         plt.legend()
+        plt.grid()
         if save:
             plt.savefig("plots/size-{}".format(self.env.size))
             plt.close()

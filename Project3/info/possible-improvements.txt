@@ -12,7 +12,6 @@
     - (5 x 5, n_filters) Convolution with bias, followed by ReLU
     - d − 1 repetition of (3 × 3, n_filters) Convolution with bias, followed by ReLU
     - (1 × 1, 1) Convolution with position bias
-    - Softmax
 - The Hex board is symmetric under 180 degree rotation. Therefore,
   for each training example, add a rotated symmetric
   position randomly selected to train with probability 0.5.
@@ -26,3 +25,4 @@ DONE
     - Explore negative log likelihood loss and KL divergence (use batchmean)
 - A leaf node is expanded only when its visit count exceeds an
   expansion threshold, which is set to 10 in MoHex 2.0.
+- BCELoss learns quick, NLLLoss maximizes the likelihood of a single next move
