@@ -209,7 +209,7 @@ if __name__ == '__main__':
     ANN = ANN(board_size**2, H_dims, alpha, optimizer, activation, epochs)
     CNN = CNN(board_size, alpha, epochs, activation, optimizer)
     #CNN.load(size=board_size, level=50)
-    MCTS = MonteCarloTreeSearch(CNN, c=1.4, c_pb=1., eps=1, stoch_policy=True)
+    MCTS = MonteCarloTreeSearch(CNN, c=1.4, eps=1, stoch_policy=True)
     env = HexGame(board_size)
     RL = RL(G, M, env, CNN, MCTS, save_interval, batch_size, buffer_size)
 
