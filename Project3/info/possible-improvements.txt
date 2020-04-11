@@ -16,13 +16,13 @@
 - The Hex board is symmetric under 180 degree rotation. Therefore,
   for each training example, add a rotated symmetric
   position randomly selected to train with probability 0.5.
+- Expand tree-policy with c_pb × ρ(s, a) / sqrt(N(s, a) + 1)
+    - ρ(s, a) is model prediction from NN
 
 DONE
 
 - L(θ; D) = − Sum: log p_θ(a|s)
             (s,a)∈D
     - Explore negative log likelihood loss and KL divergence (use batchmean)
-- Expand tree-policy with c_pb × ρ(s, a) / sqrt(N(s, a) + 1)
-    - ρ(s, a) is model prediction from NN
 - A leaf node is expanded only when its visit count exceeds an
   expansion threshold, which is set to 10 in MoHex 2.0.

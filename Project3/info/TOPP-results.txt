@@ -1,0 +1,8 @@
+Final results 10000 games, CNN 1000 simulations:
+ 1: 300  - 7469 wins
+ 2: 250  - 7425 wins
+ 3: 150  - 7029 wins
+ 4: 200  - 6995 wins
+ 5: 100  - 6685 wins
+ 6:  50  - 5647 wins
+ 7:   0  - 750 wins

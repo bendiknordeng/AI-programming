@@ -23,7 +23,9 @@ class CNN(nn.Module):
             nn.Conv2d(1,1,1))
         params = list(self.parameters())
         self.optimizer = self.__choose_optimizer(params, optimizer)
-        self.loss_fn = nn.BCELoss()
+        self.nll_loss = nn.NLLLoss(reduction='sum')
+        self.kl_div_loss = nn.KLDivLoss(reduction='batchmean')
+        self.bce_loss = nn.BCELoss()
 
     def forward(self, x, training=False):
         self.train(training)
@@ -36,12 +38,16 @@ class CNN(nn.Module):
         y = torch.FloatTensor(y)
         for i in range(self.epochs):
             pred_y = self.forward(x, training=True)
-            loss = self.loss_fn(pred_y, y)
+            log_prob = torch.log(pred_y)
+            kld_loss = self.kl_div_loss(log_prob, y)
+            nll_loss = self.nll_loss(log_prob, y.argmax(dim=1))
+            bce_loss = self.bce_loss(pred_y, y)
+            loss = nll_loss
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
         acc = pred_y.argmax(dim=1).eq(y.argmax(dim=1)).sum().numpy()/len(y)
-        return loss.item(), acc
+        return bce_loss, kld_loss, nll_loss, acc
 
     def get_status(self, input, target):
         y = torch.FloatTensor(target)
