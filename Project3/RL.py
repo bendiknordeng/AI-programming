@@ -98,37 +98,6 @@ class RL:
                 plt.pause(0.1)
                 plt.close()
 
-    def generate_cases(self):
-        cases = []
-        print("Generating training cases")
-        for i in tqdm(range(self.G)):
-            self.env.reset()
-            self.MCTS.init_tree()
-            while not self.env.is_game_over():
-                D = self.MCTS.search(self.env, self.M)
-                cases.append((self.env.flat_state, D))
-                self.env.move(self.env.all_moves[np.argmax(D)])
-            #MCTS.eps *= 0.99
-        self.write_db("cases/test_size_{}".format(self.env.size), cases)
-
-    def plot_level_accuracies(self, levels):
-        cases = self.load_db("cases/size_{}".format(self.env.size))
-        losses = []
-        accuracies = []
-        for l in levels:
-            self.ANN.load(self.env.size, l)
-            input, target = list(zip(*cases))
-            losses.append(self.ANN.get_loss(input, target))
-            accuracies.append(self.ANN.accuracy(input, target))
-        fig = plt.figure()
-        ax = fig.add_subplot(1, 1, 1)
-        plt.xlabel("episodes")
-        fig.axes[0].set_title("Size {}".format(self.env.size))
-        ax.plot(levels, accuracies, color='tab:blue', label="Accuracy")
-        ax.plot(levels, losses, color='tab:orange', label="Loss")
-        plt.legend()
-        plt.show()
-
     def play_game(self):
         self.env.reset()
         while True:
@@ -139,24 +108,6 @@ class RL:
             if winning_path:
                 break
         self.env.draw(path=winning_path)
-
-    def model_fitness(self):
-        inputs, targets = RL.load_db("cases/test_size_{}".format(self.env.size))
-        self.ANN.fit(inputs, targets)
-        loss, acc = self.ANN.get_status(inputs, targets)
-        print("Loss: {}, Accuracy: {}".format(loss, acc))
-
-    def write_db(self, filename, cases):
-        inputs, targets = list(zip(*cases))
-        np.savetxt(filename+'_inputs.txt', inputs)
-        np.savetxt(filename+'_targets.txt', targets)
-        print("Cases have been written to \n{}\n{}".format(filename+'_inputs.txt', filename+'_targets.txt'))
-
-    def load_db(self, filename):
-        inputs = np.loadtxt(filename+'_inputs.txt')
-        targets = np.loadtxt(filename+'_targets.txt')
-        return inputs.astype(int), targets
-
 
 if __name__ == '__main__':
     # MCTS/RL parameters
@@ -174,7 +125,7 @@ if __name__ == '__main__':
     H_dims = [120, 84]
     activation = activation_functions[0]
     optimizer = optimizers[3]
-    epochs = 5
+    epochs = 50
 
     ANN = ANN(board_size**2, H_dims, alpha, optimizer, activation, epochs)
     CNN = CNN(board_size, alpha, epochs, activation, optimizer)
@@ -184,10 +135,10 @@ if __name__ == '__main__':
     RL = RL(G, M, env, CNN, MCTS, save_interval, batch_size, buffer_size)
 
     # Load inputs and targets from file and test loss/accuracy
-    #RL.model_fitness()
+    RL.model_fitness()
 
     # Run RL algorithm and plot results
-    RL.run(live_plot=True)
+    #RL.run(live_plot=True)
     RL.play_game()
 
     # Generate training cases

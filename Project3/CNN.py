@@ -40,19 +40,12 @@ class CNN(nn.Module):
 
     def fit(self, x, y):
         y = torch.FloatTensor(y)
-        for i in range(self.epochs):
+        for i in tqdm(range(self.epochs)):
             pred_y = self.log_prob(x)
             loss = self.loss_fn(pred_y, y.argmax(dim=1))
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
-        acc = pred_y.argmax(dim=1).eq(y.argmax(dim=1)).sum().numpy()/len(y)
-        return loss.item(), acc
-
-    def get_status(self, input, target):
-        y = torch.FloatTensor(target)
-        pred_y = self.forward(input)
-        loss = self.loss_fn(pred_y, y)
         acc = pred_y.argmax(dim=1).eq(y.argmax(dim=1)).sum().numpy()/len(y)
         return loss.item(), acc
 
