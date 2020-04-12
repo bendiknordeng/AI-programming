@@ -30,13 +30,12 @@ class RL:
         self.accuracies = []
         self.buffer = []
 
-    def run(self, live_plot=False):
+    def run(self, live_plot=False, plot_interval=1):
         for i in tqdm(range(self.G)):
-            if live_plot:
-                self.plot(episode=i)
+            if live_plot and i % plot_interval == 0:
+                self.plot(episode=i, save=True)
             if i % self.save_interval == 0:
                 self.ANN.save(size=env.size, level=i)
-                self.plot(episode=i, save=True)
             self.env.reset()
             self.MCTS.init_tree()
             while not self.env.is_game_over():
@@ -111,8 +110,8 @@ class RL:
 
 if __name__ == '__main__':
     # MCTS/RL parameters
-    board_size = 5
-    G = 250
+    board_size = 6
+    G = 500
     M = 500
     save_interval = 50
     batch_size = 128
@@ -125,7 +124,7 @@ if __name__ == '__main__':
     H_dims = [120, 84]
     activation = activation_functions[0]
     optimizer = optimizers[3]
-    epochs = 50
+    epochs = 1
 
     ANN = ANN(board_size**2, H_dims, alpha, optimizer, activation, epochs)
     CNN = CNN(board_size, alpha, epochs, activation, optimizer)
@@ -134,16 +133,6 @@ if __name__ == '__main__':
     env = HexGame(board_size)
     RL = RL(G, M, env, CNN, MCTS, save_interval, batch_size, buffer_size)
 
-    # Load inputs and targets from file and test loss/accuracy
-    RL.model_fitness()
-
     # Run RL algorithm and plot results
-    #RL.run(live_plot=True)
+    RL.run(live_plot=True, plot_interval=10)
     RL.play_game()
-
-    # Generate training cases
-    #RL.generate_cases()
-
-    # Plot model accuracies and losses
-    #levels = np.arange(0, 251, 50)
-    #RL.plot_level_accuracies(levels)

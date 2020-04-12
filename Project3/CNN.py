@@ -14,11 +14,11 @@ class CNN(nn.Module):
         self.epochs = epochs
         self.conv = nn.Sequential(
             nn.ZeroPad2d(2),
-            nn.Conv2d(9,32,3),
+            nn.Conv2d(9,48,3),
             nn.ReLU(),
-            nn.Conv2d(32,32,2),
+            nn.Conv2d(48,48,2),
             nn.ReLU(),
-            nn.Conv2d(32,1,2),
+            nn.Conv2d(48,1,2),
             nn.ReLU(),
             nn.Conv2d(1,1,1))
         params = list(self.parameters())
@@ -40,7 +40,7 @@ class CNN(nn.Module):
 
     def fit(self, x, y):
         y = torch.FloatTensor(y)
-        for i in tqdm(range(self.epochs)):
+        for i in range(self.epochs):
             pred_y = self.log_prob(x)
             loss = self.loss_fn(pred_y, y.argmax(dim=1))
             self.optimizer.zero_grad()
