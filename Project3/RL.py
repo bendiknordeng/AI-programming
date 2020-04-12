@@ -83,7 +83,7 @@ class RL:
         plt.legend()
         ax = fig.add_subplot(gs[0,1])
         ax.set_title("Loss")
-        ax.plot(self.episodes, self.losses, color='tab:red', label="Negative log likelihood")
+        ax.plot(self.episodes, self.losses, color='tab:red', label="Binary cross entropy")
         plt.legend()
         plt.grid()
         if save:
@@ -111,8 +111,8 @@ class RL:
 if __name__ == '__main__':
     # MCTS/RL parameters
     board_size = 6
-    G = 500
-    M = 500
+    G = 200
+    M = 1000
     save_interval = 50
     batch_size = 128
     buffer_size = 500
@@ -124,7 +124,7 @@ if __name__ == '__main__':
     H_dims = [120, 84]
     activation = activation_functions[0]
     optimizer = optimizers[3]
-    epochs = 1
+    epochs = 10
 
     ANN = ANN(board_size**2, H_dims, alpha, optimizer, activation, epochs)
     CNN = CNN(board_size, alpha, epochs, activation, optimizer)
