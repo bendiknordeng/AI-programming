@@ -35,6 +35,7 @@ class RL:
                 self.plot(episode=i, save=True)
             if i % self.save_interval == 0:
                 self.ANN.save(size=env.size, level=i)
+                self.ANN.epochs += 1
             self.env.reset()
             self.MCTS.init_tree()
             while not self.env.is_game_over():
@@ -130,7 +131,7 @@ def load_db(filename):
 if __name__ == '__main__':
     # MCTS/RL parameters
     board_size = 5
-    G = 20
+    G = 250
     M = 500
     save_interval = 50
     batch_size = 128
@@ -143,7 +144,7 @@ if __name__ == '__main__':
     H_dims = [32, 32]
     activation = activation_functions[0]
     optimizer = optimizers[3]
-    epochs = 1
+    epochs = 10
 
     #ANN = ANN(board_size**2, H_dims, alpha, optimizer, activation, epochs)
     CNN = CNN(board_size, H_dims, alpha, epochs, activation, optimizer)
