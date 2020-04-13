@@ -17,10 +17,6 @@ class RL:
         self.env = env
         self.ANN = ANN
         self.MCTS = MCTS
-        if self.G >= 200:
-            self.eps_decay = 0.05 ** (1./self.G) # 5% random at end of run
-        else:
-            self.eps_decay = 0.99
         self.save_interval = save_interval
         self.batch_size = batch_size
         self.buffer_size = buffer_size
@@ -28,9 +24,10 @@ class RL:
         self.accuracies = []
         self.buffer = []
 
-    def run(self, live_plot=False, plot_interval=1):
+    def run(self, plot_interval=1):
+        eps_decay = 0.05 ** (1./self.G) if self.G > 100 else 1
         for i in tqdm(range(self.G)):
-            if live_plot and i % plot_interval == 0:
+            if i % plot_interval == 0:
                 self.plot(episode=i, save=True)
             if i % self.save_interval == 0:
                 self.ANN.save(size=env.size, level=i)
@@ -41,7 +38,7 @@ class RL:
                 self.add_case(D)
                 env.move(env.all_moves[np.argmax(D)])
             self.train_ann()
-            self.MCTS.eps *= self.eps_decay
+            self.MCTS.eps *= eps_decay
         self.ANN.save(size=env.size, level=i+1)
         self.plot(episode=i+1, save=True)
 
@@ -116,29 +113,29 @@ class RL:
 
 if __name__ == '__main__':
     # MCTS/RL parameters
-    board_size = 5
-    G = 200
+    board_size = 4
+    G = 10
     M = 500
     save_interval = 50
-    batch_size = 500
-    buffer_size = 1000
+    batch_size = 250
+    buffer_size = 500
 
     # ANN parameters
     activation_functions = ["Sigmoid", "Tanh", "ReLU"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
     alpha = 0.001  # learning rate
-    H_dims = [120, 84]
+    H_dims = [32, 32]
     activation = activation_functions[0]
     optimizer = optimizers[3]
     epochs = 10
 
-    ANN = ANN(board_size**2, H_dims, alpha, optimizer, activation, epochs)
-    CNN = CNN(board_size, alpha, epochs, activation, optimizer)
+    #ANN = ANN(board_size**2, H_dims, alpha, optimizer, activation, epochs)
+    CNN = CNN(board_size, H_dims, alpha, epochs, activation, optimizer)
     #CNN.load(size=board_size, level=50)
     MCTS = MonteCarloTreeSearch(CNN, c=1.4, eps=1, stoch_policy=True)
     env = HexGame(board_size)
     RL = RL(G, M, env, CNN, MCTS, save_interval, batch_size, buffer_size)
 
     # Run RL algorithm and plot results
-    RL.run(live_plot=True, plot_interval=1)
+    RL.run(plot_interval=1)
     RL.play_game()

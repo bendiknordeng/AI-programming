@@ -4,37 +4,45 @@ import torch.nn.functional as F
 import numpy as np
 from tqdm import tqdm
 from game import HexGame
+from collections import OrderedDict
 
 class CNN(nn.Module):
-    def __init__(self, size, alpha=0.01, epochs=10, activation='ReLU', optimizer='Adam'):
+    def __init__(self, size, H_dims=[64,64,64], alpha=0.01, epochs=10, activation='ReLU', optimizer='Adam'):
         super(CNN, self).__init__()
-        self.env = HexGame(size)
         self.size = size
+        self.env = HexGame(self.size)
         self.alpha = alpha
         self.epochs = epochs
-        self.conv = nn.Sequential(
-            nn.ZeroPad2d(2),
-            nn.Conv2d(9,32,3),
-            nn.ReLU(),
-            nn.Conv2d(32,32,2),
-            nn.ReLU(),
-            nn.Conv2d(32,1,2),
-            nn.ReLU(),
-            nn.Conv2d(1,1,1))
+        layers = self.build_model(H_dims, activation)
+        self.model = nn.Sequential(layers)
         params = list(self.parameters())
         self.optimizer = self.__choose_optimizer(params, optimizer)
         self.loss_fn = nn.NLLLoss(reduction='sum')
 
+    def build_model(self, H_dims, activation):
+        layers = OrderedDict([
+            ('pad0', nn.ZeroPad2d(2)),
+            ('conv0', nn.Conv2d(9,H_dims[0],4)),
+            (activation.lower()+'0', self.__choose_activation_fn(activation))])
+        for i in range(len(H_dims)-1):
+            layers['pad'+str(i+1)] = nn.ZeroPad2d(1)
+            layers['conv'+str(i+1)] = nn.Conv2d(H_dims[i], H_dims[i+1], 3)
+            layers[activation.lower()+str(i+1)] = self.__choose_activation_fn(activation)
+        layers['conv'+str(i+2)] = nn.Conv2d(H_dims[-1], 1, 2)
+        layers[activation.lower()+str(i+2)] = self.__choose_activation_fn(activation)
+        layers['conv'+str(i+3)] = nn.Conv2d(1, 1, 1)
+        return layers
+
     def forward(self, x, training=False):
         self.train(training)
         x = self.transform_input(x)
-        x = self.conv(x)
+        x = self.model(x)
         x = x.reshape(-1,self.size**2)
         return F.softmax(x, dim=1)
 
     def log_prob(self, x):
         x = self.transform_input(x)
-        x = self.conv(x)
+        x = self.model(x)
         x = x.reshape(-1,self.size**2)
         return F.log_softmax(x, dim=1)
 
@@ -46,6 +54,13 @@ class CNN(nn.Module):
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
+        acc = pred_y.argmax(dim=1).eq(y.argmax(dim=1)).sum().numpy()/len(y)
+        return loss.item(), acc
+
+    def evaluate(self, x, y):
+        y = torch.FloatTensor(y)
+        pred_y = self.log_prob(x)
+        loss = self.loss_fn(pred_y, y.argmax(dim=1))
         acc = pred_y.argmax(dim=1).eq(y.argmax(dim=1)).sum().numpy()/len(y)
         return loss.item(), acc
 
@@ -127,6 +142,7 @@ class CNN(nn.Module):
             "Tanh": nn.Tanh(),
             "Sigmoid": nn.Sigmoid(),
         }[activation_fn]
+
 
 if __name__ == '__main__':
     from game import HexGame
