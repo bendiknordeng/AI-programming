@@ -111,6 +111,11 @@ class RL:
                 break
         self.env.draw(path=winning_path)
 
+def load_db(self, filename):
+    inputs = np.loadtxt(filename+'_inputs.txt')
+    targets = np.loadtxt(filename+'_targets.txt')
+    return inputs.astype(int), targets
+
 if __name__ == '__main__':
     # MCTS/RL parameters
     board_size = 4
