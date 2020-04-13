@@ -10,8 +10,6 @@ from matplotlib import pyplot as plt
 from mcts import MonteCarloTreeSearch
 from tqdm import tqdm
 
-np.set_printoptions(linewidth=500)  # print formatting
-
 class RL:
     def __init__(self, G, M, env, ANN, MCTS, save_interval, batch_size, buffer_size):
         self.G = G
@@ -97,12 +95,20 @@ class RL:
                 plt.pause(0.1)
                 plt.close()
 
-    def play_game(self):
+    def play_game(self, top_moves=5):
         self.env.reset()
         while True:
-            _, _, index = self.ANN.get_move(self.env)
+            probs, _, index = self.ANN.get_move(self.env)
             self.env.move(self.env.all_moves[index])
             self.env.draw(animation_delay = 0.2)
+            print("Player-{} to play".format(3-self.env.player))
+            val = {i: p for i, p in enumerate(probs)}
+            sorted_moves = {k: v for k, v in sorted(val.items(), key=lambda item: item[1])}
+            print("Top-{} moves:".format(top_moves))
+            for i in range(1,top_moves+1):
+                move = list(sorted_moves.keys())[-i]
+                print("{:>2}: {:>5.2f}%".format(move, sorted_moves[move] * 100))
+            print()
             winning_path = self.env.is_game_over()
             if winning_path:
                 break
@@ -110,12 +116,12 @@ class RL:
 
 if __name__ == '__main__':
     # MCTS/RL parameters
-    board_size = 6
+    board_size = 5
     G = 200
-    M = 1000
+    M = 500
     save_interval = 50
-    batch_size = 128
-    buffer_size = 500
+    batch_size = 500
+    buffer_size = 1000
 
     # ANN parameters
     activation_functions = ["Sigmoid", "Tanh", "ReLU"]
@@ -134,5 +140,5 @@ if __name__ == '__main__':
     RL = RL(G, M, env, CNN, MCTS, save_interval, batch_size, buffer_size)
 
     # Run RL algorithm and plot results
-    RL.run(live_plot=True, plot_interval=10)
+    RL.run(live_plot=True, plot_interval=1)
     RL.play_game()

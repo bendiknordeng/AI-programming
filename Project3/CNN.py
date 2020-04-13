@@ -14,16 +14,16 @@ class CNN(nn.Module):
         self.epochs = epochs
         self.conv = nn.Sequential(
             nn.ZeroPad2d(2),
-            nn.Conv2d(9,48,3),
+            nn.Conv2d(9,32,3),
             nn.ReLU(),
-            nn.Conv2d(48,48,2),
+            nn.Conv2d(32,32,2),
             nn.ReLU(),
-            nn.Conv2d(48,1,2),
+            nn.Conv2d(32,1,2),
             nn.ReLU(),
             nn.Conv2d(1,1,1))
         params = list(self.parameters())
         self.optimizer = self.__choose_optimizer(params, optimizer)
-        self.loss_fn = nn.BCELoss(reduction='sum')
+        self.loss_fn = nn.NLLLoss(reduction='sum')
 
     def forward(self, x, training=False):
         self.train(training)
@@ -32,17 +32,17 @@ class CNN(nn.Module):
         x = x.reshape(-1,self.size**2)
         return F.softmax(x, dim=1)
 
-    #def log_prob(self, x):
-    #    x = self.transform_input(x)
-    #    x = self.conv(x)
-    #    x = x.reshape(-1,self.size**2)
-    #    return F.log_softmax(x, dim=1)
+    def log_prob(self, x):
+        x = self.transform_input(x)
+        x = self.conv(x)
+        x = x.reshape(-1,self.size**2)
+        return F.log_softmax(x, dim=1)
 
     def fit(self, x, y):
         y = torch.FloatTensor(y)
         for i in range(self.epochs):
-            pred_y = self.forward(x)
-            loss = self.loss_fn(pred_y, y)
+            pred_y = self.log_prob(x)
+            loss = self.loss_fn(pred_y, y.argmax(dim=1))
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
