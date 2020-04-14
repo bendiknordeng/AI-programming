@@ -11,7 +11,7 @@ from mcts import MonteCarloTreeSearch
 from tqdm import tqdm
 
 class RL:
-    def __init__(self, G, M, env, ANN, MCTS, save_interval, batch_size, buffer_size, test_data):
+    def __init__(self, G, M, env, ANN, MCTS, save_interval, batch_size, buffer_size, test_data=None):
         self.G = G
         self.M = M
         self.env = env
@@ -24,8 +24,9 @@ class RL:
         self.train_accuracies = []
         self.test_losses = []
         self.test_accuracies = []
-        self.x_test, self.y_test = test_data
-        self.n_test = len(test_data[0])
+        self.test_data = test_data
+        if test_data:
+            self.x_test, self.y_test = test_data
         self.buffer = []
 
     def run(self, plot_interval=1):
@@ -69,10 +70,11 @@ class RL:
         loss /= batch_size
         self.train_losses.append(loss)
         self.train_accuracies.append(acc)
-        loss, acc = self.ANN.evaluate(self.x_test, self.y_test)
-        loss /= self.n_test
-        self.test_losses.append(loss)
-        self.test_accuracies.append(acc)
+        if self.test_data:
+            loss, acc = self.ANN.evaluate(self.x_test, self.y_test)
+            loss /= self.n_test
+            self.test_losses.append(loss)
+            self.test_accuracies.append(acc)
 
     def plot(self, episode, save=False):
         self.episodes = np.arange(episode)
@@ -84,13 +86,13 @@ class RL:
         ax = fig.add_subplot(gs[0,0])
         ax.set_title("Accuracy")
         ax.plot(self.episodes, self.train_accuracies, color='tab:green', label="Train")
-        ax.plot(self.episodes, self.test_accuracies, color='tab:blue', label="Test")
+        if self.test_data: x.plot(self.episodes, self.test_accuracies, color='tab:blue', label="Test")
         plt.grid()
         plt.legend()
         ax = fig.add_subplot(gs[0,1])
         ax.set_title("Loss")
         ax.plot(self.episodes, self.train_losses, color='tab:orange', label="Train")
-        ax.plot(self.episodes, self.test_losses, color='tab:purple', label="Test")
+        if self.test_data: ax.plot(self.episodes, self.test_losses, color='tab:purple', label="Test")
         plt.legend()
         plt.grid()
         if save:
@@ -130,30 +132,30 @@ def load_db(filename):
 
 if __name__ == '__main__':
     # MCTS/RL parameters
-    board_size = 5
-    G = 250
+    board_size = 4
+    G = 10
     M = 500
     save_interval = 50
-    batch_size = 128
-    buffer_size = 500
+    batch_size = 500
+    buffer_size = 1000
 
     # ANN parameters
     activation_functions = ["Sigmoid", "Tanh", "ReLU"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
     alpha = 0.001  # learning rate
-    H_dims = [32, 32]
-    activation = activation_functions[0]
+    H_dims = [32]
+    activation = activation_functions[2]
     optimizer = optimizers[3]
     epochs = 0
 
     #ANN = ANN(board_size**2, H_dims, alpha, optimizer, activation, epochs)
     CNN = CNN(board_size, H_dims, alpha, epochs, activation, optimizer)
-    CNN.load(size=board_size, level=300)
+    #CNN.load(size=board_size, level=50)
     test_data = load_db('cases/test_size_5')
     MCTS = MonteCarloTreeSearch(CNN, c=1.4, eps=1, stoch_policy=True)
     env = HexGame(board_size)
-    RL = RL(G, M, env, CNN, MCTS, save_interval, batch_size, buffer_size, test_data)
+    RL = RL(G, M, env, CNN, MCTS, save_interval, batch_size, buffer_size)
 
     # Run RL algorithm and plot results
-    #RL.run(plot_interval=1)
+    RL.run(plot_interval=1)
     RL.play_game()

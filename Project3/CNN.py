@@ -21,16 +21,16 @@ class CNN(nn.Module):
 
     def build_model(self, H_dims, activation):
         layers = OrderedDict([
-            ('pad0', nn.ZeroPad2d(2)),
-            ('conv0', nn.Conv2d(9,H_dims[0],4)),
-            (activation.lower()+'0', self.__choose_activation_fn(activation))])
+            ('0',nn.ZeroPad2d(2)),
+            ('1',nn.Conv2d(9,H_dims[0],3)),
+            ('2',self.__choose_activation_fn(activation))])
         for i in range(len(H_dims)-1):
-            layers['pad'+str(i+1)] = nn.ZeroPad2d(1)
-            layers['conv'+str(i+1)] = nn.Conv2d(H_dims[i], H_dims[i+1], 3)
-            layers[activation.lower()+str(i+1)] = self.__choose_activation_fn(activation)
-        layers['conv'+str(i+2)] = nn.Conv2d(H_dims[-1], 1, 2)
-        layers[activation.lower()+str(i+2)] = self.__choose_activation_fn(activation)
-        layers['conv'+str(i+3)] = nn.Conv2d(1, 1, 1)
+            layers[str(len(layers))] = nn.ZeroPad2d(1)
+            layers[str(len(layers))] = nn.Conv2d(H_dims[i], H_dims[i+1], 3)
+            layers[str(len(layers))] = self.__choose_activation_fn(activation)
+        layers[str(len(layers))] = nn.Conv2d(H_dims[-1], 1, 3)
+        layers[str(len(layers))] = self.__choose_activation_fn(activation)
+        layers[str(len(layers))] = nn.Conv2d(1, 1, 1)
         return layers
 
     def forward(self, x, training=False):
@@ -154,5 +154,6 @@ if __name__ == '__main__':
     for cell in blacks:
         env.state[cell] = 2
     CNN = CNN(4)
+    import pdb; pdb.set_trace()
     CNN.forward(env.flat_state.reshape(1,-1))
     import pdb; pdb.set_trace()
