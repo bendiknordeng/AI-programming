@@ -165,7 +165,7 @@ def load_db(filename):
 
 if __name__ == '__main__':
     # MCTS/RL parameters
-    board_size = 4
+    board_size = 5
     G = 10
     M = 500
     save_interval = 50
@@ -176,7 +176,7 @@ if __name__ == '__main__':
     activation_functions = ["Sigmoid", "Tanh", "ReLU"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
     alpha = 0.001  # learning rate
-    H_dims = [32]
+    H_dims = [32, 32, 32]
     activation = activation_functions[2]
     optimizer = optimizers[3]
     epochs = 10
