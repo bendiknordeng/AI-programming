@@ -35,7 +35,7 @@ class RL:
                 self.plot(episode=i, save=True)
             if i % self.save_interval == 0:
                 self.ANN.save(size=env.size, level=i)
-                self.ANN.epochs += 1
+                self.ANN.epochs += 10
             self.env.reset()
             self.MCTS.init_tree()
             while not self.env.is_game_over():
@@ -144,16 +144,16 @@ if __name__ == '__main__':
     H_dims = [32, 32]
     activation = activation_functions[0]
     optimizer = optimizers[3]
-    epochs = 10
+    epochs = 0
 
     #ANN = ANN(board_size**2, H_dims, alpha, optimizer, activation, epochs)
     CNN = CNN(board_size, H_dims, alpha, epochs, activation, optimizer)
-    #CNN.load(size=board_size, level=50)
+    CNN.load(size=board_size, level=300)
     test_data = load_db('cases/test_size_5')
     MCTS = MonteCarloTreeSearch(CNN, c=1.4, eps=1, stoch_policy=True)
     env = HexGame(board_size)
     RL = RL(G, M, env, CNN, MCTS, save_interval, batch_size, buffer_size, test_data)
 
     # Run RL algorithm and plot results
-    RL.run(plot_interval=1)
+    #RL.run(plot_interval=1)
     RL.play_game()
