@@ -42,25 +42,25 @@ def play(mcts, sim, ann, env, top_moves):
 
 
 if __name__ == '__main__':
-    board_size = 6
-    level = 200
+    board_size = 5
+    level = 0
 
-    activation_functions = ["linear", "sigmoid", "tanh", "relu"]
+    activation_functions = ["Sigmoid", "Tanh", "ReLU"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
     alpha = 0.001  # learning rate
-    H_dims = [128,64]
+    H_dims = [32, 32]
     io_dim = board_size * board_size  # input and output layer sizes
-    activation = activation_functions[3]
+    activation = activation_functions[2]
     optimizer = optimizers[3]
     epochs = 500
 
     #ann = ANN(io_dim, H_dims, alpha, optimizer, activation, epochs)
     #ann.load(board_size, level)
-    cnn = CNN(board_size, alpha, epochs, activation, optimizer)
+    cnn = CNN = CNN(board_size, H_dims, alpha, epochs, activation, optimizer)
     cnn.load(board_size, level)
 
-    sim = 50
-    mcts = MonteCarloTreeSearch(cnn, c=1., eps=1)
+    sim = 5000
+    mcts = MonteCarloTreeSearch(cnn, c=1.4, eps=1)
     env = HexGame(board_size)
     top_moves = 5
 
