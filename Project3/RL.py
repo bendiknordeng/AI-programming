@@ -148,9 +148,9 @@ class RL:
             self.MCTS.init_tree()
             while not self.env.is_game_over():
                 D = self.MCTS.search(self.env, self.M)
-                self.env.move(self.env.all_moves[np.argmax(D)])
                 cases.append((self.env.flat_state, D))
                 cases.append(self.rotated(self.env.flat_state, D))
+                self.env.move(self.env.all_moves[np.argmax(D)])
         write_db('cases/test_size_{}'.format(self.env.size), cases)
 
 def write_db(filename, cases):
@@ -165,7 +165,7 @@ def load_db(filename):
 
 if __name__ == '__main__':
     # MCTS/RL parameters
-    board_size = 5
+    board_size = 4
     G = 10
     M = 500
     save_interval = 50
@@ -176,7 +176,7 @@ if __name__ == '__main__':
     activation_functions = ["Sigmoid", "Tanh", "ReLU"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
     alpha = 0.001  # learning rate
-    H_dims = [32, 32, 32]
+    H_dims = [32, 32]
     activation = activation_functions[2]
     optimizer = optimizers[3]
     epochs = 10
