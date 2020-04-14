@@ -27,6 +27,7 @@ class RL:
         self.test_data = test_data
         if test_data:
             self.x_test, self.y_test = test_data
+            self.n_test = len(self.x_test)
         self.buffer = []
 
     def run(self, plot_interval=1):
@@ -86,7 +87,7 @@ class RL:
         ax = fig.add_subplot(gs[0,0])
         ax.set_title("Accuracy")
         ax.plot(self.episodes, self.train_accuracies, color='tab:green', label="Train")
-        if self.test_data: x.plot(self.episodes, self.test_accuracies, color='tab:blue', label="Test")
+        if self.test_data: ax.plot(self.episodes, self.test_accuracies, color='tab:blue', label="Test")
         plt.grid()
         plt.legend()
         ax = fig.add_subplot(gs[0,1])
@@ -132,8 +133,8 @@ def load_db(filename):
 
 if __name__ == '__main__':
     # MCTS/RL parameters
-    board_size = 4
-    G = 10
+    board_size = 5
+    G = 250
     M = 500
     save_interval = 50
     batch_size = 500
@@ -154,7 +155,7 @@ if __name__ == '__main__':
     test_data = load_db('cases/test_size_5')
     MCTS = MonteCarloTreeSearch(CNN, c=1.4, eps=1, stoch_policy=True)
     env = HexGame(board_size)
-    RL = RL(G, M, env, CNN, MCTS, save_interval, batch_size, buffer_size)
+    RL = RL(G, M, env, CNN, MCTS, save_interval, batch_size, buffer_size, test_data=test_data)
 
     # Run RL algorithm and plot results
     RL.run(plot_interval=1)
