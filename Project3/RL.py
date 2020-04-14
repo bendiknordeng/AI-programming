@@ -10,6 +10,8 @@ from matplotlib import pyplot as plt
 from mcts import MonteCarloTreeSearch
 from tqdm import tqdm
 
+np.set_printoptions(linewidth=500)  # print formatting
+
 class RL:
     def __init__(self, G, M, env, ANN, MCTS, save_interval, batch_size, buffer_size, test_data=None):
         self.G = G
@@ -51,17 +53,20 @@ class RL:
 
     def add_case(self, D):
         state = self.env.flat_state
-        size = self.env.size
         self.buffer.append((state, D))
         if len(self.buffer) > self.buffer_size: self.buffer.pop(0)
         if random.random() > 0.5:
-            player = state[0]
-            state = state[1:].reshape(size, size)
-            rot_state = np.rot90(state,k=2,axes=(0,1))
-            probs = D.reshape(size, size)
-            rot_D = np.rot90(probs, k=2, axes=(0,1))
-            self.buffer.append((np.asarray([player] + list(rot_state.reshape(size**2))), rot_D.reshape(size**2)))
+            self.buffer.append(self. rotated(state, D))
             if len(self.buffer) > self.buffer_size: self.buffer.pop(0)
+
+    def rotated(self, state, D):
+        size = self.env.size
+        player = state[0]
+        state = state[1:].reshape(size, size)
+        rot_state = np.rot90(state,k=2,axes=(0,1))
+        probs = D.reshape(size, size)
+        rot_D = np.rot90(probs, k=2, axes=(0,1))
+        return (np.asarray([player] + list(rot_state.reshape(size**2))), rot_D.reshape(size**2))
 
     def train_ann(self):
         batch_size = min(self.batch_size,len(self.buffer))
@@ -78,7 +83,7 @@ class RL:
             self.test_accuracies.append(acc)
 
     def plot(self, episode, save=False):
-        self.episodes = np.arange(episode)
+        x = np.arange(episode)
         fig = plt.figure(figsize=(12,5))
         title = 'Size: {}   M: {}   lr: {}   Epochs: {}   '.format(self.env.size, self.M, self.ANN.alpha, self.ANN.epochs)
         title += 'Batch size: {}   Buffer size: {}'.format(self.batch_size, len(self.buffer))
@@ -86,14 +91,14 @@ class RL:
         gs = fig.add_gridspec(1, 2)
         ax = fig.add_subplot(gs[0,0])
         ax.set_title("Accuracy")
-        ax.plot(self.episodes, self.train_accuracies, color='tab:green', label="Train")
-        if self.test_data: ax.plot(self.episodes, self.test_accuracies, color='tab:blue', label="Test")
+        ax.plot(x, self.train_accuracies, color='tab:green', label="Train")
+        if self.test_data: ax.plot(x, self.test_accuracies, color='tab:blue', label="Test")
         plt.grid()
         plt.legend()
         ax = fig.add_subplot(gs[0,1])
         ax.set_title("Loss")
-        ax.plot(self.episodes, self.train_losses, color='tab:orange', label="Train")
-        if self.test_data: ax.plot(self.episodes, self.test_losses, color='tab:purple', label="Test")
+        ax.plot(x, self.train_losses, color='tab:orange', label="Train")
+        if self.test_data: ax.plot(x, self.test_losses, color='tab:purple', label="Test")
         plt.legend()
         plt.grid()
         if save:
@@ -126,6 +131,33 @@ class RL:
                 break
         self.env.draw(path=winning_path)
 
+    def pre_train(self, x, y, epochs):
+        n = len(x)
+        for i in tqdm(range(epochs)):
+            loss, acc = self.ANN.fit(x, y)
+            loss /= n
+            self.train_losses.append(loss)
+            self.train_accuracies.append(acc)
+            self.plot(i+1, save=True)
+        print("Loss: {}\nAccuracy: {}".format(loss, acc))
+
+    def generate_cases(self):
+        cases = []
+        for i in tqdm(range(self.G)):
+            self.env.reset()
+            self.MCTS.init_tree()
+            while not self.env.is_game_over():
+                D = self.MCTS.search(self.env, self.M)
+                self.env.move(self.env.all_moves[np.argmax(D)])
+                cases.append((self.env.flat_state, D))
+                cases.append(self.rotated(self.env.flat_state, D))
+        write_db('cases/test_size_{}'.format(self.env.size), cases)
+
+def write_db(filename, cases):
+    inputs, targets = list(zip(*cases))
+    np.savetxt(filename+'_inputs.txt', inputs)
+    np.savetxt(filename+'_targets.txt', targets)
+
 def load_db(filename):
     inputs = np.loadtxt(filename+'_inputs.txt')
     targets = np.loadtxt(filename+'_targets.txt')
@@ -133,8 +165,8 @@ def load_db(filename):
 
 if __name__ == '__main__':
     # MCTS/RL parameters
-    board_size = 5
-    G = 250
+    board_size = 4
+    G = 10
     M = 500
     save_interval = 50
     batch_size = 500
@@ -147,16 +179,19 @@ if __name__ == '__main__':
     H_dims = [32]
     activation = activation_functions[2]
     optimizer = optimizers[3]
-    epochs = 0
+    epochs = 10
 
     #ANN = ANN(board_size**2, H_dims, alpha, optimizer, activation, epochs)
     CNN = CNN(board_size, H_dims, alpha, epochs, activation, optimizer)
     #CNN.load(size=board_size, level=50)
-    test_data = load_db('cases/test_size_5')
+    test_data = load_db('cases/test_size_{}'.format(board_size))
     MCTS = MonteCarloTreeSearch(CNN, c=1.4, eps=1, stoch_policy=True)
     env = HexGame(board_size)
-    RL = RL(G, M, env, CNN, MCTS, save_interval, batch_size, buffer_size, test_data=test_data)
+    RL = RL(G, M, env, CNN, MCTS, save_interval, batch_size, buffer_size, test_data=None)
 
+    x, y = test_data
+    RL.pre_train(x, y, 20)
     # Run RL algorithm and plot results
-    RL.run(plot_interval=1)
+    #RL.run(plot_interval=1)
     RL.play_game()
+    #RL.generate_cases()
