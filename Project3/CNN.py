@@ -141,6 +141,7 @@ class CNN(nn.Module):
             "ReLU": nn.ReLU(),
             "Tanh": nn.Tanh(),
             "Sigmoid": nn.Sigmoid(),
+            "Linear": nn.Identity(),
         }[activation_fn]
 
 

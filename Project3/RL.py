@@ -173,11 +173,11 @@ if __name__ == '__main__':
     buffer_size = 1000
 
     # ANN parameters
-    activation_functions = ["Sigmoid", "Tanh", "ReLU"]
+    activation_functions = ["Linear", "Sigmoid", "Tanh", "ReLU"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
     alpha = 0.001  # learning rate
     H_dims = [32, 32]
-    activation = activation_functions[2]
+    activation = activation_functions[3]
     optimizer = optimizers[3]
     epochs = 10
 

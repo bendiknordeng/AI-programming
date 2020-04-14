@@ -45,12 +45,12 @@ if __name__ == '__main__':
     board_size = 5
     level = 0
 
-    activation_functions = ["Sigmoid", "Tanh", "ReLU"]
+    activation_functions = ["Linear", "Sigmoid", "Tanh", "ReLU"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
     alpha = 0.001  # learning rate
     H_dims = [32, 32]
     io_dim = board_size * board_size  # input and output layer sizes
-    activation = activation_functions[2]
+    activation = activation_functions[3]
     optimizer = optimizers[3]
     epochs = 500
 
