@@ -39,7 +39,6 @@ class RL:
                 self.plot(episode=i, save=True)
             if i % self.save_interval == 0:
                 self.ANN.save(size=env.size, level=i)
-                self.ANN.epochs += 10
             self.env.reset()
             self.MCTS.init_tree()
             while not self.env.is_game_over():
@@ -73,12 +72,12 @@ class RL:
         training_cases = random.sample(self.buffer, batch_size)
         x_train, y_train = list(zip(*training_cases))
         loss, acc = self.ANN.fit(x_train, y_train)
-        loss /= batch_size
+        #loss /= batch_size
         self.train_losses.append(loss)
         self.train_accuracies.append(acc)
         if self.test_data:
             loss, acc = self.ANN.evaluate(self.x_test, self.y_test)
-            loss /= self.n_test
+            #loss /= self.n_test
             self.test_losses.append(loss)
             self.test_accuracies.append(acc)
 
@@ -165,8 +164,8 @@ def load_db(filename):
 
 if __name__ == '__main__':
     # MCTS/RL parameters
-    board_size = 4
-    G = 10
+    board_size = 5
+    G = 250
     M = 500
     save_interval = 50
     batch_size = 500
@@ -187,11 +186,11 @@ if __name__ == '__main__':
     test_data = load_db('cases/test_size_{}'.format(board_size))
     MCTS = MonteCarloTreeSearch(CNN, c=1.4, eps=1, stoch_policy=True)
     env = HexGame(board_size)
-    RL = RL(G, M, env, CNN, MCTS, save_interval, batch_size, buffer_size, test_data=None)
+    RL = RL(G, M, env, CNN, MCTS, save_interval, batch_size, buffer_size, test_data=test_data)
 
-    x, y = test_data
-    RL.pre_train(x, y, 20)
+    #x, y = test_data
+    #RL.pre_train(x, y, 20)
     # Run RL algorithm and plot results
-    #RL.run(plot_interval=1)
+    RL.run(plot_interval=10)
     RL.play_game()
     #RL.generate_cases()
