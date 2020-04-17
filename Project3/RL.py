@@ -29,14 +29,14 @@ class RL:
         self.test_data = test_data
         if test_data:
             self.x_test, self.y_test = test_data
-            self.n_test = len(self.x_test)
         self.buffer = []
+        self.start_plot = 0
 
     def run(self, plot_interval=1):
         eps_decay = 0.05 ** (1./self.G) if self.G > 100 else 1
         for i in tqdm(range(self.G)):
-            if i % plot_interval == 0:
-                self.plot(episode=i, save=True)
+            if i % plot_interval == 0 and self.start_plot:
+                self.plot(save=True)
             if i % self.save_interval == 0:
                 self.ANN.save(size=env.size, level=i)
             self.env.reset()
@@ -45,44 +45,40 @@ class RL:
                 D = self.MCTS.search(self.env, self.M)
                 self.add_case(D)
                 env.move(env.all_moves[np.argmax(D)])
-            self.train_ann()
+            self.train_ann(i)
             self.MCTS.eps *= eps_decay
         self.ANN.save(size=env.size, level=i+1)
-        self.plot(episode=i+1, save=True)
+        self.plot(save=True)
 
     def add_case(self, D):
         state = self.env.flat_state
         self.buffer.append((state, D))
-        if len(self.buffer) > self.buffer_size: self.buffer.pop(0)
+        #if len(self.buffer) > self.buffer_size: self.buffer.pop(0)
         if random.random() > 0.5:
-            self.buffer.append(self. rotated(state, D))
-            if len(self.buffer) > self.buffer_size: self.buffer.pop(0)
+            self.buffer.append(self.rotated(state, D))
+            #if len(self.buffer) > self.buffer_size: self.buffer.pop(0)
 
     def rotated(self, state, D):
         size = self.env.size
         player = state[0]
-        state = state[1:].reshape(size, size)
-        rot_state = np.rot90(state,k=2,axes=(0,1))
-        probs = D.reshape(size, size)
-        rot_D = np.rot90(probs, k=2, axes=(0,1))
-        return (np.asarray([player] + list(rot_state.reshape(size**2))), rot_D.reshape(size**2))
+        return (np.asarray([player] + list(state[:0:-1])), D[::-1])
 
-    def train_ann(self):
-        batch_size = min(self.batch_size,len(self.buffer))
-        training_cases = random.sample(self.buffer, batch_size)
-        x_train, y_train = list(zip(*training_cases))
-        loss, acc = self.ANN.fit(x_train, y_train)
-        #loss /= batch_size
-        self.train_losses.append(loss)
-        self.train_accuracies.append(acc)
-        if self.test_data:
-            loss, acc = self.ANN.evaluate(self.x_test, self.y_test)
-            #loss /= self.n_test
-            self.test_losses.append(loss)
-            self.test_accuracies.append(acc)
+    def train_ann(self, i):
+        self.batch_size = len(self.buffer)//2
+        if self.batch_size > 500: # start training when enough cases to not overfit small sample
+            if not self.start_plot: self.start_plot = i
+            training_cases = random.sample(self.buffer, self.batch_size)
+            x_train, y_train = list(zip(*training_cases))
+            loss, acc = self.ANN.fit(x_train, y_train)
+            self.train_losses.append(loss)
+            self.train_accuracies.append(acc)
+            if self.test_data:
+                loss, acc = self.ANN.evaluate(self.x_test, self.y_test)
+                self.test_losses.append(loss)
+                self.test_accuracies.append(acc)
 
-    def plot(self, episode, save=False):
-        x = np.arange(episode)
+    def plot(self, save=False):
+        x = np.arange(len(self.train_accuracies))+self.start_plot
         fig = plt.figure(figsize=(12,5))
         title = 'Size: {}   M: {}   lr: {}   Epochs: {}   '.format(self.env.size, self.M, self.ANN.alpha, self.ANN.epochs)
         title += 'Batch size: {}   Buffer size: {}'.format(self.batch_size, len(self.buffer))
@@ -165,8 +161,8 @@ def load_db(filename):
 if __name__ == '__main__':
     # MCTS/RL parameters
     board_size = 5
-    G = 250
-    M = 500
+    G = 500
+    M = 1000
     save_interval = 50
     batch_size = 500
     buffer_size = 1000
@@ -178,7 +174,7 @@ if __name__ == '__main__':
     H_dims = [32, 32]
     activation = activation_functions[3]
     optimizer = optimizers[3]
-    epochs = 10
+    epochs = 1
 
     #ANN = ANN(board_size**2, H_dims, alpha, optimizer, activation, epochs)
     CNN = CNN(board_size, H_dims, alpha, epochs, activation, optimizer)

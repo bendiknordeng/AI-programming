@@ -17,9 +17,6 @@
   position randomly selected to train with probability 0.5.
 - Expand tree-policy with c_pb × ρ(s, a) / sqrt(N(s, a) + 1)
     - ρ(s, a) is model prediction from NN
-
-DONE
-
 - L(θ; D) = − Sum: log p_θ(a|s)
             (s,a)∈D
     - Explore negative log likelihood loss and KL divergence (use batchmean)

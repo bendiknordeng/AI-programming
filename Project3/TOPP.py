@@ -8,13 +8,14 @@ from game import HexGame
 
 
 class TOPP:
-    def __init__(self, players1, players2, board_size, num_games):
+    def __init__(self, players1, players2, board_size, num_games, stoch_percent):
         self.players1 = players1
         self.players2 = players2
         self.board_size = board_size
         self.env = HexGame(board_size)
         self.table = {p: 0 for p in self.players1}
         self.num_games = num_games
+        self.stoch_percent = stoch_percent
 
     def run_tournament(self, display):
         print("Tournament on a board size", self.board_size )
@@ -41,7 +42,7 @@ class TOPP:
         while not self.env.is_game_over():
             moves += 1
             _, stoch_index, greedy_index = ann1.get_move(self.env) if self.env.player == 1 else ann2.get_move(self.env)
-            self.env.move(self.env.all_moves[stoch_index if random.random() > 0 else greedy_index])
+            self.env.move(self.env.all_moves[stoch_index if random.random() < self.stoch_percent else greedy_index])
             if display: self.env.draw(animation_delay=0.2)
         p1_won = True if self.env.result() == 1 else False
         if display:
@@ -56,16 +57,17 @@ if __name__ == '__main__':
     activation_functions = ["Linear", "Sigmoid", "Tanh", "ReLU"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
     alpha = 0.001  # learning rate
-    H_dims = [math.floor(2*(1+board_size**2)/3)+board_size**2] * 3
+    H_dims = [32, 32]
     io_dim = board_size * board_size  # input and output layer sizes
     activation = activation_functions[3]
     optimizer = optimizers[3]
     epochs = 10
 
-    num_games = 50
+    num_games = 10
     bottom_level = 0
-    top_level = 300
+    top_level = 400
     interval = 50
+    stoch_percent = 1.
 
     l = np.arange(bottom_level, top_level+1, interval)
     models = np.sort(np.concatenate([l,l]))
@@ -74,11 +76,11 @@ if __name__ == '__main__':
 
 
     for i in range(0,len(models),2):
-        ann = CNN(board_size)
+        ann = CNN(board_size, H_dims)
         ann.load(board_size, models[i])
         players1[models[i]] = ann
-        ann = CNN(board_size)
+        ann = CNN(board_size, H_dims)
         ann.load(board_size, models[i+1])
         players2[models[i+1]] = ann
-    tournament = TOPP(players1, players2, board_size, num_games)
+    tournament = TOPP(players1, players2, board_size, num_games, stoch_percent)
     tournament.run_tournament(display=False)

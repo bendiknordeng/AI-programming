@@ -17,7 +17,7 @@ class CNN(nn.Module):
         self.model = nn.Sequential(layers)
         params = list(self.parameters())
         self.optimizer = self.__choose_optimizer(params, optimizer)
-        self.loss_fn = nn.BCELoss()
+        self.loss_fn = nn.CrossEntropyLoss()
 
     def build_model(self, H_dims, activation):
         layers = OrderedDict([
@@ -40,17 +40,24 @@ class CNN(nn.Module):
         x = x.reshape(-1,self.size**2)
         return F.softmax(x, dim=1)
 
-    def log_prob(self, x):
+    def log_prob(self, x, training=False):
+        self.train(training)
         x = self.transform_input(x)
         x = self.model(x)
         x = x.reshape(-1,self.size**2)
         return F.log_softmax(x, dim=1)
 
+    def raw_forward(self, x, training=False):
+        self.train(training)
+        x = self.transform_input(x)
+        x = self.model(x)
+        return x.reshape(-1,self.size**2)
+
     def fit(self, x, y):
         y = torch.FloatTensor(y)
         for i in range(self.epochs):
-            pred_y = self.forward(x, training=True)
-            loss = self.loss_fn(pred_y, y)
+            pred_y = self.raw_forward(x, training=True)
+            loss = self.loss_fn(pred_y, y.argmax(dim=1))
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
@@ -59,8 +66,8 @@ class CNN(nn.Module):
 
     def evaluate(self, x, y):
         y = torch.FloatTensor(y)
-        pred_y = self.forward(x)
-        loss = self.loss_fn(pred_y, y)
+        pred_y = self.raw_forward(x)
+        loss = self.loss_fn(pred_y, y.argmax(dim=1))
         acc = pred_y.argmax(dim=1).eq(y.argmax(dim=1)).sum().numpy()/len(y)
         return loss.item(), acc
 
