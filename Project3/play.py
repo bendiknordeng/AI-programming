@@ -1,8 +1,6 @@
 from game import HexGame
 from mcts import MonteCarloTreeSearch
-from ANN import ANN
 from CNN import CNN
-import math
 import numpy as np
 
 def play(mcts, sim, ann, env, top_moves):
@@ -17,13 +15,13 @@ def play(mcts, sim, ann, env, top_moves):
         val = {i: p for i, p in enumerate(probs)}
         sorted_moves = {k: v for k, v in sorted(val.items(), key=lambda item: item[1])}
         print("Top {} ANN moves: \t Top MCTS moves:".format(top_moves, top_moves))
-        for i in range(1,6):
+        for i in range(1,top_moves+1):
             model_move = list(sorted_moves.keys())[-i]
             mcts_move = list(sorted_mcts.keys())[-i]
             print("{:>2}: {:>5.2f}% \t {:>10}: {:>5.2f}%".format(model_move, sorted_moves[model_move] * 100,
                                                              mcts_move, sorted_mcts[mcts_move] * 100))
-        print("\nMCTS would have chosen: {}, ({:.2f}% confidence)".format(best_mcts_move, D[best_mcts_move]*100))
-        print("The model would have chosen: {}, ({:.2f}% confidence)".format(index, probs[index]*100))
+        #print("\nMCTS would have chosen: {}, ({:.2f}% confidence)".format(best_mcts_move, D[best_mcts_move]*100))
+        #print("The model would have chosen: {}, ({:.2f}% confidence)".format(index, probs[index]*100))
         env.draw()
         i = input("Choose move (press enter for model move): ")
         if i == '':
@@ -42,8 +40,8 @@ def play(mcts, sim, ann, env, top_moves):
 
 
 if __name__ == '__main__':
-    board_size = 5
-    level = 300
+    board_size = 6
+    level = 750
 
     activation_functions = ["Linear", "Sigmoid", "Tanh", "ReLU"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
@@ -52,14 +50,12 @@ if __name__ == '__main__':
     io_dim = board_size * board_size  # input and output layer sizes
     activation = activation_functions[3]
     optimizer = optimizers[3]
-    epochs = 500
+    epochs = 1
 
-    #ann = ANN(io_dim, H_dims, alpha, optimizer, activation, epochs)
-    #ann.load(board_size, level)
-    cnn = CNN = CNN(board_size, H_dims, alpha, epochs, activation, optimizer)
+    cnn = CNN(board_size, H_dims, alpha, epochs, activation, optimizer)
     cnn.load(board_size, level)
 
-    sim = 500
+    sim = 10
     mcts = MonteCarloTreeSearch(cnn, c=1.4, eps=1)
     env = HexGame(board_size)
     top_moves = 5

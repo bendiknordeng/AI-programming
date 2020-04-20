@@ -39,6 +39,7 @@ class RL:
                 self.plot(save=True)
             if i % self.save_interval == 0:
                 self.ANN.save(size=env.size, level=i)
+                #write_db('size_6_comp', self.buffer)
             self.env.reset()
             self.MCTS.init_tree()
             while not self.env.is_game_over():
@@ -53,10 +54,8 @@ class RL:
     def add_case(self, D):
         state = self.env.flat_state
         self.buffer.append((state, D))
-        #if len(self.buffer) > self.buffer_size: self.buffer.pop(0)
         if random.random() > 0.5:
             self.buffer.append(self.rotated(state, D))
-            #if len(self.buffer) > self.buffer_size: self.buffer.pop(0)
 
     def rotated(self, state, D):
         size = self.env.size
@@ -97,7 +96,7 @@ class RL:
         plt.legend()
         plt.grid()
         if save:
-            plt.savefig("plots/size-{}".format(self.env.size))
+            plt.savefig("plots/size-{}-new".format(self.env.size))
             plt.close()
         else:
             if episode==self.G:
@@ -149,20 +148,24 @@ class RL:
         write_db('cases/test_size_{}'.format(self.env.size), cases)
 
 def write_db(filename, cases):
+    if len(cases) == 0: return
     inputs, targets = list(zip(*cases))
     np.savetxt(filename+'_inputs.txt', inputs)
     np.savetxt(filename+'_targets.txt', targets)
+    print("Buffer written to file")
 
 def load_db(filename):
     inputs = np.loadtxt(filename+'_inputs.txt')
     targets = np.loadtxt(filename+'_targets.txt')
+    print("Buffer loaded from file")
     return inputs.astype(int), targets
+
 
 if __name__ == '__main__':
     # MCTS/RL parameters
-    board_size = 5
-    G = 500
-    M = 1000
+    board_size = 6
+    G = 1000
+    M = 2000
     save_interval = 50
     batch_size = 500
     buffer_size = 1000
@@ -182,11 +185,12 @@ if __name__ == '__main__':
     test_data = load_db('cases/test_size_{}'.format(board_size))
     MCTS = MonteCarloTreeSearch(CNN, c=1.4, eps=1, stoch_policy=True)
     env = HexGame(board_size)
-    RL = RL(G, M, env, CNN, MCTS, save_interval, batch_size, buffer_size, test_data=test_data)
+    RL = RL(G, M, env, CNN, MCTS, save_interval, batch_size, buffer_size, test_data=None)
 
     #x, y = test_data
-    #RL.pre_train(x, y, 20)
+    RL.pre_train(x, y, 20)
+    CNN.save()
     # Run RL algorithm and plot results
-    RL.run(plot_interval=10)
-    RL.play_game()
+    #RL.run(plot_interval=10)
+    #RL.play_game()
     #RL.generate_cases()

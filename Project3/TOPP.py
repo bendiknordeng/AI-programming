@@ -2,9 +2,9 @@ import math
 import random
 
 import numpy as np
-from ANN import ANN
 from CNN import CNN
 from game import HexGame
+from tqdm import tqdm
 
 
 class TOPP:
@@ -17,18 +17,23 @@ class TOPP:
         self.num_games = num_games
         self.stoch_percent = stoch_percent
 
-    def run_tournament(self, display):
-        print("Tournament on a board size", self.board_size )
-        for _ in range(self.num_games):
+    def run_tournament(self, display, print_games=False):
+        print("Tournament on board size", self.board_size)
+        if print_games:
+            runlist = range(self.num_games)
+        else:
+            runlist = tqdm(range(self.num_games))
+        for _ in runlist:
             for p1 in self.players1:
-                print()
+                game_print = ""
                 for p2 in self.players2:
                     if p1 != p2:
-                        print("{} - {}:".format(p1,p2), end=" ")
+                        if print_games: game_print += "{} - {}: ".format(p1,p2)
                         p1_won, moves = self.play_game(self.players1[p1], self.players2[p2], display)
                         winner = p1 if p1_won else p2
                         self.table[winner] += 1
-                        print("{} won after {} moves.".format(winner, moves))
+                        if print_games: game_print += "{} won after {} moves.\n".format(winner, moves)
+                if print_games: print(game_print)
         print("\nFinal results:")
         sorted_table = {player: result for player, result in sorted(self.table.items(), key=lambda item: item[1], reverse=True)}
         place = 1
@@ -52,7 +57,7 @@ class TOPP:
 
 
 if __name__ == '__main__':
-    board_size = 5
+    board_size = 6
 
     activation_functions = ["Linear", "Sigmoid", "Tanh", "ReLU"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
@@ -63,9 +68,9 @@ if __name__ == '__main__':
     optimizer = optimizers[3]
     epochs = 10
 
-    num_games = 10
+    num_games = 50
     bottom_level = 0
-    top_level = 400
+    top_level = 800
     interval = 50
     stoch_percent = 1.
 
@@ -73,7 +78,6 @@ if __name__ == '__main__':
     models = np.sort(np.concatenate([l,l]))
     players1 = {}
     players2 = {}
-
 
     for i in range(0,len(models),2):
         ann = CNN(board_size, H_dims)
@@ -83,4 +87,4 @@ if __name__ == '__main__':
         ann.load(board_size, models[i+1])
         players2[models[i+1]] = ann
     tournament = TOPP(players1, players2, board_size, num_games, stoch_percent)
-    tournament.run_tournament(display=False)
+    tournament.run_tournament(display=False, print_games=False)

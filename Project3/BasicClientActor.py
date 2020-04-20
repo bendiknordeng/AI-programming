@@ -1,7 +1,7 @@
 import math
 from BasicClientActorAbs import BasicClientActorAbs
-from ANN import ANN
 from game import HexGame
+from CNN import CNN
 import numpy as np
 
 class BasicClientActor(BasicClientActorAbs):
@@ -9,8 +9,16 @@ class BasicClientActor(BasicClientActorAbs):
     def __init__(self, IP_address=None, verbose=True):
         self.series_id = -1
         BasicClientActorAbs.__init__(self, IP_address, verbose=verbose)
-        self.ann = ANN(1,[1],0, "Adam", "relu", 1)
-        self.ann.load(6,400)
+        activation_functions = ["Linear", "Sigmoid", "Tanh", "ReLU"]
+        optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
+        alpha = 0.001  # learning rate
+        H_dims = [32, 32]
+        activation = activation_functions[3]
+        optimizer = optimizers[3]
+        epochs = 1
+        self.board_size = 6
+        self.cnn = CNN(self.board_size, H_dims, alpha, epochs, activation, optimizer)
+        self.cnn.load(self.board_size, 650)
 
     def handle_get_action(self, state):
         """
@@ -22,12 +30,13 @@ class BasicClientActor(BasicClientActorAbs):
         then you will see a 2 here throughout the entire series, whereas player 1 will see a 1.
         :return: Your actor's selected action as a tuple (row, column)
         """
+
+        # This is an example player who picks random moves. REMOVE THIS WHEN YOU ADD YOUR OWN CODE !!
         player = state[0]
         board_state = state[1:]
-        board_size = int(np.sqrt(len(board_state)))
-        env = HexGame(board_size, board_state, player)
-        probs, stoch_index, greedy_index = self.ann.get_move(env)
-        return env.all_moves(greedy_index)
+        env = HexGame(self.board_size, board_state, player)
+        probs, stoch_index, greedy_index = self.cnn.get_move(env)
+        return env.all_moves[greedy_index]
 
     def handle_series_start(self, unique_id, series_id, player_map, num_games, game_params):
         """
@@ -71,13 +80,12 @@ class BasicClientActor(BasicClientActorAbs):
         :param end_state: Final state of the board.
         :return:
         """
-        #############################
-        #
-        #
-        # YOUR CODE HERE
-        #
-        #
-        ##############################
+        player = end_state[0]
+        state = end_state[1:]
+        env = HexGame(self.board_size, state, player)
+        path = env.is_game_over()
+        env.draw(path=path, animation_delay=0.1)
+
         print("Game over, these are the stats:")
         print('Winner: ' + str(winner))
         print('End state: ' + str(end_state))

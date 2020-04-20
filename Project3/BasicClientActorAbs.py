@@ -295,3 +295,7 @@ class BasicClientActorAbs(ABC):
                 col = index % size
                 empty_locs.append((row, col))
         return random.choice(empty_locs)
+
+
+
+

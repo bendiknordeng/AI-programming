@@ -2,12 +2,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-from tqdm import tqdm
-from game import HexGame
 from collections import OrderedDict
+from game import HexGame
 
 class CNN(nn.Module):
-    def __init__(self, size, H_dims=[64,64,64], alpha=0.01, epochs=10, activation='ReLU', optimizer='Adam'):
+    def __init__(self, size, H_dims=(32,32), alpha=0.01, epochs=10, activation='ReLU', optimizer='Adam'):
         super(CNN, self).__init__()
         self.size = size
         self.env = HexGame(self.size)
@@ -132,7 +131,7 @@ class CNN(nn.Module):
         print("Model has been saved to models/{}_CNN_level_{}".format(size,level))
 
     def load(self, size, level):
-        self.load_state_dict(torch.load("models/{}_CNN_level_{}".format(size,level)))
+        self.load_state_dict(torch.load("models/{}_CNN_level_{}_v2".format(size,level)))
         print("Loaded model from models/{}_CNN_level_{}".format(size,level))
 
     def __choose_optimizer(self, params, optimizer):
