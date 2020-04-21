@@ -13,7 +13,7 @@ from tqdm import tqdm
 np.set_printoptions(linewidth=500)  # print formatting
 
 class RL:
-    def __init__(self, G, M, env, ANN, MCTS, save_interval, batch_size, buffer_size, test_data=None):
+    def __init__(self, G, M, env, ANN, MCTS, save_interval, batch_size, buffer_size, buffer=None, test_data=None):
         self.G = G
         self.M = M
         self.env = env
@@ -29,12 +29,13 @@ class RL:
         self.test_data = test_data
         if test_data:
             self.x_test, self.y_test = test_data
-        self.buffer = []
+        self.buffer = buffer if buffer else []
         self.start_plot = 0
+
 
     def run(self, plot_interval=1):
         eps_decay = 0.05 ** (1./self.G) if self.G > 100 else 1
-        for i in tqdm(range(self.G)):
+        for i in tqdm(range(801, self.G)):
             if i % plot_interval == 0 and self.start_plot:
                 self.plot(save=True)
             if i % self.save_interval == 0:
@@ -96,7 +97,7 @@ class RL:
         plt.legend()
         plt.grid()
         if save:
-            plt.savefig("plots/size-{}-new".format(self.env.size))
+            plt.savefig("plots/size-{}-cont".format(self.env.size))
             plt.close()
         else:
             if episode==self.G:
@@ -129,10 +130,9 @@ class RL:
         n = len(x)
         for i in tqdm(range(epochs)):
             loss, acc = self.ANN.fit(x, y)
-            loss /= n
             self.train_losses.append(loss)
             self.train_accuracies.append(acc)
-            self.plot(i+1, save=True)
+            self.plot(save=True)
         print("Loss: {}\nAccuracy: {}".format(loss, acc))
 
     def generate_cases(self):
@@ -181,16 +181,19 @@ if __name__ == '__main__':
 
     #ANN = ANN(board_size**2, H_dims, alpha, optimizer, activation, epochs)
     CNN = CNN(board_size, H_dims, alpha, epochs, activation, optimizer)
-    #CNN.load(size=board_size, level=50)
-    test_data = load_db('cases/test_size_{}'.format(board_size))
-    MCTS = MonteCarloTreeSearch(CNN, c=1.4, eps=1, stoch_policy=True)
+    CNN.load(size=board_size, level=800)
+    cases = load_db('cases/size_{}_comp'.format(board_size))
+    cases = list(zip(*cases))
+    eps = 1 * (0.05 ** (1./1000)) ** 800
+    MCTS = MonteCarloTreeSearch(CNN, c=1.4, eps=eps, stoch_policy=True)
     env = HexGame(board_size)
-    RL = RL(G, M, env, CNN, MCTS, save_interval, batch_size, buffer_size, test_data=None)
+    RL = RL(G, M, env, CNN, MCTS, save_interval, batch_size, buffer_size, buffer=cases, test_data=None)
 
-    #x, y = test_data
-    RL.pre_train(x, y, 20)
-    CNN.save()
+    #x, y = cases[10000:]
+    #RL.pre_train(x, y, 25)
+    #CNN.save(size=6, level=1200)
+
     # Run RL algorithm and plot results
-    #RL.run(plot_interval=10)
+    RL.run(plot_interval=10)
     #RL.play_game()
     #RL.generate_cases()

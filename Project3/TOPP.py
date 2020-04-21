@@ -68,9 +68,9 @@ if __name__ == '__main__':
     optimizer = optimizers[3]
     epochs = 10
 
-    num_games = 50
-    bottom_level = 0
-    top_level = 800
+    num_games = 500
+    bottom_level = 900
+    top_level = 1000
     interval = 50
     stoch_percent = 1.
 

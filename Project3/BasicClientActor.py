@@ -18,7 +18,7 @@ class BasicClientActor(BasicClientActorAbs):
         epochs = 1
         self.board_size = 6
         self.cnn = CNN(self.board_size, H_dims, alpha, epochs, activation, optimizer)
-        self.cnn.load(self.board_size, 650)
+        self.cnn.load(self.board_size, 900)
 
     def handle_get_action(self, state):
         """
