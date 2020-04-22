@@ -18,7 +18,7 @@ class BasicClientActor(BasicClientActorAbs):
         epochs = 1
         self.board_size = 6
         self.cnn = CNN(self.board_size, H_dims, alpha, epochs, activation, optimizer)
-        self.cnn.load(self.board_size, 900)
+        self.cnn.load(self.board_size, 1000)
 
     def handle_get_action(self, state):
         """
@@ -36,6 +36,8 @@ class BasicClientActor(BasicClientActorAbs):
         board_state = state[1:]
         env = HexGame(self.board_size, board_state, player)
         probs, stoch_index, greedy_index = self.cnn.get_move(env)
+        print("Your model chose the move {}".format(env.all_moves[greedy_index]))
+        env.draw(animation_delay=0.1)
         return env.all_moves[greedy_index]
 
     def handle_series_start(self, unique_id, series_id, player_map, num_games, game_params):

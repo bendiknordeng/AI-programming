@@ -219,13 +219,3 @@ class HexGame:
         Returns: string for verbose mode
         """
         return "Player {} put a piece on {}".format(self.player, action)
-
-if __name__ == "__main__":
-    game = HexGame(4)
-    reds = [(1, 2)]
-    blacks = []
-    for cell in reds:
-        game.state[cell] = 1
-    for cell in blacks:
-        game.state[cell] = 2
-    game.draw()

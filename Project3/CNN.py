@@ -127,11 +127,11 @@ class CNN(nn.Module):
         return new_probs, stoch_index, greedy_index
 
     def save(self, size, level):
-        torch.save(self.state_dict(), "models/{}_CNN_level_{}_v2".format(size,level))
-        print("Model has been saved to models/{}_CNN_level_{}_v2".format(size,level))
+        torch.save(self.state_dict(), "models/{}_CNN_level_{}".format(size,level))
+        print("Model has been saved to models/{}_CNN_level_{}".format(size,level))
 
     def load(self, size, level):
-        self.load_state_dict(torch.load("models/{}_CNN_level_{}_v2".format(size,level)))
+        self.load_state_dict(torch.load("models/{}_CNN_level_{}".format(size,level)))
         print("Loaded model from models/{}_CNN_level_{}".format(size,level))
 
     def __choose_optimizer(self, params, optimizer):

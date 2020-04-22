@@ -34,13 +34,12 @@ class RL:
 
 
     def run(self, plot_interval=1):
-        eps_decay = 0.05 ** (1./self.G) if self.G > 100 else 1
-        for i in tqdm(range(801, self.G)):
+        for i in tqdm(range(1001, self.G)):
             if i % plot_interval == 0 and self.start_plot:
                 self.plot(save=True)
             if i % self.save_interval == 0:
                 self.ANN.save(size=env.size, level=i)
-                #write_db('size_6_comp', self.buffer)
+                write_db('size_6_comp', self.buffer)
             self.env.reset()
             self.MCTS.init_tree()
             while not self.env.is_game_over():
@@ -164,7 +163,7 @@ def load_db(filename):
 if __name__ == '__main__':
     # MCTS/RL parameters
     board_size = 6
-    G = 1000
+    G = 1500
     M = 2000
     save_interval = 50
     batch_size = 500
@@ -181,10 +180,10 @@ if __name__ == '__main__':
 
     #ANN = ANN(board_size**2, H_dims, alpha, optimizer, activation, epochs)
     CNN = CNN(board_size, H_dims, alpha, epochs, activation, optimizer)
-    CNN.load(size=board_size, level=800)
+    CNN.load(size=board_size, level=1000)
     cases = load_db('cases/size_{}_comp'.format(board_size))
-    cases = list(zip(*cases))
-    eps = 1 * (0.05 ** (1./1000)) ** 800
+    cases = list(zip(*cases[10000:]))
+    eps = 0
     MCTS = MonteCarloTreeSearch(CNN, c=1.4, eps=eps, stoch_policy=True)
     env = HexGame(board_size)
     RL = RL(G, M, env, CNN, MCTS, save_interval, batch_size, buffer_size, buffer=cases, test_data=None)
@@ -194,6 +193,6 @@ if __name__ == '__main__':
     #CNN.save(size=6, level=1200)
 
     # Run RL algorithm and plot results
-    RL.run(plot_interval=10)
+    RL.run(plot_interval=1)
     #RL.play_game()
     #RL.generate_cases()

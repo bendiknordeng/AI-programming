@@ -55,8 +55,8 @@ if __name__ == '__main__':
     cnn = CNN(board_size, H_dims, alpha, epochs, activation, optimizer)
     cnn.load(board_size, level)
 
-    sim = 10
-    mcts = MonteCarloTreeSearch(cnn, c=1.4, eps=1)
+    sim = 500
+    mcts = MonteCarloTreeSearch(cnn, c=1.4, eps=0)
     env = HexGame(board_size)
     top_moves = 5
 
