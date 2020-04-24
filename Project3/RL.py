@@ -47,7 +47,7 @@ class RL:
                 self.add_case(D)
                 env.move(env.all_moves[np.argmax(D)])
             self.train_ann(i)
-            self.MCTS.eps *= eps_decay
+            #self.MCTS.eps *= eps_decay
         self.ANN.save(size=env.size, level=i+1)
         self.plot(save=True)
 
@@ -181,12 +181,12 @@ if __name__ == '__main__':
     #ANN = ANN(board_size**2, H_dims, alpha, optimizer, activation, epochs)
     CNN = CNN(board_size, H_dims, alpha, epochs, activation, optimizer)
     CNN.load(size=board_size, level=1000)
-    cases = load_db('cases/size_{}_comp'.format(board_size))
-    cases = list(zip(*cases[10000:]))
+    cases = load_db('cases/size_{}_comp_v1'.format(board_size))
+    cases = list(zip(*cases))
     eps = 0
     MCTS = MonteCarloTreeSearch(CNN, c=1.4, eps=eps, stoch_policy=True)
     env = HexGame(board_size)
-    RL = RL(G, M, env, CNN, MCTS, save_interval, batch_size, buffer_size, buffer=cases, test_data=None)
+    RL = RL(G, M, env, CNN, MCTS, save_interval, batch_size, buffer_size, buffer=cases[10000:], test_data=None)
 
     #x, y = cases[10000:]
     #RL.pre_train(x, y, 25)

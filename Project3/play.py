@@ -41,7 +41,7 @@ def play(mcts, sim, ann, env, top_moves):
 
 if __name__ == '__main__':
     board_size = 6
-    level = 1000
+    level = 1200
 
     activation_functions = ["Linear", "Sigmoid", "Tanh", "ReLU"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
@@ -56,7 +56,7 @@ if __name__ == '__main__':
     cnn.load(board_size, level)
 
     sim = 500
-    mcts = MonteCarloTreeSearch(cnn, c=1.4, eps=0)
+    mcts = MonteCarloTreeSearch(cnn, c=1.4, eps=1)
     env = HexGame(board_size)
     top_moves = 5
 

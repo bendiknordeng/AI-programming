@@ -38,7 +38,7 @@ class TOPP:
         sorted_table = {player: result for player, result in sorted(self.table.items(), key=lambda item: item[1], reverse=True)}
         place = 1
         for player in list(sorted_table.keys()):
-            print("{:>2}: {:>3}  - {:>2} wins".format(place, player, self.table[player]))
+            print("{:>2}: {:>4}  - {:>2} wins".format(place, player, self.table[player]))
             place += 1
 
     def play_game(self, ann1, ann2, display=True):
@@ -48,7 +48,7 @@ class TOPP:
             moves += 1
             _, stoch_index, greedy_index = ann1.get_move(self.env) if self.env.player == 1 else ann2.get_move(self.env)
             self.env.move(self.env.all_moves[stoch_index if random.random() < self.stoch_percent else greedy_index])
-            if display: self.env.draw(animation_delay=0.2)
+            if display: self.env.draw(animation_delay=0.5)
         p1_won = True if self.env.result() == 1 else False
         if display:
             path = self.env.is_game_over()
@@ -68,11 +68,11 @@ if __name__ == '__main__':
     optimizer = optimizers[3]
     epochs = 10
 
-    num_games = 500
-    bottom_level = 900
-    top_level = 1000
+    num_games = 10
+    bottom_level = 0
+    top_level = 1250
     interval = 50
-    stoch_percent = 1.
+    stoch_percent = 0.
 
     l = np.arange(bottom_level, top_level+1, interval)
     models = np.sort(np.concatenate([l,l]))
