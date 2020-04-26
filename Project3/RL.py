@@ -122,27 +122,6 @@ class RL:
                 break
         self.env.draw(path=winning_path)
 
-    def pre_train(self, x, y, epochs):
-        n = len(x)
-        for i in tqdm(range(epochs)):
-            loss, acc = self.ANN.fit(x, y)
-            self.train_losses.append(loss)
-            self.train_accuracies.append(acc)
-            self.plot(save=True)
-        print("Loss: {}\nAccuracy: {}".format(loss, acc))
-
-    def generate_cases(self):
-        cases = []
-        for i in tqdm(range(self.G)):
-            self.env.reset()
-            self.MCTS.init_tree()
-            while not self.env.is_game_over():
-                D = self.MCTS.search(self.env, self.M)
-                cases.append((self.env.flat_state, D))
-                cases.append(self.rotated(self.env.flat_state, D))
-                self.env.move(self.env.all_moves[np.argmax(D)])
-        write_db('cases/test_size_{}'.format(self.env.size), cases)
-
 def write_db(filename, cases):
     if len(cases) == 0: return
     inputs, targets = list(zip(*cases))
@@ -159,9 +138,9 @@ def load_db(filename):
 
 if __name__ == '__main__':
     # MCTS/RL parameters
-    board_size = 4
+    board_size = 5
     G = 50
-    M = 250
+    M = 500
     save_interval = 10
 
     # ANN parameters
@@ -173,7 +152,6 @@ if __name__ == '__main__':
     optimizer = optimizers[3]
     epochs = 5
 
-    #ANN = ANN(board_size**2, H_dims, alpha, optimizer, activation, epochs)
     CNN = CNN(board_size, H_dims, alpha, epochs, activation, optimizer)
     #CNN.load(size=board_size, level=1350)
     #cases = load_db('cases/size_{}_comp'.format(board_size))
@@ -182,11 +160,6 @@ if __name__ == '__main__':
     env = HexGame(board_size)
     RL = RL(G, M, env, CNN, MCTS, save_interval, buffer=None, test_data=None)
 
-    #x, y = cases[10000:]
-    #RL.pre_train(x, y, 25)
-    #CNN.save(size=6, level=1200)
-
     # Run RL algorithm and plot results
     RL.run(plot_interval=10)
     RL.play_game()
-    #RL.generate_cases()
