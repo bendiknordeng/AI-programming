@@ -57,7 +57,7 @@ class TOPP:
 
 
 if __name__ == '__main__':
-    board_size = 6
+    board_size = 5
 
     activation_functions = ["Linear", "Sigmoid", "Tanh", "ReLU"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
@@ -68,11 +68,11 @@ if __name__ == '__main__':
     optimizer = optimizers[3]
     epochs = 10
 
-    num_games = 10
+    num_games = 20
     bottom_level = 0
-    top_level = 1250
+    top_level = 500
     interval = 50
-    stoch_percent = 0.
+    stoch_percent = 1.
 
     l = np.arange(bottom_level, top_level+1, interval)
     models = np.sort(np.concatenate([l,l]))

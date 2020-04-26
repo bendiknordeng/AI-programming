@@ -13,15 +13,13 @@ from tqdm import tqdm
 np.set_printoptions(linewidth=500)  # print formatting
 
 class RL:
-    def __init__(self, G, M, env, ANN, MCTS, save_interval, batch_size, buffer_size, buffer=None, test_data=None):
+    def __init__(self, G, M, env, ANN, MCTS, save_interval, buffer=None, test_data=None):
         self.G = G
         self.M = M
         self.env = env
         self.ANN = ANN
         self.MCTS = MCTS
         self.save_interval = save_interval
-        self.batch_size = batch_size
-        self.buffer_size = buffer_size
         self.train_losses = []
         self.train_accuracies = []
         self.test_losses = []
@@ -34,12 +32,12 @@ class RL:
 
 
     def run(self, plot_interval=1):
-        for i in tqdm(range(1001, self.G)):
+        eps_decay = 0.05 ** (1./self.G) if self.G > 100 else 1
+        for i in tqdm(range(self.G)):
             if i % plot_interval == 0 and self.start_plot:
                 self.plot(save=True)
             if i % self.save_interval == 0:
                 self.ANN.save(size=env.size, level=i)
-                write_db('size_6_comp', self.buffer)
             self.env.reset()
             self.MCTS.init_tree()
             while not self.env.is_game_over():
@@ -47,7 +45,7 @@ class RL:
                 self.add_case(D)
                 env.move(env.all_moves[np.argmax(D)])
             self.train_ann(i)
-            #self.MCTS.eps *= eps_decay
+            self.MCTS.eps *= eps_decay
         self.ANN.save(size=env.size, level=i+1)
         self.plot(save=True)
 
@@ -63,24 +61,23 @@ class RL:
         return (np.asarray([player] + list(state[:0:-1])), D[::-1])
 
     def train_ann(self, i):
-        self.batch_size = len(self.buffer)//2
-        if self.batch_size > 500: # start training when enough cases to not overfit small sample
-            if not self.start_plot: self.start_plot = i
-            training_cases = random.sample(self.buffer, self.batch_size)
-            x_train, y_train = list(zip(*training_cases))
-            loss, acc = self.ANN.fit(x_train, y_train)
-            self.train_losses.append(loss)
-            self.train_accuracies.append(acc)
-            if self.test_data:
-                loss, acc = self.ANN.evaluate(self.x_test, self.y_test)
-                self.test_losses.append(loss)
-                self.test_accuracies.append(acc)
+        batch_size = len(self.buffer)//2
+        if not self.start_plot: self.start_plot = i
+        training_cases = random.sample(self.buffer, batch_size)
+        x_train, y_train = list(zip(*training_cases))
+        loss, acc = self.ANN.fit(x_train, y_train)
+        self.train_losses.append(loss)
+        self.train_accuracies.append(acc)
+        if self.test_data:
+            loss, acc = self.ANN.evaluate(self.x_test, self.y_test)
+            self.test_losses.append(loss)
+            self.test_accuracies.append(acc)
 
     def plot(self, save=False):
         x = np.arange(len(self.train_accuracies))+self.start_plot
         fig = plt.figure(figsize=(12,5))
         title = 'Size: {}   M: {}   lr: {}   Epochs: {}   '.format(self.env.size, self.M, self.ANN.alpha, self.ANN.epochs)
-        title += 'Batch size: {}   Buffer size: {}'.format(self.batch_size, len(self.buffer))
+        title += 'Buffer size: {}'.format(len(self.buffer))
         fig.suptitle(title, fontsize=10)
         gs = fig.add_gridspec(1, 2)
         ax = fig.add_subplot(gs[0,0])
@@ -162,12 +159,10 @@ def load_db(filename):
 
 if __name__ == '__main__':
     # MCTS/RL parameters
-    board_size = 6
-    G = 1500
-    M = 2000
+    board_size = 4
+    G = 20
+    M = 500
     save_interval = 50
-    batch_size = 500
-    buffer_size = 1000
 
     # ANN parameters
     activation_functions = ["Linear", "Sigmoid", "Tanh", "ReLU"]
@@ -176,23 +171,22 @@ if __name__ == '__main__':
     H_dims = [32, 32]
     activation = activation_functions[3]
     optimizer = optimizers[3]
-    epochs = 1
+    epochs = 25
 
     #ANN = ANN(board_size**2, H_dims, alpha, optimizer, activation, epochs)
     CNN = CNN(board_size, H_dims, alpha, epochs, activation, optimizer)
-    CNN.load(size=board_size, level=1000)
-    cases = load_db('cases/size_{}_comp_v1'.format(board_size))
-    cases = list(zip(*cases))
-    eps = 0
-    MCTS = MonteCarloTreeSearch(CNN, c=1.4, eps=eps, stoch_policy=True)
+    #CNN.load(size=board_size, level=1350)
+    #cases = load_db('cases/size_{}_comp'.format(board_size))
+    #cases = list(zip(*cases))
+    MCTS = MonteCarloTreeSearch(CNN, c=1.4, eps=1, stoch_policy=True)
     env = HexGame(board_size)
-    RL = RL(G, M, env, CNN, MCTS, save_interval, batch_size, buffer_size, buffer=cases[10000:], test_data=None)
+    RL = RL(G, M, env, CNN, MCTS, save_interval, buffer=None, test_data=None)
 
     #x, y = cases[10000:]
     #RL.pre_train(x, y, 25)
     #CNN.save(size=6, level=1200)
 
     # Run RL algorithm and plot results
-    RL.run(plot_interval=1)
-    #RL.play_game()
+    RL.run(plot_interval=50)
+    RL.play_game()
     #RL.generate_cases()
