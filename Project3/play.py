@@ -20,9 +20,10 @@ def play(mcts, sim, ann, env, top_moves):
             mcts_move = list(sorted_mcts.keys())[-i]
             print("{:>2}: {:>5.2f}% \t {:>10}: {:>5.2f}%".format(model_move, sorted_moves[model_move] * 100,
                                                              mcts_move, sorted_mcts[mcts_move] * 100))
-        #print("\nMCTS would have chosen: {}, ({:.2f}% confidence)".format(best_mcts_move, D[best_mcts_move]*100))
-        #print("The model would have chosen: {}, ({:.2f}% confidence)".format(index, probs[index]*100))
+        print("\nThe model would have chosen: {}, ({:.2f}% confidence)".format(index, probs[index]*100))
+        print("MCTS would have chosen: {}, ({:.2f}% confidence)\n".format(best_mcts_move, D[best_mcts_move]*100))
         env.draw()
+
         i = input("Choose move (press enter for model move): ")
         if i == '':
             move = index
@@ -30,29 +31,20 @@ def play(mcts, sim, ann, env, top_moves):
             move = best_mcts_move
         else:
             move = int(i)
-        print("Chose move {}".format(move))
+        print("\nChose move {}".format(move))
         env.move(env.all_moves[move])
         winning_path = env.is_game_over()
         if winning_path:
             break
-    print("Player", 3 - env.player, "won")
+    print("\nPlayer", 3 - env.player, "won")
     env.draw(path=winning_path)
 
 
 if __name__ == '__main__':
     board_size = 6
-    level = 1200
+    level = 1500
 
-    activation_functions = ["Linear", "Sigmoid", "Tanh", "ReLU"]
-    optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
-    alpha = 0.001  # learning rate
-    H_dims = [32, 32]
-    io_dim = board_size * board_size  # input and output layer sizes
-    activation = activation_functions[3]
-    optimizer = optimizers[3]
-    epochs = 1
-
-    cnn = CNN(board_size, H_dims, alpha, epochs, activation, optimizer)
+    cnn = CNN(board_size)
     cnn.load(board_size, level)
 
     sim = 500

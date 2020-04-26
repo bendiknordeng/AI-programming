@@ -6,7 +6,7 @@ from collections import OrderedDict
 from game import HexGame
 
 class CNN(nn.Module):
-    def __init__(self, size, H_dims=(32,32), alpha=0.01, epochs=10, activation='ReLU', optimizer='Adam'):
+    def __init__(self, size, H_dims=(32,32), alpha=0.001, epochs=1, activation='ReLU', optimizer='Adam'):
         super(CNN, self).__init__()
         self.size = size
         self.env = HexGame(self.size)
