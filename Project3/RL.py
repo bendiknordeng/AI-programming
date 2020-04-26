@@ -93,7 +93,7 @@ class RL:
         plt.legend()
         plt.grid()
         if save:
-            plt.savefig("plots/size-{}-cont".format(self.env.size))
+            plt.savefig("plots/size-{}".format(self.env.size))
             plt.close()
         else:
             if episode==self.G:
@@ -160,9 +160,9 @@ def load_db(filename):
 if __name__ == '__main__':
     # MCTS/RL parameters
     board_size = 4
-    G = 20
-    M = 500
-    save_interval = 50
+    G = 50
+    M = 250
+    save_interval = 10
 
     # ANN parameters
     activation_functions = ["Linear", "Sigmoid", "Tanh", "ReLU"]
@@ -171,7 +171,7 @@ if __name__ == '__main__':
     H_dims = [32, 32]
     activation = activation_functions[3]
     optimizer = optimizers[3]
-    epochs = 25
+    epochs = 5
 
     #ANN = ANN(board_size**2, H_dims, alpha, optimizer, activation, epochs)
     CNN = CNN(board_size, H_dims, alpha, epochs, activation, optimizer)
@@ -187,6 +187,6 @@ if __name__ == '__main__':
     #CNN.save(size=6, level=1200)
 
     # Run RL algorithm and plot results
-    RL.run(plot_interval=50)
+    RL.run(plot_interval=10)
     RL.play_game()
     #RL.generate_cases()
