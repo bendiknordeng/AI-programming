@@ -35,7 +35,7 @@ class TOPP:
                         if print_games: game_print += "{} won after {} moves.\n".format(winner, moves)
                 if print_games: print(game_print)
         print("\nFinal results:")
-        sorted_table = {player: result for player, result in sorted(self.table.items(), key=lambda item: item[1], reverse=True)}
+        sorted_table = {player: result for player, result in sorted(self.table.items(), key=lambda item: (item[1], str(item[0])), reverse=True)}
         place = 1
         for player in list(sorted_table.keys()):
             print("{:>2}: {:>4}  - {:>2} wins".format(place, player, self.table[player]))
@@ -57,7 +57,7 @@ class TOPP:
 
 
 if __name__ == '__main__':
-    board_size = 5
+    board_size = 6
 
     activation_functions = ["Linear", "Sigmoid", "Tanh", "ReLU"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
@@ -68,10 +68,10 @@ if __name__ == '__main__':
     optimizer = optimizers[3]
     epochs = 10
 
-    num_games = 20
+    num_games = 50
     bottom_level = 0
-    top_level = 500
-    interval = 50
+    top_level = 1700
+    interval = 100
     stoch_percent = 1.
 
     l = np.arange(bottom_level, top_level+1, interval)
@@ -80,10 +80,10 @@ if __name__ == '__main__':
     players2 = {}
 
     for i in range(0,len(models),2):
-        ann = CNN(board_size, H_dims)
+        ann = CNN(board_size)
         ann.load(board_size, models[i])
         players1[models[i]] = ann
-        ann = CNN(board_size, H_dims)
+        ann = CNN(board_size)
         ann.load(board_size, models[i+1])
         players2[models[i+1]] = ann
     tournament = TOPP(players1, players2, board_size, num_games, stoch_percent)

@@ -33,11 +33,12 @@ class RL:
 
     def run(self, plot_interval=1):
         eps_decay = 0.05 ** (1./self.G) if self.G > 100 else 1
-        for i in tqdm(range(self.G)):
+        for i in tqdm(range(1501,self.G)):
             if i % plot_interval == 0 and self.start_plot:
                 self.plot(save=True)
             if i % self.save_interval == 0:
                 self.ANN.save(size=env.size, level=i)
+                write_db('cases/size_6', self.buffer)
             self.env.reset()
             self.MCTS.init_tree()
             while not self.env.is_game_over():
@@ -45,7 +46,7 @@ class RL:
                 self.add_case(D)
                 env.move(env.all_moves[np.argmax(D)])
             self.train_ann(i)
-            self.MCTS.eps *= eps_decay
+            #self.MCTS.eps *= eps_decay
         self.ANN.save(size=env.size, level=i+1)
         self.plot(save=True)
 
@@ -138,10 +139,11 @@ def load_db(filename):
 
 if __name__ == '__main__':
     # MCTS/RL parameters
-    board_size = 5
-    G = 50
-    M = 500
-    save_interval = 10
+    board_size = 6
+    G = 2000
+    M = 2000
+    epsilon = 0
+    save_interval = 50
 
     # ANN parameters
     activation_functions = ["Linear", "Sigmoid", "Tanh", "ReLU"]
@@ -150,16 +152,17 @@ if __name__ == '__main__':
     H_dims = [32, 32]
     activation = activation_functions[3]
     optimizer = optimizers[3]
-    epochs = 5
+    epochs = 1
 
     CNN = CNN(board_size, H_dims, alpha, epochs, activation, optimizer)
-    #CNN.load(size=board_size, level=1350)
-    #cases = load_db('cases/size_{}_comp'.format(board_size))
-    #cases = list(zip(*cases))
-    MCTS = MonteCarloTreeSearch(CNN, c=1.4, eps=1, stoch_policy=True)
+    CNN.load(size=board_size, level=1500)
+    cases = load_db('cases/size_{}_comp_v2'.format(board_size))
+    cases = list(zip(*cases))
+
+    MCTS = MonteCarloTreeSearch(CNN, c=1.4, eps=epsilon, stoch_policy=True)
     env = HexGame(board_size)
-    RL = RL(G, M, env, CNN, MCTS, save_interval, buffer=None, test_data=None)
+    RL = RL(G, M, env, CNN, MCTS, save_interval, buffer=cases[5000:], test_data=None)
 
     # Run RL algorithm and plot results
-    RL.run(plot_interval=10)
-    RL.play_game()
+    RL.run(plot_interval=1)
+    #RL.play_game()

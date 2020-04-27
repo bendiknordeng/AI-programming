@@ -23,7 +23,6 @@ def play(mcts, sim, ann, env, top_moves):
         print("\nThe model would have chosen: {}, ({:.2f}% confidence)".format(index, probs[index]*100))
         print("MCTS would have chosen: {}, ({:.2f}% confidence)\n".format(best_mcts_move, D[best_mcts_move]*100))
         env.draw()
-
         i = input("Choose move (press enter for model move): ")
         if i == '':
             move = index
@@ -42,12 +41,12 @@ def play(mcts, sim, ann, env, top_moves):
 
 if __name__ == '__main__':
     board_size = 6
-    level = 1500
+    level = 1700
 
     cnn = CNN(board_size)
     cnn.load(board_size, level)
 
-    sim = 500
+    sim = 10
     mcts = MonteCarloTreeSearch(cnn, c=1.4, eps=1)
     env = HexGame(board_size)
     top_moves = 5
