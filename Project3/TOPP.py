@@ -71,7 +71,7 @@ def get_players(board_size, bottom_level, top_level, interval):
 
 if __name__ == '__main__':
     board_size = 4
-    num_games = 50
+    num_games = 10
     bottom_level = 0
     top_level = 20
     interval = 5

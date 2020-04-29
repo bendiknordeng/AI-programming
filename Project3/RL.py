@@ -155,7 +155,7 @@ if __name__ == '__main__':
     epochs = 5
 
     CNN = CNN(board_size, H_dims, alpha, epochs, activation, optimizer)
-    #CNN.load(size=board_size, level=1700)
+    #CNN.load(size=board_size, level=500)
     #cases = load_db('cases/size_{}_comp_v3'.format(board_size))
     #cases = list(zip(*cases))
 
@@ -164,5 +164,5 @@ if __name__ == '__main__':
     RL = RL(G, M, env, CNN, MCTS, save_interval, buffer=None, test_data=None)
 
     # Run RL algorithm and plot results
-    RL.run(plot_interval=10)
+    RL.run(plot_interval=5)
     RL.play_game()

@@ -23,15 +23,22 @@ def play(mcts, sim, ann, env, top_moves):
         print("\nThe model would have chosen: {}, ({:.2f}% confidence)".format(index, probs[index]*100))
         print("MCTS would have chosen: {}, ({:.2f}% confidence)\n".format(best_mcts_move, D[best_mcts_move]*100))
         env.draw()
-        i = input("Choose move (press enter for model move): ")
-        if i == '':
-            move = index
-        elif i == ' ':
-            move = best_mcts_move
-        else:
-            move = int(i)
-        print("\nChose move {}".format(move))
-        env.move(env.all_moves[move])
+        while True:
+            i = input("Choose move (press enter for model move): ")
+            if i == '':
+                move = index
+            elif i == ' ':
+                move = best_mcts_move
+            else:
+                move = int(i)
+            print("\nChose move {}".format(move))
+            try:
+                env.move(env.all_moves[move])
+                break
+            except:
+                print("Invalid move, try again")
+                env.draw()
+                continue
         winning_path = env.is_game_over()
         if winning_path:
             break
@@ -40,8 +47,8 @@ def play(mcts, sim, ann, env, top_moves):
 
 
 if __name__ == '__main__':
-    board_size = 6
-    level = 2000
+    board_size = 5
+    level = 500
 
     cnn = CNN(board_size)
     cnn.load(board_size, level)
