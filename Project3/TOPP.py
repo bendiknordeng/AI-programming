@@ -6,7 +6,6 @@ from CNN import CNN
 from game import HexGame
 from tqdm import tqdm
 
-
 class TOPP:
     def __init__(self, players1, players2, board_size, num_games, stoch_percent):
         self.players1 = players1
@@ -17,9 +16,9 @@ class TOPP:
         self.num_games = num_games
         self.stoch_percent = stoch_percent
 
-    def run_tournament(self, display, print_games=False):
+    def run_tournament(self, display, verbose=False):
         print("Tournament on board size", self.board_size)
-        if print_games:
+        if verbose:
             runlist = range(self.num_games)
         else:
             runlist = tqdm(range(self.num_games))
@@ -28,12 +27,12 @@ class TOPP:
                 game_print = ""
                 for p2 in self.players2:
                     if p1 != p2:
-                        if print_games: game_print += "{} - {}: ".format(p1,p2)
+                        if verbose: game_print += "{} - {}: ".format(p1,p2)
                         p1_won, moves = self.play_game(self.players1[p1], self.players2[p2], display)
                         winner = p1 if p1_won else p2
                         self.table[winner] += 1
-                        if print_games: game_print += "{} won after {} moves.\n".format(winner, moves)
-                if print_games: print(game_print)
+                        if verbose: game_print += "{} won after {} moves.\n".format(winner, moves)
+                if verbose: print(game_print)
         print("\nFinal results:")
         sorted_table = {player: result for player, result in sorted(self.table.items(), key=lambda item: (item[1], str(item[0])), reverse=True)}
         place = 1
@@ -48,37 +47,18 @@ class TOPP:
             moves += 1
             _, stoch_index, greedy_index = ann1.get_move(self.env) if self.env.player == 1 else ann2.get_move(self.env)
             self.env.move(self.env.all_moves[stoch_index if random.random() < self.stoch_percent else greedy_index])
-            if display: self.env.draw(animation_delay=0.5)
+            if display: self.env.draw(animation_delay=0.25)
         p1_won = True if self.env.result() == 1 else False
         if display:
             path = self.env.is_game_over()
             self.env.draw(path=path, animation_delay=0.2)
         return p1_won, moves
 
-
-if __name__ == '__main__':
-    board_size = 6
-
-    activation_functions = ["Linear", "Sigmoid", "Tanh", "ReLU"]
-    optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
-    alpha = 0.001  # learning rate
-    H_dims = [32, 32]
-    io_dim = board_size * board_size  # input and output layer sizes
-    activation = activation_functions[3]
-    optimizer = optimizers[3]
-    epochs = 10
-
-    num_games = 50
-    bottom_level = 0
-    top_level = 1700
-    interval = 100
-    stoch_percent = 1.
-
+def get_players(board_size, bottom_level, top_level, interval):
     l = np.arange(bottom_level, top_level+1, interval)
     models = np.sort(np.concatenate([l,l]))
     players1 = {}
     players2 = {}
-
     for i in range(0,len(models),2):
         ann = CNN(board_size)
         ann.load(board_size, models[i])
@@ -86,5 +66,20 @@ if __name__ == '__main__':
         ann = CNN(board_size)
         ann.load(board_size, models[i+1])
         players2[models[i+1]] = ann
+    return players1, players2
+
+
+if __name__ == '__main__':
+    board_size = 5
+    num_games = 50
+    bottom_level = 0
+    top_level = 500
+    interval = 50
+    stoch_percent = 1.
+    one_vs_one = False
+    visualize = False
+    verbose = False
+
+    players1, players2 = get_players(board_size, bottom_level, top_level, top_level-bottom_level if one_vs_one else interval)
     tournament = TOPP(players1, players2, board_size, num_games, stoch_percent)
-    tournament.run_tournament(display=False, print_games=False)
+    tournament.run_tournament(display=visualize, verbose=verbose)

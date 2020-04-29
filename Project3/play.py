@@ -41,7 +41,7 @@ def play(mcts, sim, ann, env, top_moves):
 
 if __name__ == '__main__':
     board_size = 6
-    level = 1700
+    level = 2000
 
     cnn = CNN(board_size)
     cnn.load(board_size, level)
