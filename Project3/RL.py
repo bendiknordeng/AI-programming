@@ -33,7 +33,7 @@ class RL:
 
     def run(self, plot_interval=1):
         eps_decay = 0.05 ** (1./self.G) if self.G > 100 else 1
-        for i in tqdm(range(1701,self.G)):
+        for i in tqdm(range(self.G)):
             if i % plot_interval == 0 and self.start_plot:
                 self.plot(save=True)
             if i % self.save_interval == 0:
@@ -139,11 +139,11 @@ def load_db(filename):
 
 if __name__ == '__main__':
     # MCTS/RL parameters
-    board_size = 5
-    G = 50
+    board_size = 4
+    G = 20
     M = 500
-    epsilon = 0
-    save_interval = 50
+    epsilon = 1
+    save_interval = 5
 
     # ANN parameters
     activation_functions = ["Linear", "Sigmoid", "Tanh", "ReLU"]
@@ -152,7 +152,7 @@ if __name__ == '__main__':
     H_dims = [32, 32]
     activation = activation_functions[3]
     optimizer = optimizers[3]
-    epochs = 1
+    epochs = 5
 
     CNN = CNN(board_size, H_dims, alpha, epochs, activation, optimizer)
     #CNN.load(size=board_size, level=1700)
@@ -165,4 +165,4 @@ if __name__ == '__main__':
 
     # Run RL algorithm and plot results
     RL.run(plot_interval=10)
-    #RL.play_game()
+    RL.play_game()
