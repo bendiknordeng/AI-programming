@@ -139,11 +139,11 @@ def load_db(filename):
 
 if __name__ == '__main__':
     # MCTS/RL parameters
-    board_size = 4
-    G = 20
+    board_size = 5
+    G = 200
     M = 500
     epsilon = 1
-    save_interval = 5
+    save_interval = 50
 
     # ANN parameters
     activation_functions = ["Linear", "Sigmoid", "Tanh", "ReLU"]
@@ -152,7 +152,7 @@ if __name__ == '__main__':
     H_dims = [32, 32]
     activation = activation_functions[3]
     optimizer = optimizers[3]
-    epochs = 5
+    epochs = 1
 
     CNN = CNN(board_size, H_dims, alpha, epochs, activation, optimizer)
     #CNN.load(size=board_size, level=500)

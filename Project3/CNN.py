@@ -39,13 +39,6 @@ class CNN(nn.Module):
         x = x.reshape(-1,self.size**2)
         return F.softmax(x, dim=1)
 
-    def log_prob(self, x, training=False):
-        self.train(training)
-        x = self.transform_input(x)
-        x = self.model(x)
-        x = x.reshape(-1,self.size**2)
-        return F.log_softmax(x, dim=1)
-
     def raw_forward(self, x, training=False):
         self.train(training)
         x = self.transform_input(x)

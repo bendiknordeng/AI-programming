@@ -40,22 +40,3 @@ class MonteCarloTreeSearch:
             action = self.tree.rollout_policy(env, self.ANN, self.eps, self.stoch_policy)
             env.move(action)
         return env.result()
-
-if __name__ == '__main__':
-    from game import HexGame
-    import numpy as np
-    import pprint
-    env = HexGame(4)
-    reds = [(0,2),(1,2),(2,1)]
-    for c in reds:
-        env.state[c] = 1
-    blacks = [(1,1),(2,2),(3,0)]
-    for c in blacks:
-        env.state[c] = 2
-    sim = 500
-
-    MCTS = MonteCarloTreeSearch()
-    D = MCTS.search(env, sim)
-    val = dict(zip(np.arange(env.size**2),D))
-    pprint.pp({k: v for k, v in sorted(val.items(), key=lambda item: item[1])})
-    env.draw()

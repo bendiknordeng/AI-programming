@@ -70,11 +70,11 @@ def get_players(board_size, bottom_level, top_level, interval):
 
 
 if __name__ == '__main__':
-    board_size = 4
-    num_games = 10
+    board_size = 5
+    num_games = 50
     bottom_level = 0
-    top_level = 20
-    interval = 5
+    top_level = 500
+    interval = 100
     stoch_percent = 1.
     one_vs_one = False
     visualize = False
